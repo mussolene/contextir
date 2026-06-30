@@ -1,0 +1,17 @@
+{
+  "hit1": 0.9147,
+  "hit5": 1.0,
+  "hit10": 1.0,
+  "mrr10": 0.9541,
+  "records": 500,
+  "examples": 2497,
+  "latency_ms_per_query": 0.0425,
+  "semantic_coherence": {
+    "intra_cluster_similarity": 0.9588,
+    "inter_cluster_similarity": 0.2197,
+    "semantic_gap": 0.7391
+  },
+  "ablation": {
+    "shuffled_hit1": 0.0012
+  }
+}
