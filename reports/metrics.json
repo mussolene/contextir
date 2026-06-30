@@ -21,8 +21,8 @@
     "char_similarity": 0.6072728207990852
   },
   "efficiency": {
-    "baseline_latency_ms": 0.0018413869353632133,
-    "semantic_latency_ms": 0.5344391668525834,
+    "baseline_latency_ms": 0.0017363935088117917,
+    "semantic_latency_ms": 0.461206113298734,
     "semantic_encoder_size_bytes": 18614,
     "baseline_size_bytes": 68724,
     "semantic_translator_size_bytes": 573853
