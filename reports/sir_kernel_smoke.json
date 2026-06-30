@@ -1,0 +1,44 @@
+{
+  "aggregate": {
+    "cases": 2,
+    "avg_preserved_concepts": 1.0,
+    "pii_leaks": 0,
+    "avg_contract_concepts": 6.0
+  },
+  "results": [
+    {
+      "case_id": "kernel_privacy",
+      "source_concepts": 6,
+      "round_concepts": 21,
+      "shared_concepts": 6,
+      "preserved_concepts": 1.0,
+      "protected_spans": 1,
+      "pii_leaked": false,
+      "decompiled_text": "semantic core, semantic intermediate representation, entropy reduction, reloop, hide. Protected placeholders: PII_EMAIL_1\nSIR anchors: sir:semantic_core sir:semantic_intermediate_representation sir:entropy_reduction sir:reloop 02144835-v 02147109-v",
+      "contract_stats": {
+        "chars": 97,
+        "tokens": 13,
+        "segments": 1,
+        "concepts": 6,
+        "unknown_token_rate": 0.6154
+      }
+    },
+    {
+      "case_id": "kernel_semantics",
+      "source_concepts": 6,
+      "round_concepts": 7,
+      "shared_concepts": 6,
+      "preserved_concepts": 1.0,
+      "protected_spans": 0,
+      "pii_leaked": false,
+      "decompiled_text": "снижение энтропии, reloop, семантическое ядро, семантическое промежуточное представление, вхождение\nSIR anchors: sir:entropy_reduction sir:reloop sir:semantic_core sir:semantic_intermediate_representation 00049003-n 00058519-n",
+      "contract_stats": {
+        "chars": 73,
+        "tokens": 10,
+        "segments": 2,
+        "concepts": 6,
+        "unknown_token_rate": 0.8
+      }
+    }
+  ]
+}

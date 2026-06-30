@@ -172,6 +172,42 @@ The `agent` and `ollama` modes are optional backends. If they are unavailable or
 time out, the runtime falls back to the deterministic local backend so the SIR
 pipeline remains testable without network or model state.
 
+## Kernel API
+
+The core product boundary is now `SIRKernel`:
+
+```text
+compile(text, source_lang, target_lang) -> SIR semantic contract
+decompile(contract, target_lang) -> target-language text
+```
+
+CLI:
+
+```bash
+python3 scripts/sir_kernel.py compile \
+  --text "Вход текст выход контракт семантики" \
+  --source-lang ru \
+  --target-lang en \
+  --out /tmp/sir_contract.json
+
+python3 scripts/sir_kernel.py decompile \
+  --contract /tmp/sir_contract.json \
+  --target-lang en
+```
+
+For machine roundtrips, `decompile --include-anchors` appends hidden SIR concept
+anchors so a later compile can preserve the full contract while the visible text
+can remain compact.
+
+Current kernel smoke:
+
+```text
+cases: 2
+avg_preserved_concepts: 1.0
+pii_leaks: 0
+avg_contract_concepts: 6.0
+```
+
 Cursor Agent note: `agent` without `--print` is an interactive TUI meant for a
 human terminal session. Runtime automation must use the headless path
 `agent --print --mode ask --trust <prompt>`, and should keep the deterministic

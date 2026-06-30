@@ -9,7 +9,7 @@
     "avg_segment_coverage": 0.9583,
     "avg_unknown_token_rate": 0.6259,
     "avg_compression_ratio": 12.8165,
-    "avg_latency_ms": 3.24,
+    "avg_latency_ms": 3.5425,
     "baseline_avg_concept_f1": 0.2242,
     "sir_vs_baseline_f1_delta": 0.31
   },
@@ -30,7 +30,7 @@
       "unknown_token_rate": 0.6533,
       "compression_ratio": 12.522,
       "sir_chars": 7100,
-      "latency_ms": 3.74,
+      "latency_ms": 4.49,
       "bridge_text": "semantic core, entropy reduction, reloop, semantic intermediate representation. retention, storage, conservation, reservation. state, act, action. teaching, tutelage, see, owe. decompiler, next, subsequently",
       "reconstructed_text": "снижение энтропии, семантическое ядро, семантическое промежуточное представление, reloop. удержание, хранение, сохранение, оставление. действовать, состояние, действие, действие. понимать, объяснять, опекунство, учение. декомпилятор, затем, после, следующий",
       "direct_baseline": {
@@ -61,7 +61,7 @@
       "unknown_token_rate": 0.5915,
       "compression_ratio": 13.5996,
       "sir_chars": 6759,
-      "latency_ms": 2.97,
+      "latency_ms": 3.57,
       "bridge_text": "bizarre, curious, eerie, laptop. firm, confidently, yesterday, stead. reloop, merely, entirely, only. story, short story, description, fib. decompiler, entropy reduction, semantic core",
       "reconstructed_text": "неестественный, любопытный, странный, странный. уверенно, уверенно, вчера, место. reloop, только, целиком, один. рассказ, отрывисто, грубый, короткий. снижение энтропии, семантическое ядро, декомпилятор, предкомпилятор",
       "direct_baseline": {
@@ -92,7 +92,7 @@
       "unknown_token_rate": 0.5781,
       "compression_ratio": 13.3705,
       "sir_chars": 5883,
-      "latency_ms": 2.44,
+      "latency_ms": 2.59,
       "bridge_text": "person, homo, Homo sapiens, car. raucous, turn, custom, brusque. merely, simply, handily, temper. shot, nucleus, nucleus, retention. farther, ahead, antic, running",
       "reconstructed_text": "гомо сапиенс, человек, человек, машина. растягивать, хриплый, поворот, обычай. только, просто, удобно, настроение. выстрел, инъекция, попытка, удержание. дальше, вперёд, вперёд, вперёд",
       "direct_baseline": {
@@ -123,7 +123,7 @@
       "unknown_token_rate": 0.6806,
       "compression_ratio": 11.7738,
       "sir_chars": 6299,
-      "latency_ms": 3.81,
+      "latency_ms": 3.52,
       "bridge_text": "reloop, serenely, fraction, part. beneficial, good, lucky, good. subsequent, following, step, teaching. touch, next, subsequently, then. merely, entirely, only, so far",
       "reconstructed_text": "reloop, безмятежно, функция, расставаться. хороший, действующий, хороший, счастливый. последующий, следующий, мера, шаг. стиль, затем, после, затем. до сих пор, только, целиком, один",
       "direct_baseline": {
