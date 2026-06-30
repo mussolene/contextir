@@ -23,6 +23,7 @@ The project currently has two layers:
 
 - synthetic RU/EN translator MVP for measuring a compact semantic bottleneck;
 - lexical SIR + tiny ML core for concept grounding and future pretraining.
+- concept graph + relation core for the first graph reasoning benchmark.
 
 ## Setup
 
@@ -61,6 +62,23 @@ SIR nearest concept: 02121620-n
 Output: cat
 ```
 
+## Run SIR Graph Core
+
+```bash
+python3 scripts/build_concept_graph.py --min-relation-count 3
+python3 scripts/train_sir_graph_core.py train --out checkpoints/sir_graph_core_smoke.npz
+python3 scripts/train_sir_graph_core.py eval --checkpoint checkpoints/sir_graph_core_smoke.npz --out reports/sir_graph_core_eval.json
+```
+
+This trains relation-specific maps for tasks like:
+
+```text
+source concept + relation -> target concept
+```
+
+The held-out validation report is written to
+`reports/sir_graph_core_valid_eval.json`.
+
 ## Outputs
 
 - `data/processed/*.jsonl` synthetic train/valid/test splits.
@@ -69,9 +87,12 @@ Output: cat
 - `checkpoints/baseline_translator.json`
 - `checkpoints/semantic_translator.json`
 - `checkpoints/sir_ml_core_smoke.npz`
+- `checkpoints/sir_graph_core_smoke.npz`
 - `reports/metrics.json`
 - `reports/examples.md`
 - `reports/sir_ml_core_smoke_eval.json`
+- `reports/sir_graph_core_valid_eval.json`
+- `reports/sir_graph_core_eval.json`
 
 ## Metrics
 

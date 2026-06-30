@@ -74,3 +74,40 @@ python3 scripts/train_sir_ml_core.py demo --text "кошка" --target en --limi
    idiom-to-literal-SIR compilation.
 4. Keep every milestone behind a benchmark and a git commit.
 
+## Current Graph Milestone
+
+The first graph layer builds WordNet pointer relations among the current
+concept records:
+
+```bash
+python3 scripts/build_concept_graph.py --min-relation-count 3
+python3 scripts/train_sir_graph_core.py train --out checkpoints/sir_graph_core_smoke.npz
+python3 scripts/train_sir_graph_core.py eval --checkpoint checkpoints/sir_graph_core_smoke.npz --out reports/sir_graph_core_eval.json
+```
+
+Model shape:
+
+```text
+source concept vector + relation-specific linear map -> target concept vector
+```
+
+The held-out validation metric is the main metric. Full-graph eval is useful as
+a fit/debug check, not as proof of generalization.
+
+Current held-out result:
+
+```text
+relations: 7,126
+hit@1: 0.0772
+hit@5: 0.1364
+hit@10: 0.1662
+MRR@10: 0.1033
+```
+
+The relation core is therefore a benchmarkable first graph substrate, not a
+finished reasoner. Broad relations such as `hypernym` and `hyponym` remain weak;
+more constrained relations such as `instance_hypernym`, `domain_topic`,
+`domain_usage`, and several part/domain relations already show useful signal.
+
+Next architectural step: replace relation-specific linear maps with a small
+graph encoder trained with negative sampling and relation-aware neighborhoods.
