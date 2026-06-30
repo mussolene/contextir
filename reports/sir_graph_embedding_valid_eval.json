@@ -1,0 +1,220 @@
+{
+  "relations": 7126,
+  "hit1": 0.0946,
+  "hit5": 0.1953,
+  "hit10": 0.2397,
+  "mrr10": 0.1369,
+  "latency_ms_per_relation": 1.6719,
+  "by_relation": {
+    "also_see": {
+      "n": 93,
+      "hit1": 0.0323,
+      "hit5": 0.086,
+      "hit10": 0.1075,
+      "mrr10": 0.0504
+    },
+    "antonym": {
+      "n": 152,
+      "hit1": 0.1776,
+      "hit5": 0.3158,
+      "hit10": 0.3882,
+      "mrr10": 0.2369
+    },
+    "attribute": {
+      "n": 46,
+      "hit1": 0.1304,
+      "hit5": 0.1957,
+      "hit10": 0.2391,
+      "mrr10": 0.1634
+    },
+    "cause": {
+      "n": 5,
+      "hit1": 0.2,
+      "hit5": 0.4,
+      "hit10": 0.4,
+      "mrr10": 0.25
+    },
+    "derivationally_related": {
+      "n": 1342,
+      "hit1": 0.0417,
+      "hit5": 0.1036,
+      "hit10": 0.1423,
+      "mrr10": 0.0689
+    },
+    "domain_region": {
+      "n": 28,
+      "hit1": 0.3571,
+      "hit5": 0.6429,
+      "hit10": 0.75,
+      "mrr10": 0.4572
+    },
+    "domain_topic": {
+      "n": 153,
+      "hit1": 0.3333,
+      "hit5": 0.5163,
+      "hit10": 0.5882,
+      "mrr10": 0.4086
+    },
+    "domain_usage": {
+      "n": 26,
+      "hit1": 0.5769,
+      "hit5": 0.9615,
+      "hit10": 1.0,
+      "mrr10": 0.7267
+    },
+    "entailment": {
+      "n": 18,
+      "hit1": 0.0,
+      "hit5": 0.0556,
+      "hit10": 0.1667,
+      "mrr10": 0.028
+    },
+    "hypernym": {
+      "n": 1610,
+      "hit1": 0.123,
+      "hit5": 0.2739,
+      "hit10": 0.3366,
+      "mrr10": 0.1872
+    },
+    "hyponym": {
+      "n": 1672,
+      "hit1": 0.0347,
+      "hit5": 0.0831,
+      "hit10": 0.119,
+      "mrr10": 0.0554
+    },
+    "instance_hypernym": {
+      "n": 189,
+      "hit1": 0.545,
+      "hit5": 0.8148,
+      "hit10": 0.836,
+      "mrr10": 0.6595
+    },
+    "instance_hyponym": {
+      "n": 185,
+      "hit1": 0.0054,
+      "hit5": 0.0324,
+      "hit10": 0.0486,
+      "mrr10": 0.0163
+    },
+    "member_holonym": {
+      "n": 54,
+      "hit1": 0.2593,
+      "hit5": 0.5185,
+      "hit10": 0.6111,
+      "mrr10": 0.3496
+    },
+    "member_meronym": {
+      "n": 69,
+      "hit1": 0.058,
+      "hit5": 0.2464,
+      "hit10": 0.2609,
+      "mrr10": 0.1277
+    },
+    "member_of_domain_region": {
+      "n": 25,
+      "hit1": 0.0,
+      "hit5": 0.08,
+      "hit10": 0.08,
+      "mrr10": 0.0267
+    },
+    "member_of_domain_topic": {
+      "n": 167,
+      "hit1": 0.018,
+      "hit5": 0.024,
+      "hit10": 0.0419,
+      "mrr10": 0.022
+    },
+    "member_of_domain_usage": {
+      "n": 30,
+      "hit1": 0.0,
+      "hit5": 0.0,
+      "hit10": 0.0333,
+      "mrr10": 0.0042
+    },
+    "part_holonym": {
+      "n": 430,
+      "hit1": 0.193,
+      "hit5": 0.3744,
+      "hit10": 0.4209,
+      "mrr10": 0.2694
+    },
+    "part_meronym": {
+      "n": 431,
+      "hit1": 0.0232,
+      "hit5": 0.0858,
+      "hit10": 0.116,
+      "mrr10": 0.0483
+    },
+    "pertainym": {
+      "n": 104,
+      "hit1": 0.0962,
+      "hit5": 0.2404,
+      "hit10": 0.2981,
+      "mrr10": 0.1614
+    },
+    "similar_to": {
+      "n": 201,
+      "hit1": 0.0498,
+      "hit5": 0.1244,
+      "hit10": 0.1692,
+      "mrr10": 0.0771
+    },
+    "substance_holonym": {
+      "n": 35,
+      "hit1": 0.0857,
+      "hit5": 0.1714,
+      "hit10": 0.2286,
+      "mrr10": 0.125
+    },
+    "substance_meronym": {
+      "n": 32,
+      "hit1": 0.125,
+      "hit5": 0.2812,
+      "hit10": 0.3125,
+      "mrr10": 0.1797
+    },
+    "verb_group": {
+      "n": 29,
+      "hit1": 0.1379,
+      "hit5": 0.3103,
+      "hit10": 0.4138,
+      "mrr10": 0.2029
+    }
+  },
+  "train_relations": 28502,
+  "valid_relations": 7126,
+  "relation_types": 25,
+  "epochs": 4,
+  "train_seconds": 61.18,
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 0.176703,
+      "valid_hit1": 0.0571,
+      "valid_hit10": 0.1478,
+      "valid_mrr10": 0.0824
+    },
+    {
+      "epoch": 2,
+      "loss": 0.122419,
+      "valid_hit1": 0.0679,
+      "valid_hit10": 0.1838,
+      "valid_mrr10": 0.1003
+    },
+    {
+      "epoch": 3,
+      "loss": 0.092207,
+      "valid_hit1": 0.0797,
+      "valid_hit10": 0.213,
+      "valid_mrr10": 0.1189
+    },
+    {
+      "epoch": 4,
+      "loss": 0.070959,
+      "valid_hit1": 0.0946,
+      "valid_hit10": 0.2397,
+      "valid_mrr10": 0.1369
+    }
+  ]
+}

@@ -79,6 +79,18 @@ source concept + relation -> target concept
 The held-out validation report is written to
 `reports/sir_graph_core_valid_eval.json`.
 
+## Run Trainable Graph Embedding Core
+
+```bash
+python3 scripts/train_sir_graph_embedding_core.py train --dim 96 --epochs 4 --out checkpoints/sir_graph_embedding_core_smoke.npz
+python3 scripts/train_sir_graph_embedding_core.py eval --checkpoint checkpoints/sir_graph_embedding_core_smoke.npz --out reports/sir_graph_embedding_eval.json
+python3 scripts/train_sir_graph_embedding_core.py demo --source 02121620-n --relation hypernym --k 5 --checkpoint checkpoints/sir_graph_embedding_core_smoke.npz
+```
+
+This trains concept and relation embeddings with negative sampling. It is the
+first trainable graph substrate and currently beats the relation-matrix core on
+held-out hit@10.
+
 ## Outputs
 
 - `data/processed/*.jsonl` synthetic train/valid/test splits.
@@ -88,11 +100,14 @@ The held-out validation report is written to
 - `checkpoints/semantic_translator.json`
 - `checkpoints/sir_ml_core_smoke.npz`
 - `checkpoints/sir_graph_core_smoke.npz`
+- `checkpoints/sir_graph_embedding_core_smoke.npz`
 - `reports/metrics.json`
 - `reports/examples.md`
 - `reports/sir_ml_core_smoke_eval.json`
 - `reports/sir_graph_core_valid_eval.json`
 - `reports/sir_graph_core_eval.json`
+- `reports/sir_graph_embedding_valid_eval.json`
+- `reports/sir_graph_embedding_eval.json`
 
 ## Metrics
 

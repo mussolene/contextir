@@ -111,3 +111,44 @@ more constrained relations such as `instance_hypernym`, `domain_topic`,
 
 Next architectural step: replace relation-specific linear maps with a small
 graph encoder trained with negative sampling and relation-aware neighborhoods.
+
+## Trainable Graph Embedding Milestone
+
+`semantic_core/sir_graph_embedding_core.py` adds a trainable TransE-style graph
+core:
+
+```text
+source concept embedding + relation embedding ~= target concept embedding
+```
+
+Training uses margin ranking with negative target sampling. This is still small
+and inspectable, but it is a real learned graph substrate rather than a closed
+form relation map.
+
+Full graph training command:
+
+```bash
+python3 scripts/train_sir_graph_embedding_core.py train --dim 96 --epochs 4 --out checkpoints/sir_graph_embedding_core_smoke.npz
+```
+
+Held-out result:
+
+```text
+relations: 7,126
+hit@1: 0.0946
+hit@5: 0.1953
+hit@10: 0.2397
+MRR@10: 0.1369
+```
+
+This improves over the relation-matrix held-out baseline:
+
+```text
+matrix hit@1: 0.0772
+matrix hit@10: 0.1662
+embedding hit@1: 0.0946
+embedding hit@10: 0.2397
+```
+
+The `cat + hypernym` probe now puts `animal` in the top 2. That is not yet good
+enough for product inference, but it confirms the training direction.
