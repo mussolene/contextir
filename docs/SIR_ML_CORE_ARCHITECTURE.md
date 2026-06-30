@@ -1,17 +1,148 @@
 # SIR ML Core Architecture
 
-This project is the single home for the SIR translator experiment.
+This project is the single home for the SIR semantic intermediate
+representation experiment.
+
+SIR is not intended to be only a translator. The product bet is a small
+language-independent semantic core that can run cheaply, keep sensitive data in
+a protected local contour, and present larger models with a compact reasoning
+surface instead of raw multilingual text.
 
 The intended runtime shape is:
 
 ```text
 language text
-  -> precompiler
-  -> SIR vector / SIR graph
-  -> small ML core
+  -> precompiler / privacy scrubber
+  -> SIR packet / SIR vector / SIR graph
+  -> small semantic core
+  -> reasoning model / agent / tool loop
+  -> SIR validation / answer packet
   -> decompiler
-  -> language text / action / relation
+  -> target language text / action / relation
 ```
+
+## Product Thesis
+
+Large models spend a meaningful part of their work on high-entropy language
+operations: parsing noisy user text, resolving multilingual surface forms,
+tracking implicit entities, preserving constraints, and rephrasing the answer
+for the target language. SIR should move as much of that work as possible into a
+small specialized semantic layer.
+
+The large model should not need to be the primary language knower for every
+language. It should receive a compact representation of the user's intent,
+entities, relations, constraints, uncertainty, and protected placeholders in the
+semantic space it was trained to understand. The SIR decompiler then turns the
+semantic answer back into the user's target language.
+
+This makes SIR closer to a semantic coprocessor than to a classic translator:
+
+```text
+source language
+  -> SIR compile
+  -> language-independent semantic reasoning surface
+  -> model / MoE / agent reasoning
+  -> SIR answer surface
+  -> target language decompile
+```
+
+## Required Capabilities
+
+The core must eventually support four hard requirements:
+
+1. Privacy and depublication.
+   PII and sensitive values must be replaced with protected local placeholders
+   before any external or frontier model sees the request. The SIR packet should
+   preserve enough typed structure for reasoning without publishing the private
+   surface value.
+
+2. A small learned semantic language.
+   The core may invent its own compact contract, but that contract must be
+   serializable, benchmarkable, and understandable to surrounding systems. The
+   contract should include concepts, relations, roles, intent, constraints,
+   uncertainty, provenance, and protected spans.
+
+3. Meaning-preserving multilingual compile/decompile.
+   Any trained source language should compile into the same semantic space, and
+   any trained target language should decompile from that space. Translation is
+   therefore a consequence of semantic preservation, not the central mechanism.
+
+4. Reduced reasoning surface for MoE and agent systems.
+   SIR should route cleaner, smaller, typed semantic packets to local or remote
+   models so fewer expert weights are activated by incidental language noise.
+   The expected benefit is lower token pressure, better expert routing, fewer
+   lost constraints, and more stable agent tool decisions.
+
+## SIR Packet Contract
+
+A practical v1 packet should be small, explicit, and hostile to hallucinated
+surface detail:
+
+```json
+{
+  "version": "sir.v1",
+  "source_lang": "ru",
+  "target_lang": "en",
+  "intent": {"label": "ask|command|translate|reason|plan", "confidence": 0.0},
+  "concepts": [
+    {"id": "03082979-n", "role": "object", "score": 0.91}
+  ],
+  "relations": [
+    {"source": "user", "relation": "requests", "target": "action"}
+  ],
+  "constraints": [
+    {"type": "privacy", "value": "do_not_expose_pii"}
+  ],
+  "protected_spans": [
+    {"placeholder": "PII_PERSON_1", "type": "person_name", "local_ref": "vault:..."}
+  ],
+  "uncertainty": [
+    {"span": "ambiguous word", "candidates": ["sense_a", "sense_b"]}
+  ]
+}
+```
+
+The packet is not a final ontology. It is the first executable contract for
+training, benchmarking, privacy, routing, and roundtrip checks.
+
+## Agent and Chat Loop
+
+SIR should fit both chat and agentic execution:
+
+```text
+user message
+  -> local SIR compile + PII placeholders
+  -> route: answer directly | ask clarification | retrieve memory | call tool | call model
+  -> model/tool result
+  -> compile result back into SIR
+  -> compare result packet with request packet
+  -> decompile to the user's target language
+```
+
+The optional `reloop` path improves answer quality by compiling both the input
+and the candidate output:
+
+```text
+input text -> SIR request
+model answer -> SIR answer
+SIR request + SIR answer -> consistency check
+if missing constraints or unsupported claims:
+  ask the model for a revised answer with a smaller semantic diff
+```
+
+The reloop should be bounded. It is a quality control loop, not an unbounded
+agent reflection loop.
+
+## Non-Goals for v1
+
+SIR v1 should not try to be a fluent universal generator. That would recreate a
+large language model in miniature. The v1 target is narrower:
+
+- preserve meaning across compile/decompile;
+- hide sensitive surface values;
+- reduce prompt entropy;
+- expose typed uncertainty instead of pretending every sense is known;
+- make agent/model outputs checkable against the original semantic contract.
 
 ## Source Policy
 
