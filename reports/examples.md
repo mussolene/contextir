@@ -1,0 +1,26 @@
+# Translation Examples
+
+- `на дороге дремлет робот` -> `the robot is sleeping on the street` | gold: `the robot is sleeping on the street` | nearest: `m_robot_sleeping_street` | score: 1.000
+- `ребёнок идёт в комнате` -> `the child is walking in the room` | gold: `the child is walking in the room` | nearest: `m_child_walking_room` | score: 1.000
+- `животное глядит у стола` -> `the bird is looking on the table` | gold: `the cat is looking on the table` | nearest: `m_bird_looking_table` | score: 0.994
+- `в помещении находится птица` -> `the bird is sitting in the room` | gold: `the bird is standing in the room` | nearest: `m_bird_sitting_room` | score: 0.994
+- `the robot is standing in the room` -> `робот стоит в комнате` | gold: `робот стоит в комнате` | nearest: `m_robot_standing_room` | score: 1.000
+- `пернатое отдыхает дома` -> `the bird is sleeping in the room` | gold: `the bird is sleeping in the room` | nearest: `m_bird_sleeping_room` | score: 1.000
+- `the cat is walking in the room` -> `кошка идёт в комнате` | gold: `кошка идёт в комнате` | nearest: `m_cat_walking_room` | score: 1.000
+- `the cat is walking by the window` -> `кошка идёт у окна` | gold: `кошка идёт у окна` | nearest: `m_cat_walking_window` | score: 1.000
+- `в помещении наблюдает собака` -> `the dog is looking in the room` | gold: `the dog is looking in the room` | nearest: `m_dog_looking_room` | score: 1.000
+- `the bird is sitting on the table` -> `птица сидит на столе` | gold: `птица сидит на столе` | nearest: `m_bird_sitting_table` | score: 0.965
+- `meaning: the bird is walking in the room` -> `птица идёт в комнате` | gold: `птица идёт в комнате` | nearest: `m_bird_walking_room` | score: 0.856
+- `a bird is located indoors` -> `птица стоит в комнате` | gold: `птица стоит в комнате` | nearest: `m_bird_standing_room` | score: 0.991
+- `в помещении дремлет кошка` -> `the cat is sleeping in the room` | gold: `the cat is sleeping in the room` | nearest: `m_cat_sleeping_room` | score: 1.000
+- `meaning: the teacher is standing on the street` -> `учитель стоит на улице` | gold: `учитель стоит на улице` | nearest: `m_teacher_standing_street` | score: 1.000
+- `the teacher is walking in the garden` -> `учитель идёт в саду` | gold: `учитель идёт в саду` | nearest: `m_teacher_walking_garden` | score: 0.823
+- `автомат идёт на столе` -> `the robot is walking on the table` | gold: `the robot is walking on the table` | nearest: `m_robot_walking_table` | score: 1.000
+- `the dog is walking on the street` -> `собака идёт на улице` | gold: `собака идёт на улице` | nearest: `m_dog_walking_street` | score: 0.994
+- `the youngster is going outside` -> `ребёнок идёт на улице` | gold: `ребёнок идёт в саду` | nearest: `m_child_walking_street` | score: 1.000
+- `a machine is watching near the window` -> `робот смотрит у окна` | gold: `робот смотрит у окна` | nearest: `m_robot_looking_window` | score: 0.877
+- `в помещении шагает ребёнок` -> `the child is walking in the room` | gold: `the child is walking in the room` | nearest: `m_child_walking_room` | score: 1.000
+- `смысл: ребёнок стоит на столе` -> `the child is standing on the table` | gold: `the child is standing on the table` | nearest: `m_child_standing_table` | score: 0.980
+- `a bird is watching indoors` -> `птица стоит в комнате` | gold: `птица смотрит в комнате` | nearest: `m_bird_standing_room` | score: 0.858
+- `животное стоит на столе` -> `the bird is standing on the table` | gold: `the dog is standing on the table` | nearest: `m_bird_standing_table` | score: 1.000
+- `the teacher is sitting in the room` -> `учитель стоит в комнате` | gold: `учитель сидит в комнате` | nearest: `m_teacher_standing_room` | score: 0.877

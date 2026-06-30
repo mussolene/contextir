@@ -1,0 +1,18 @@
+seed: 42
+
+data:
+  train_size: 900
+  valid_size: 150
+  test_size: 150
+  synthetic: true
+
+model:
+  semantic_dim: 128
+
+training:
+  noise: 0.035
+
+evaluation:
+  num_examples: 24
+  save_plots: true
+

@@ -1,0 +1,35 @@
+{
+  "baseline": {
+    "exact_match": 0.14666666666666667,
+    "token_accuracy": 0.25166666666666665,
+    "char_similarity": 0.29761431201434396
+  },
+  "semantic_translator": {
+    "exact_match": 0.72,
+    "token_accuracy": 0.9204761904761903,
+    "char_similarity": 0.9641424535328542
+  },
+  "semantic_coherence": {
+    "intra_cluster_similarity": 0.8349359937616296,
+    "inter_cluster_similarity": 0.19690007419945002,
+    "semantic_gap": 0.6380359195621796
+  },
+  "cycle_consistency": 0.9704322226842245,
+  "ablation": {
+    "exact_match": 0.006666666666666667,
+    "token_accuracy": 0.4059523809523809,
+    "char_similarity": 0.6072728207990852
+  },
+  "efficiency": {
+    "baseline_latency_ms": 0.0024016667157411575,
+    "semantic_latency_ms": 0.43932499984900153,
+    "semantic_encoder_size_bytes": 18614,
+    "baseline_size_bytes": 68724,
+    "semantic_translator_size_bytes": 573853
+  },
+  "success_criteria": {
+    "semantic_gap_ge_0_15": true,
+    "cycle_consistency_ge_0_75": true,
+    "ablation_drops_quality": true
+  }
+}
