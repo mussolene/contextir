@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import defaultdict
 from typing import Iterable
 
-from semantic_core.sir_sources import ConceptRecord, LexicalSIRCore, load_records_jsonl, normalize
+from semantic_core.sir_sources import PROJECT_ROOT, ConceptRecord, LexicalSIRCore, load_record_bundle, normalize
 
 
 @dataclass
@@ -238,6 +238,7 @@ class SIRRoundtrip:
                 continue
             score = 0.0
             source = ""
+            record = self.by_id[concept_id]
             if f" {alias} " in padded:
                 score = 1.0 if " " in alias else 0.92
                 source = "alias"
@@ -246,7 +247,9 @@ class SIRRoundtrip:
                 source = "loose_alias"
             if not score:
                 continue
-            record = self.by_id[concept_id]
+            if record.source.startswith("sir-domain"):
+                score += 0.35
+                source = f"sir_domain_{source}"
             current = hits.get(concept_id)
             if current is None or score > current.score:
                 hits[concept_id] = ConceptHit(
@@ -306,4 +309,5 @@ def read_roundtrip_rows(path: Path) -> list[dict[str, str]]:
 
 
 def load_roundtrip(records_path: Path) -> SIRRoundtrip:
-    return SIRRoundtrip(load_records_jsonl(records_path))
+    domain_path = PROJECT_ROOT / "data" / "concepts" / "sir_domain_records.jsonl"
+    return SIRRoundtrip(load_record_bundle([records_path, domain_path]))

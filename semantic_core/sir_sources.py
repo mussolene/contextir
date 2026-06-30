@@ -290,6 +290,25 @@ def load_records_jsonl(path: Path) -> list[ConceptRecord]:
     return records
 
 
+def load_record_bundle(paths: Iterable[Path]) -> list[ConceptRecord]:
+    by_id: dict[str, ConceptRecord] = {}
+    for path in paths:
+        if not path.exists():
+            continue
+        for record in load_records_jsonl(path):
+            current = by_id.get(record.concept_id)
+            if current is None:
+                by_id[record.concept_id] = record
+                continue
+            current.en = dedupe([*current.en, *record.en])
+            current.ru = dedupe([*current.ru, *record.ru])
+            if not current.definition_en and record.definition_en:
+                current.definition_en = record.definition_en
+            if current.source != record.source:
+                current.source = f"{current.source}+{record.source}"
+    return list(by_id.values())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download and prepare SIR concept sources.")
     parser.add_argument("--download", action="store_true", help="Clone/download OMW, English WordNet, and Princeton WordNet.")

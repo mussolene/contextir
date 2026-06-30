@@ -29,9 +29,9 @@ The direct baseline keeps only one dictionary-level concept per segment, then it
 
 Current local result:
 
-- long-text SIR roundtrip: `concept_f1=0.4819`, `segment_coverage=0.9583`, `latency_ms=~4.1`;
-- direct transpiler baseline: `concept_f1=0.2068`;
-- SIR delta over direct baseline: `+0.2751`;
+- long-text SIR roundtrip: `concept_f1=0.5342`, `segment_coverage=0.9583`, `latency_ms=~3.2`;
+- direct transpiler baseline: `concept_f1=0.2242`;
+- SIR delta over direct baseline: `+0.3100`;
 - existing synthetic translator bench: `exact_match=0.72`, `cycle_consistency=0.9704`, `semantic_gap=0.6380`.
 
 Stabilization priorities exposed by the benchmark:
@@ -40,3 +40,4 @@ Stabilization priorities exposed by the benchmark:
 2. Add morphology-aware Russian normalization, because many unknown tokens are inflected forms.
 3. Rank aliases during decompile by language frequency/domain instead of using the first WordNet lemma.
 4. Keep vector fallback out of the trusted roundtrip path until it is calibrated with hard negatives.
+5. Expand the project-local SIR domain pack; the first pack improved roundtrip F1 from `0.4819` to `0.5342`.

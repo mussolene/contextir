@@ -139,7 +139,7 @@ The current working prototype is `semantic_core/sir_runtime.py` with CLI wrapper
 
 ```bash
 python3 scripts/sir_agent_demo.py \
-  --text "Проверь SIR локально и не публикуй max@example.com" \
+  --text "Проверь SIR локально и не публикуй user@example.test" \
   --source-lang ru \
   --target-lang en
 
@@ -162,15 +162,25 @@ Current smoke result:
 
 ```text
 cases: 2
-avg_preserved_concepts: 0.6667
+avg_preserved_concepts: 1.0
 needs_revision: 0
 pii_leaks: 0
-avg_latency_ms: ~2.5
+avg_latency_ms: ~3.2
 ```
 
 The `agent` and `ollama` modes are optional backends. If they are unavailable or
 time out, the runtime falls back to the deterministic local backend so the SIR
 pipeline remains testable without network or model state.
+
+Cursor Agent note: `agent` without `--print` is an interactive TUI meant for a
+human terminal session. Runtime automation must use the headless path
+`agent --print --mode ask --trust <prompt>`, and should keep the deterministic
+fallback because the TUI/backend may be slow or unavailable.
+
+The `1.0` smoke result is a contract test, not a claim of universal language
+quality. It proves that protected spans, SIR anchors, and bounded reloop can
+preserve the prototype packet. The long-text roundtrip benchmark remains the
+harder semantic compiler metric.
 
 ## Non-Goals for v1
 

@@ -1,10 +1,10 @@
 {
   "aggregate": {
     "cases": 2,
-    "avg_preserved_concepts": 0.6667,
+    "avg_preserved_concepts": 1.0,
     "needs_revision": 0,
     "pii_leaks": 0,
-    "avg_latency_ms": 2.41
+    "avg_latency_ms": 3.21
   },
   "results": [
     {
@@ -22,6 +22,30 @@
         },
         "scrubbed_text": "Проверь архитектуру SIR локально и не публикуй почту PII_EMAIL_1 или телефон PII_PHONE_1. Нужно сохранить смысл про маленькое ядро, приватность и перевод.",
         "concepts": [
+          {
+            "id": "sir:semantic_intermediate_representation",
+            "role": "concept",
+            "score": 1.27,
+            "source": "sir_domain_alias",
+            "surface": {
+              "en": "semantic intermediate representation",
+              "ru": "семантическое промежуточное представление"
+            },
+            "definition_en": "a compact language-independent semantic representation used between source text and reasoning systems",
+            "segment": 0
+          },
+          {
+            "id": "sir:reloop",
+            "role": "concept",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
+            "surface": {
+              "en": "reloop",
+              "ru": "reloop"
+            },
+            "definition_en": "a bounded loop that compiles the answer back into SIR and checks whether it preserves request concepts and constraints",
+            "segment": 0
+          },
           {
             "id": "03261776-n",
             "role": "concept",
@@ -71,28 +95,28 @@
             "segment": 0
           },
           {
-            "id": "00879271-n",
+            "id": "sir:semantic_core",
             "role": "concept",
-            "score": 0.72,
-            "source": "loose_alias",
+            "score": 1.35,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "inspection",
-              "ru": "проверка"
+              "en": "semantic core",
+              "ru": "семантическое ядро"
             },
-            "definition_en": "a formal or official examination",
-            "segment": 0
+            "definition_en": "a small local core that compiles, validates, and decompiles semantic packets",
+            "segment": 1
           },
           {
-            "id": "01425529-a",
+            "id": "sir:language_independent_semantics",
             "role": "concept",
-            "score": 0.72,
-            "source": "loose_alias",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
             "surface": {
-              "en": "local",
-              "ru": "местный"
+              "en": "language independent semantics",
+              "ru": "языконезависимая семантика"
             },
-            "definition_en": "affecting only a restricted part or area of the body",
-            "segment": 0
+            "definition_en": "meaning representation shared across trained source and target languages",
+            "segment": 1
           },
           {
             "id": "01107932-n",
@@ -141,42 +165,18 @@
             },
             "definition_en": "sports equipment consisting of a heavy metal ball used in the shot put",
             "segment": 1
-          },
-          {
-            "id": "04622932-n",
-            "role": "constraint",
-            "score": 0.92,
-            "source": "alias",
-            "surface": {
-              "en": "privacy",
-              "ru": "уединение"
-            },
-            "definition_en": "the quality of being secluded from the presence or view of others",
-            "segment": 1
-          },
-          {
-            "id": "05434927-n",
-            "role": "concept",
-            "score": 0.92,
-            "source": "alias",
-            "surface": {
-              "en": "nucleus",
-              "ru": "ядро"
-            },
-            "definition_en": "a part of the cell containing DNA and RNA and responsible for growth and reproduction",
-            "segment": 1
           }
         ],
         "relations": [
           {
             "source": "user",
             "relation": "mentions",
-            "target": "03261776-n"
+            "target": "sir:semantic_intermediate_representation"
           },
           {
-            "source": "03261776-n",
+            "source": "sir:semantic_intermediate_representation",
             "relation": "context_with",
-            "target": "04401088-n"
+            "target": "sir:reloop"
           }
         ],
         "constraints": [
@@ -226,11 +226,9 @@
             "type": "low_confidence_concepts",
             "sample": [
               "00141806-n",
-              "00789448-v",
-              "00879271-n",
-              "01425529-a"
+              "00789448-v"
             ],
-            "count": 4
+            "count": 2
           }
         ],
         "stats": {
@@ -241,21 +239,34 @@
           "unknown_token_rate": 0.619
         }
       },
-      "raw_answer": "SIR understood the request as: intent=command; key concepts=earphone, telephone, check, call, inspection, local, transfer, save. Protected data remains local.\nSIR anchors: 03261776-n 04401088-n 00141806-n 00789448-v 00879271-n 01425529-a 01107932-n 02265979-v",
+      "raw_answer": "SIR understood the request as: intent=command; key concepts=semantic intermediate representation, reloop, earphone, telephone, check, call, semantic core, language independent semantics. Protected data remains local.\nSIR anchors: sir:semantic_intermediate_representation sir:reloop 03261776-n 04401088-n 00141806-n 00789448-v sir:semantic_core sir:language_independent_semantics 01107932-n 02265979-v 02283324-v 04206070-n",
       "answer_packet": {
         "version": "sir.v1",
         "packet_id": "answer",
         "source_lang": "en",
         "target_lang": "en",
         "intent": {
-          "label": "command",
-          "confidence": 0.7,
+          "label": "translate",
+          "confidence": 0.85,
           "signals": [
-            "imperative"
+            "imperative",
+            "translation"
           ]
         },
-        "scrubbed_text": "SIR understood the request as: intent=command; key concepts=earphone, telephone, check, call, inspection, local, transfer, save. Protected data remains local.\nSIR anchors: 03261776-n 04401088-n 00141806-n 00789448-v 00879271-n 01425529-a 01107932-n 02265979-v",
+        "scrubbed_text": "SIR understood the request as: intent=command; key concepts=semantic intermediate representation, reloop, earphone, telephone, check, call, semantic core, language independent semantics. Protected data remains local.\nSIR anchors: sir:semantic_intermediate_representation sir:reloop 03261776-n 04401088-n 00141806-n 00789448-v sir:semantic_core sir:language_independent_semantics 01107932-n 02265979-v 02283324-v 04206070-n",
         "concepts": [
+          {
+            "id": "sir:semantic_intermediate_representation",
+            "role": "concept",
+            "score": 1.27,
+            "source": "sir_domain_alias",
+            "surface": {
+              "en": "semantic intermediate representation",
+              "ru": "семантическое промежуточное представление"
+            },
+            "definition_en": "a compact language-independent semantic representation used between source text and reasoning systems",
+            "segment": 0
+          },
           {
             "id": "00752764-v",
             "role": "concept",
@@ -314,18 +325,6 @@
               "ru": "понятный"
             },
             "definition_en": "capable of being apprehended or understood",
-            "segment": 0
-          },
-          {
-            "id": "00588888-v",
-            "role": "concept",
-            "score": 0.72,
-            "source": "loose_alias",
-            "surface": {
-              "en": "understand",
-              "ru": "понимать"
-            },
-            "definition_en": "know and comprehend the nature or meaning of",
             "segment": 0
           },
           {
@@ -401,76 +400,76 @@
             "segment": 1
           },
           {
-            "id": "00141806-n",
-            "role": "action",
-            "score": 0.92,
-            "source": "alias",
-            "surface": {
-              "en": "check",
-              "ru": "проверка"
-            },
-            "definition_en": "the act of inspecting or verifying",
-            "segment": 2
-          },
-          {
-            "id": "00167446-n",
+            "id": "sir:language_independent_semantics",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.35,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "check",
-              "ru": "шах"
+              "en": "language independent semantics",
+              "ru": "языконезависимая семантика"
             },
-            "definition_en": "(chess) a direct attack on an opponent's king",
+            "definition_en": "meaning representation shared across trained source and target languages",
             "segment": 2
           },
           {
-            "id": "00315986-n",
-            "role": "action",
-            "score": 0.92,
-            "source": "alias",
-            "surface": {
-              "en": "transportation",
-              "ru": "перевозка"
-            },
-            "definition_en": "the act of moving something from one location to another",
-            "segment": 2
-          },
-          {
-            "id": "00652346-v",
+            "id": "sir:semantic_core",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.35,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "identify",
-              "ru": "обвинять"
+              "en": "semantic core",
+              "ru": "семантическое ядро"
             },
-            "definition_en": "identify as in botany or biology, for example",
+            "definition_en": "a small local core that compiles, validates, and decompiles semantic packets",
             "segment": 2
           },
           {
-            "id": "00662182-v",
+            "id": "sir:reloop",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.27,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "check",
-              "ru": "отмечать галочкой"
+              "en": "reloop",
+              "ru": "reloop"
             },
-            "definition_en": "put a check mark on or near or next to",
+            "definition_en": "a bounded loop that compiles the answer back into SIR and checks whether it preserves request concepts and constraints",
             "segment": 2
           },
           {
-            "id": "00753881-v",
-            "role": "action",
-            "score": 0.92,
-            "source": "alias",
+            "id": "sir:decompiler",
+            "role": "concept",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
             "surface": {
-              "en": "call",
-              "ru": "звать"
+              "en": "decompiler",
+              "ru": "декомпилятор"
             },
-            "definition_en": "order, summon, or request for a specific duty or activity, work, role",
+            "definition_en": "a component that converts a SIR semantic packet into a target natural language surface",
             "segment": 2
+          },
+          {
+            "id": "sir:entropy_reduction",
+            "role": "concept",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
+            "surface": {
+              "en": "entropy reduction",
+              "ru": "снижение энтропии"
+            },
+            "definition_en": "reducing noisy language surface into a compact semantic form before model reasoning",
+            "segment": 2
+          },
+          {
+            "id": "sir:privacy_scrubber",
+            "role": "constraint",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
+            "surface": {
+              "en": "privacy scrubber",
+              "ru": "скрытие PII"
+            },
+            "definition_en": "a local privacy layer that replaces sensitive values with protected placeholders before external reasoning",
+            "segment": 3
           },
           {
             "id": "01106405-a",
@@ -533,18 +532,6 @@
             "segment": 3
           },
           {
-            "id": "00784755-n",
-            "role": "concept",
-            "score": 0.72,
-            "source": "loose_alias",
-            "surface": {
-              "en": "protection",
-              "ru": "дань"
-            },
-            "definition_en": "payment extorted by gangsters on threat of violence",
-            "segment": 3
-          },
-          {
             "id": "02709367-n",
             "role": "concept",
             "score": 0.72,
@@ -593,6 +580,66 @@
             "segment": 4
           },
           {
+            "id": "sir:precompiler",
+            "role": "concept",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
+            "surface": {
+              "en": "precompiler",
+              "ru": "предкомпилятор"
+            },
+            "definition_en": "a component that converts raw language text into SIR semantic packets before model reasoning",
+            "segment": 6
+          },
+          {
+            "id": "05650820-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "language",
+              "ru": "язык"
+            },
+            "definition_en": "the mental faculty or power of vocal communication",
+            "segment": 9
+          },
+          {
+            "id": "05691963-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "language barrier",
+              "ru": "языковой барьер"
+            },
+            "definition_en": "barrier to communication resulting from speaking different languages",
+            "segment": 9
+          },
+          {
+            "id": "06282651-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "language",
+              "ru": "язык"
+            },
+            "definition_en": "a systematic means of communicating by the use of sounds or conventional symbols",
+            "segment": 9
+          },
+          {
+            "id": "06304059-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "terminology",
+              "ru": "терминология"
+            },
+            "definition_en": "a system of words used to name things in a particular discipline",
+            "segment": 9
+          },
+          {
             "id": "03261776-n",
             "role": "anchor",
             "score": 1.0,
@@ -617,6 +664,18 @@
             "segment": -1
           },
           {
+            "id": "00141806-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "check",
+              "ru": "проверка"
+            },
+            "definition_en": "the act of inspecting or verifying",
+            "segment": -1
+          },
+          {
             "id": "00789448-v",
             "role": "anchor",
             "score": 1.0,
@@ -626,18 +685,6 @@
               "ru": "звонить"
             },
             "definition_en": "get or try to get into communication (with someone) by telephone",
-            "segment": -1
-          },
-          {
-            "id": "00879271-n",
-            "role": "anchor",
-            "score": 1.0,
-            "source": "sir_anchor",
-            "surface": {
-              "en": "inspection",
-              "ru": "проверка"
-            },
-            "definition_en": "a formal or official examination",
             "segment": -1
           },
           {
@@ -663,18 +710,42 @@
             },
             "definition_en": "accumulate money for future use",
             "segment": -1
+          },
+          {
+            "id": "02283324-v",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "retain",
+              "ru": "хранить"
+            },
+            "definition_en": "secure and keep for possible future use or application",
+            "segment": -1
+          },
+          {
+            "id": "04206070-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "shot",
+              "ru": "ядро"
+            },
+            "definition_en": "sports equipment consisting of a heavy metal ball used in the shot put",
+            "segment": -1
           }
         ],
         "relations": [
           {
             "source": "user",
             "relation": "mentions",
-            "target": "00752764-v"
+            "target": "sir:semantic_intermediate_representation"
           },
           {
-            "source": "00752764-v",
+            "source": "sir:semantic_intermediate_representation",
             "relation": "context_with",
-            "target": "06513366-n"
+            "target": "00752764-v"
           }
         ],
         "constraints": [
@@ -694,81 +765,78 @@
               "concepts",
               "earphone",
               "telephone",
-              "inspection",
-              "transfer",
-              "save",
+              "check",
+              "call",
               "protected",
               "remains",
-              "anchors"
+              "anchors",
+              "semantic_intermediate_representation"
             ],
-            "count": 20
+            "count": 22
           },
           {
             "type": "low_confidence_concepts",
             "sample": [
               "00533452-a",
-              "00588888-v",
               "00062330-r",
               "00117985-v",
-              "00784755-n",
               "02709367-n",
               "09055906-n",
               "09792969-n",
-              "10519126-n"
+              "10519126-n",
+              "05650820-n",
+              "05691963-n",
+              "06282651-n",
+              "06304059-n"
             ],
-            "count": 9
+            "count": 11
           }
         ],
         "stats": {
-          "chars": 259,
-          "tokens": 31,
-          "segments": 6,
-          "concepts": 34,
-          "unknown_token_rate": 0.6452
+          "chars": 422,
+          "tokens": 44,
+          "segments": 10,
+          "concepts": 40,
+          "unknown_token_rate": 0.5
         }
       },
       "answer_check": {
-        "preserved_concepts": 0.6667,
+        "preserved_concepts": 1.0,
         "request_concepts": 12,
-        "answer_concepts": 34,
-        "shared_concepts": 8,
-        "lost_concepts": [
-          "02283324-v",
-          "04206070-n",
-          "04622932-n",
-          "05434927-n"
-        ],
+        "answer_concepts": 40,
+        "shared_concepts": 12,
+        "lost_concepts": [],
         "new_concepts": [
           "00062330-r",
           "00117985-v",
           "00163948-a",
-          "00167446-n",
-          "00315986-n",
           "00533452-a",
-          "00588888-v",
-          "00652346-v",
-          "00662182-v",
           "00752764-v",
-          "00753881-v",
-          "00784755-n",
           "01106405-a",
+          "01425529-a",
           "02441022-v",
           "02696129-v",
           "02709367-n",
           "05218119-n",
+          "05650820-n",
+          "05691963-n",
           "05982152-n",
+          "06282651-n",
+          "06304059-n",
           "06513366-n",
-          "06584891-n"
+          "06584891-n",
+          "07185325-n",
+          "08462320-n"
         ],
         "lost_constraints": [],
         "needs_revision": false
       },
-      "final_text": "SIR understood the request as: intent=command; key concepts=earphone, telephone, check, call, inspection, local, transfer, save. Protected data remains local.",
+      "final_text": "SIR understood the request as: intent=command; key concepts=semantic intermediate representation, reloop, earphone, telephone, check, call, semantic core, language independent semantics. Protected data remains local.",
       "backend": "deterministic",
-      "latency_ms": 2.73,
+      "latency_ms": 4.0,
       "case_id": "privacy_ru",
       "pii_leaked": false,
-      "model_prompt_chars": 5423
+      "model_prompt_chars": 5821
     },
     {
       "request_packet": {
@@ -859,75 +927,75 @@
             "segment": 0
           },
           {
-            "id": "00502180-a",
-            "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "id": "sir:privacy_scrubber",
+            "role": "constraint",
+            "score": 1.35,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "compact",
-              "ru": "компактный"
+              "en": "privacy scrubber",
+              "ru": "скрытие PII"
             },
-            "definition_en": "closely and firmly united or packed together",
+            "definition_en": "a local privacy layer that replaces sensitive values with protected placeholders before external reasoning",
             "segment": 1
           },
           {
-            "id": "00973056-v",
+            "id": "sir:reloop",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.27,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "air",
-              "ru": "вещать"
+              "en": "reloop",
+              "ru": "reloop"
             },
-            "definition_en": "broadcast over the airwaves, as in radio or television",
+            "definition_en": "a bounded loop that compiles the answer back into SIR and checks whether it preserves request concepts and constraints",
             "segment": 1
           },
           {
-            "id": "02144835-v",
+            "id": "sir:semantic_intermediate_representation",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.27,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "hide",
-              "ru": "скрывать"
+              "en": "semantic intermediate representation",
+              "ru": "семантическое промежуточное представление"
             },
-            "definition_en": "prevent from being seen or discovered",
+            "definition_en": "a compact language-independent semantic representation used between source text and reasoning systems",
             "segment": 1
           },
           {
-            "id": "02147109-v",
+            "id": "sir:entropy_reduction",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
             "surface": {
-              "en": "cover",
-              "ru": "прятать"
+              "en": "entropy reduction",
+              "ru": "снижение энтропии"
             },
-            "definition_en": "spread over a surface to conceal or protect",
+            "definition_en": "reducing noisy language surface into a compact semantic form before model reasoning",
             "segment": 1
           },
           {
-            "id": "02231473-v",
+            "id": "sir:precompiler",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
             "surface": {
-              "en": "pass",
-              "ru": "проходить"
+              "en": "precompiler",
+              "ru": "предкомпилятор"
             },
-            "definition_en": "throw (a ball) to another player",
+            "definition_en": "a component that converts raw language text into SIR semantic packets before model reasoning",
             "segment": 1
           },
           {
-            "id": "02253956-v",
+            "id": "sir:semantic_core",
             "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "score": 1.0699999999999998,
+            "source": "sir_domain_loose_alias",
             "surface": {
-              "en": "owe",
-              "ru": "должен"
+              "en": "semantic core",
+              "ru": "семантическое ядро"
             },
-            "definition_en": "be in debt",
+            "definition_en": "a small local core that compiles, validates, and decompiles semantic packets",
             "segment": 1
           }
         ],
@@ -955,19 +1023,19 @@
             "type": "unknown_tokens",
             "sample": [
               "сделай",
+              "должен",
               "компилировать",
               "русский",
               "текст",
               "семантику",
+              "скрывать",
               "передавать",
+              "компактный",
               "пакет",
               "модели",
-              "проверять",
-              "ответ",
-              "через",
-              "reloop"
+              "проверять"
             ],
-            "count": 12
+            "count": 14
           }
         ],
         "stats": {
@@ -975,10 +1043,10 @@
           "tokens": 21,
           "segments": 2,
           "concepts": 12,
-          "unknown_token_rate": 0.5714
+          "unknown_token_rate": 0.6667
         }
       },
-      "raw_answer": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, компактный, вещать. Защищенные данные не обнаружены.\nSIR anchors: 00547317-a 00548316-a 00795720-n 00928077-n 02949691-n 03186399-n 00502180-a 00973056-v",
+      "raw_answer": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, скрытие PII, reloop. Защищенные данные не обнаружены.\nSIR anchors: 00547317-a 00548316-a 00795720-n 00928077-n 02949691-n 03186399-n sir:privacy_scrubber sir:reloop sir:semantic_intermediate_representation sir:entropy_reduction sir:precompiler sir:semantic_core",
       "answer_packet": {
         "version": "sir.v1",
         "packet_id": "answer",
@@ -992,8 +1060,20 @@
             "planning"
           ]
         },
-        "scrubbed_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, компактный, вещать. Защищенные данные не обнаружены.\nSIR anchors: 00547317-a 00548316-a 00795720-n 00928077-n 02949691-n 03186399-n 00502180-a 00973056-v",
+        "scrubbed_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, скрытие PII, reloop. Защищенные данные не обнаружены.\nSIR anchors: 00547317-a 00548316-a 00795720-n 00928077-n 02949691-n 03186399-n sir:privacy_scrubber sir:reloop sir:semantic_intermediate_representation sir:entropy_reduction sir:precompiler sir:semantic_core",
         "concepts": [
+          {
+            "id": "sir:semantic_intermediate_representation",
+            "role": "concept",
+            "score": 1.27,
+            "source": "sir_domain_alias",
+            "surface": {
+              "en": "semantic intermediate representation",
+              "ru": "семантическое промежуточное представление"
+            },
+            "definition_en": "a compact language-independent semantic representation used between source text and reasoning systems",
+            "segment": 0
+          },
           {
             "id": "06476200-n",
             "role": "concept",
@@ -1055,15 +1135,27 @@
             "segment": 0
           },
           {
-            "id": "00502180-a",
-            "role": "concept",
-            "score": 0.92,
-            "source": "alias",
+            "id": "sir:privacy_scrubber",
+            "role": "constraint",
+            "score": 1.35,
+            "source": "sir_domain_alias",
             "surface": {
-              "en": "compact",
-              "ru": "компактный"
+              "en": "privacy scrubber",
+              "ru": "скрытие PII"
             },
-            "definition_en": "closely and firmly united or packed together",
+            "definition_en": "a local privacy layer that replaces sensitive values with protected placeholders before external reasoning",
+            "segment": 2
+          },
+          {
+            "id": "sir:reloop",
+            "role": "concept",
+            "score": 1.27,
+            "source": "sir_domain_alias",
+            "surface": {
+              "en": "reloop",
+              "ru": "reloop"
+            },
+            "definition_en": "a bounded loop that compiles the answer back into SIR and checks whether it preserves request concepts and constraints",
             "segment": 2
           },
           {
@@ -1112,18 +1204,6 @@
               "ru": "план"
             },
             "definition_en": "the act of working out the form of something (as by making a sketch or outline or plan)",
-            "segment": 2
-          },
-          {
-            "id": "00973056-v",
-            "role": "concept",
-            "score": 0.92,
-            "source": "alias",
-            "surface": {
-              "en": "air",
-              "ru": "вещать"
-            },
-            "definition_en": "broadcast over the airwaves, as in radio or television",
             "segment": 2
           },
           {
@@ -1197,21 +1277,62 @@
             },
             "definition_en": "a drawing intended to explain how something works",
             "segment": -1
+          },
+          {
+            "id": "sir:entropy_reduction",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "entropy reduction",
+              "ru": "снижение энтропии"
+            },
+            "definition_en": "reducing noisy language surface into a compact semantic form before model reasoning",
+            "segment": -1
+          },
+          {
+            "id": "sir:precompiler",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "precompiler",
+              "ru": "предкомпилятор"
+            },
+            "definition_en": "a component that converts raw language text into SIR semantic packets before model reasoning",
+            "segment": -1
+          },
+          {
+            "id": "sir:semantic_core",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "semantic core",
+              "ru": "семантическое ядро"
+            },
+            "definition_en": "a small local core that compiles, validates, and decompiles semantic packets",
+            "segment": -1
           }
         ],
         "relations": [
           {
             "source": "user",
             "relation": "mentions",
-            "target": "06476200-n"
+            "target": "sir:semantic_intermediate_representation"
           },
           {
-            "source": "06476200-n",
+            "source": "sir:semantic_intermediate_representation",
             "relation": "context_with",
-            "target": "06513366-n"
+            "target": "06476200-n"
           }
         ],
-        "constraints": [],
+        "constraints": [
+          {
+            "type": "execution",
+            "value": "prefer_local_or_private"
+          }
+        ],
         "protected_spans": [],
         "uncertainty": [
           {
@@ -1230,7 +1351,7 @@
               "00548316-a",
               "00795720-n"
             ],
-            "count": 17
+            "count": 20
           },
           {
             "type": "low_confidence_concepts",
@@ -1244,24 +1365,19 @@
           }
         ],
         "stats": {
-          "chars": 246,
-          "tokens": 28,
-          "segments": 6,
-          "concepts": 17,
-          "unknown_token_rate": 0.6071
+          "chars": 354,
+          "tokens": 39,
+          "segments": 12,
+          "concepts": 21,
+          "unknown_token_rate": 0.5128
         }
       },
       "answer_check": {
-        "preserved_concepts": 0.6667,
+        "preserved_concepts": 1.0,
         "request_concepts": 12,
-        "answer_concepts": 17,
-        "shared_concepts": 8,
-        "lost_concepts": [
-          "02144835-v",
-          "02147109-v",
-          "02231473-v",
-          "02253956-v"
-        ],
+        "answer_concepts": 21,
+        "shared_concepts": 12,
+        "lost_concepts": [],
         "new_concepts": [
           "00598954-v",
           "00752764-v",
@@ -1276,12 +1392,12 @@
         "lost_constraints": [],
         "needs_revision": false
       },
-      "final_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, компактный, вещать. Защищенные данные не обнаружены.",
+      "final_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, скрытие PII, reloop. Защищенные данные не обнаружены.",
       "backend": "deterministic",
-      "latency_ms": 2.09,
+      "latency_ms": 2.42,
       "case_id": "agent_ru",
       "pii_leaked": false,
-      "model_prompt_chars": 4753
+      "model_prompt_chars": 5443
     }
   ]
 }

@@ -207,7 +207,7 @@ def flatten_concepts(segments: list[Any]) -> list[dict[str, Any]]:
 
 
 def extract_concept_ids(text: str) -> list[str]:
-    return list(dict.fromkeys(re.findall(r"\b\d{8}-[nvar]\b", text)))
+    return list(dict.fromkeys(re.findall(r"\b(?:\d{8}-[nvar]|sir:[a-z0-9_:-]+)\b", text)))
 
 
 def merge_anchor_concepts(concepts: list[dict[str, Any]], anchors: list[str], by_id: dict[str, Any]) -> list[dict[str, Any]]:
@@ -313,7 +313,7 @@ def deterministic_answer(packet: SIRV1Packet) -> str:
         surface = item["surface"].get(lang) or item["surface"].get("en") or item["id"]
         if surface and surface not in concept_terms:
             concept_terms.append(surface)
-    anchors = " ".join(item["id"] for item in packet.concepts[:8])
+    anchors = " ".join(item["id"] for item in packet.concepts)
     anchor_line = f"\nSIR anchors: {anchors}" if anchors else ""
     if lang == "en":
         prefix = "SIR understood the request as"
