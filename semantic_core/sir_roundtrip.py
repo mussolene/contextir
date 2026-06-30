@@ -107,7 +107,7 @@ class SIRRoundtrip:
                                 definition_en=record.definition_en,
                             ),
                         )
-            concepts = sorted(hits.values(), key=lambda hit: hit.score, reverse=True)[:top_k_per_segment]
+            concepts = sorted(hits.values(), key=lambda hit: (-hit.score, hit.concept_id))[:top_k_per_segment]
             for hit in concepts:
                 if hit.concept_id not in ordered_concepts:
                     ordered_concepts.append(hit.concept_id)
@@ -227,7 +227,7 @@ class SIRRoundtrip:
         if not normalized:
             return hits
         candidates: dict[tuple[str, str, str], None] = {}
-        for term in terms:
+        for term in sorted(terms):
             for item in self.aliases_by_token.get(term, []):
                 candidates[item] = None
             if len(term) >= 5:

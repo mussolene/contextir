@@ -1,0 +1,1287 @@
+{
+  "aggregate": {
+    "cases": 2,
+    "avg_preserved_concepts": 0.6667,
+    "needs_revision": 0,
+    "pii_leaks": 0,
+    "avg_latency_ms": 2.41
+  },
+  "results": [
+    {
+      "request_packet": {
+        "version": "sir.v1",
+        "packet_id": "request",
+        "source_lang": "ru",
+        "target_lang": "en",
+        "intent": {
+          "label": "command",
+          "confidence": 0.7,
+          "signals": [
+            "imperative"
+          ]
+        },
+        "scrubbed_text": "Проверь архитектуру SIR локально и не публикуй почту PII_EMAIL_1 или телефон PII_PHONE_1. Нужно сохранить смысл про маленькое ядро, приватность и перевод.",
+        "concepts": [
+          {
+            "id": "03261776-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "earphone",
+              "ru": "наушники"
+            },
+            "definition_en": "electro-acoustic transducer for converting electric signals into sounds",
+            "segment": 0
+          },
+          {
+            "id": "04401088-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "telephone",
+              "ru": "телефон"
+            },
+            "definition_en": "electronic equipment that converts sound into electrical signals that can be transmitted over distances and then converts received signals back into sounds",
+            "segment": 0
+          },
+          {
+            "id": "00141806-n",
+            "role": "action",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "check",
+              "ru": "проверка"
+            },
+            "definition_en": "the act of inspecting or verifying",
+            "segment": 0
+          },
+          {
+            "id": "00789448-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "call",
+              "ru": "звонить"
+            },
+            "definition_en": "get or try to get into communication (with someone) by telephone",
+            "segment": 0
+          },
+          {
+            "id": "00879271-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "inspection",
+              "ru": "проверка"
+            },
+            "definition_en": "a formal or official examination",
+            "segment": 0
+          },
+          {
+            "id": "01425529-a",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "local",
+              "ru": "местный"
+            },
+            "definition_en": "affecting only a restricted part or area of the body",
+            "segment": 0
+          },
+          {
+            "id": "01107932-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "transfer",
+              "ru": "переход"
+            },
+            "definition_en": "transferring ownership",
+            "segment": 1
+          },
+          {
+            "id": "02265979-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "save",
+              "ru": "копить"
+            },
+            "definition_en": "accumulate money for future use",
+            "segment": 1
+          },
+          {
+            "id": "02283324-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "retain",
+              "ru": "хранить"
+            },
+            "definition_en": "secure and keep for possible future use or application",
+            "segment": 1
+          },
+          {
+            "id": "04206070-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "shot",
+              "ru": "ядро"
+            },
+            "definition_en": "sports equipment consisting of a heavy metal ball used in the shot put",
+            "segment": 1
+          },
+          {
+            "id": "04622932-n",
+            "role": "constraint",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "privacy",
+              "ru": "уединение"
+            },
+            "definition_en": "the quality of being secluded from the presence or view of others",
+            "segment": 1
+          },
+          {
+            "id": "05434927-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "nucleus",
+              "ru": "ядро"
+            },
+            "definition_en": "a part of the cell containing DNA and RNA and responsible for growth and reproduction",
+            "segment": 1
+          }
+        ],
+        "relations": [
+          {
+            "source": "user",
+            "relation": "mentions",
+            "target": "03261776-n"
+          },
+          {
+            "source": "03261776-n",
+            "relation": "context_with",
+            "target": "04401088-n"
+          }
+        ],
+        "constraints": [
+          {
+            "type": "privacy",
+            "value": "do_not_expose_protected_spans"
+          },
+          {
+            "type": "execution",
+            "value": "prefer_local_or_private"
+          }
+        ],
+        "protected_spans": [
+          {
+            "placeholder": "PII_EMAIL_1",
+            "kind": "email",
+            "local_ref": "local:014a6af13a31d034",
+            "surface_hash": "6980d1a190b28b77a120cc2f2cf2cff1"
+          },
+          {
+            "placeholder": "PII_PHONE_1",
+            "kind": "phone",
+            "local_ref": "local:6424d01c41f2290a",
+            "surface_hash": "1c01ddee8a9505b318e494782c7afafc"
+          }
+        ],
+        "uncertainty": [
+          {
+            "type": "unknown_tokens",
+            "sample": [
+              "проверь",
+              "архитектуру",
+              "локально",
+              "публикуй",
+              "почту",
+              "pii_email_1",
+              "pii_phone_1",
+              "нужно",
+              "сохранить",
+              "смысл",
+              "маленькое",
+              "приватность"
+            ],
+            "count": 13
+          },
+          {
+            "type": "low_confidence_concepts",
+            "sample": [
+              "00141806-n",
+              "00789448-v",
+              "00879271-n",
+              "01425529-a"
+            ],
+            "count": 4
+          }
+        ],
+        "stats": {
+          "chars": 154,
+          "tokens": 21,
+          "segments": 2,
+          "concepts": 12,
+          "unknown_token_rate": 0.619
+        }
+      },
+      "raw_answer": "SIR understood the request as: intent=command; key concepts=earphone, telephone, check, call, inspection, local, transfer, save. Protected data remains local.\nSIR anchors: 03261776-n 04401088-n 00141806-n 00789448-v 00879271-n 01425529-a 01107932-n 02265979-v",
+      "answer_packet": {
+        "version": "sir.v1",
+        "packet_id": "answer",
+        "source_lang": "en",
+        "target_lang": "en",
+        "intent": {
+          "label": "command",
+          "confidence": 0.7,
+          "signals": [
+            "imperative"
+          ]
+        },
+        "scrubbed_text": "SIR understood the request as: intent=command; key concepts=earphone, telephone, check, call, inspection, local, transfer, save. Protected data remains local.\nSIR anchors: 03261776-n 04401088-n 00141806-n 00789448-v 00879271-n 01425529-a 01107932-n 02265979-v",
+        "concepts": [
+          {
+            "id": "00752764-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "request",
+              "ru": "запрашивать"
+            },
+            "definition_en": "express the need or desire for",
+            "segment": 0
+          },
+          {
+            "id": "06513366-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "request",
+              "ru": "запрос"
+            },
+            "definition_en": "a formal message requesting something that is submitted to an authority",
+            "segment": 0
+          },
+          {
+            "id": "07185325-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "request",
+              "ru": "запрос"
+            },
+            "definition_en": "the verbal act of requesting",
+            "segment": 0
+          },
+          {
+            "id": "10601451-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "sir",
+              "ru": "товарищ"
+            },
+            "definition_en": "term of address for a man",
+            "segment": 0
+          },
+          {
+            "id": "00533452-a",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "apprehensible",
+              "ru": "понятный"
+            },
+            "definition_en": "capable of being apprehended or understood",
+            "segment": 0
+          },
+          {
+            "id": "00588888-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "understand",
+              "ru": "понимать"
+            },
+            "definition_en": "know and comprehend the nature or meaning of",
+            "segment": 0
+          },
+          {
+            "id": "00163948-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "captive",
+              "ru": "поглощённый"
+            },
+            "definition_en": "giving or marked by complete attention to",
+            "segment": 1
+          },
+          {
+            "id": "02441022-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "control",
+              "ru": "управлять"
+            },
+            "definition_en": "exercise authoritative control or power over",
+            "segment": 1
+          },
+          {
+            "id": "02696129-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "dominate",
+              "ru": "обозревать"
+            },
+            "definition_en": "look down on",
+            "segment": 1
+          },
+          {
+            "id": "05982152-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "purpose",
+              "ru": "план"
+            },
+            "definition_en": "an anticipated outcome that is intended or that guides your planned actions",
+            "segment": 1
+          },
+          {
+            "id": "06584891-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "instruction",
+              "ru": "оператор"
+            },
+            "definition_en": "(computer science) a line of code written as part of a computer program",
+            "segment": 1
+          },
+          {
+            "id": "00062330-r",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "intentionally",
+              "ru": "намеренно"
+            },
+            "definition_en": "with intention",
+            "segment": 1
+          },
+          {
+            "id": "00141806-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "check",
+              "ru": "проверка"
+            },
+            "definition_en": "the act of inspecting or verifying",
+            "segment": 2
+          },
+          {
+            "id": "00167446-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "check",
+              "ru": "шах"
+            },
+            "definition_en": "(chess) a direct attack on an opponent's king",
+            "segment": 2
+          },
+          {
+            "id": "00315986-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "transportation",
+              "ru": "перевозка"
+            },
+            "definition_en": "the act of moving something from one location to another",
+            "segment": 2
+          },
+          {
+            "id": "00652346-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "identify",
+              "ru": "обвинять"
+            },
+            "definition_en": "identify as in botany or biology, for example",
+            "segment": 2
+          },
+          {
+            "id": "00662182-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "check",
+              "ru": "отмечать галочкой"
+            },
+            "definition_en": "put a check mark on or near or next to",
+            "segment": 2
+          },
+          {
+            "id": "00753881-v",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "call",
+              "ru": "звать"
+            },
+            "definition_en": "order, summon, or request for a specific duty or activity, work, role",
+            "segment": 2
+          },
+          {
+            "id": "01106405-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "local",
+              "ru": "местный"
+            },
+            "definition_en": "relating to or applicable to or concerned with the administration of a city or town or district rather than a larger area",
+            "segment": 3
+          },
+          {
+            "id": "01425529-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "local",
+              "ru": "местный"
+            },
+            "definition_en": "affecting only a restricted part or area of the body",
+            "segment": 3
+          },
+          {
+            "id": "05218119-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "cadaver",
+              "ru": "труп"
+            },
+            "definition_en": "the dead body of a human being",
+            "segment": 3
+          },
+          {
+            "id": "08462320-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "data",
+              "ru": "данные"
+            },
+            "definition_en": "a collection of facts from which conclusions may be drawn",
+            "segment": 3
+          },
+          {
+            "id": "00117985-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "stay",
+              "ru": "оставаться"
+            },
+            "definition_en": "stay the same",
+            "segment": 3
+          },
+          {
+            "id": "00784755-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "protection",
+              "ru": "дань"
+            },
+            "definition_en": "payment extorted by gangsters on threat of violence",
+            "segment": 3
+          },
+          {
+            "id": "02709367-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "anchor",
+              "ru": "якорь"
+            },
+            "definition_en": "a mechanical device that prevents a vessel from moving",
+            "segment": 4
+          },
+          {
+            "id": "09055906-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "Anchorage",
+              "ru": "Анкоридж"
+            },
+            "definition_en": "a city in south central Alaska",
+            "segment": 4
+          },
+          {
+            "id": "09792969-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "anchor",
+              "ru": "ведущий"
+            },
+            "definition_en": "a television reporter who coordinates a broadcast to which several correspondents contribute",
+            "segment": 4
+          },
+          {
+            "id": "10519126-n",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "anchorite",
+              "ru": "анахорет"
+            },
+            "definition_en": "one retired from society for religious reasons",
+            "segment": 4
+          },
+          {
+            "id": "03261776-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "earphone",
+              "ru": "наушники"
+            },
+            "definition_en": "electro-acoustic transducer for converting electric signals into sounds",
+            "segment": -1
+          },
+          {
+            "id": "04401088-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "telephone",
+              "ru": "телефон"
+            },
+            "definition_en": "electronic equipment that converts sound into electrical signals that can be transmitted over distances and then converts received signals back into sounds",
+            "segment": -1
+          },
+          {
+            "id": "00789448-v",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "call",
+              "ru": "звонить"
+            },
+            "definition_en": "get or try to get into communication (with someone) by telephone",
+            "segment": -1
+          },
+          {
+            "id": "00879271-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "inspection",
+              "ru": "проверка"
+            },
+            "definition_en": "a formal or official examination",
+            "segment": -1
+          },
+          {
+            "id": "01107932-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "transfer",
+              "ru": "переход"
+            },
+            "definition_en": "transferring ownership",
+            "segment": -1
+          },
+          {
+            "id": "02265979-v",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "save",
+              "ru": "копить"
+            },
+            "definition_en": "accumulate money for future use",
+            "segment": -1
+          }
+        ],
+        "relations": [
+          {
+            "source": "user",
+            "relation": "mentions",
+            "target": "00752764-v"
+          },
+          {
+            "source": "00752764-v",
+            "relation": "context_with",
+            "target": "06513366-n"
+          }
+        ],
+        "constraints": [
+          {
+            "type": "execution",
+            "value": "prefer_local_or_private"
+          }
+        ],
+        "protected_spans": [],
+        "uncertainty": [
+          {
+            "type": "unknown_tokens",
+            "sample": [
+              "understood",
+              "intent",
+              "command",
+              "concepts",
+              "earphone",
+              "telephone",
+              "inspection",
+              "transfer",
+              "save",
+              "protected",
+              "remains",
+              "anchors"
+            ],
+            "count": 20
+          },
+          {
+            "type": "low_confidence_concepts",
+            "sample": [
+              "00533452-a",
+              "00588888-v",
+              "00062330-r",
+              "00117985-v",
+              "00784755-n",
+              "02709367-n",
+              "09055906-n",
+              "09792969-n",
+              "10519126-n"
+            ],
+            "count": 9
+          }
+        ],
+        "stats": {
+          "chars": 259,
+          "tokens": 31,
+          "segments": 6,
+          "concepts": 34,
+          "unknown_token_rate": 0.6452
+        }
+      },
+      "answer_check": {
+        "preserved_concepts": 0.6667,
+        "request_concepts": 12,
+        "answer_concepts": 34,
+        "shared_concepts": 8,
+        "lost_concepts": [
+          "02283324-v",
+          "04206070-n",
+          "04622932-n",
+          "05434927-n"
+        ],
+        "new_concepts": [
+          "00062330-r",
+          "00117985-v",
+          "00163948-a",
+          "00167446-n",
+          "00315986-n",
+          "00533452-a",
+          "00588888-v",
+          "00652346-v",
+          "00662182-v",
+          "00752764-v",
+          "00753881-v",
+          "00784755-n",
+          "01106405-a",
+          "02441022-v",
+          "02696129-v",
+          "02709367-n",
+          "05218119-n",
+          "05982152-n",
+          "06513366-n",
+          "06584891-n"
+        ],
+        "lost_constraints": [],
+        "needs_revision": false
+      },
+      "final_text": "SIR understood the request as: intent=command; key concepts=earphone, telephone, check, call, inspection, local, transfer, save. Protected data remains local.",
+      "backend": "deterministic",
+      "latency_ms": 2.73,
+      "case_id": "privacy_ru",
+      "pii_leaked": false,
+      "model_prompt_chars": 5423
+    },
+    {
+      "request_packet": {
+        "version": "sir.v1",
+        "packet_id": "request",
+        "source_lang": "ru",
+        "target_lang": "ru",
+        "intent": {
+          "label": "command",
+          "confidence": 0.85,
+          "signals": [
+            "imperative",
+            "planning"
+          ]
+        },
+        "scrubbed_text": "Сделай краткий план: SIR должен компилировать русский текст в семантику, скрывать PII, передавать компактный пакет модели и проверять ответ через reloop.",
+        "concepts": [
+          {
+            "id": "00547317-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "compendious",
+              "ru": "краткий"
+            },
+            "definition_en": "briefly giving the gist of something",
+            "segment": 0
+          },
+          {
+            "id": "00548316-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "pithy",
+              "ru": "афористичный"
+            },
+            "definition_en": "concise and full of meaning",
+            "segment": 0
+          },
+          {
+            "id": "00795720-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "undertaking",
+              "ru": "план"
+            },
+            "definition_en": "any piece of work that is undertaken or attempted",
+            "segment": 0
+          },
+          {
+            "id": "00928077-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "design",
+              "ru": "план"
+            },
+            "definition_en": "the act of working out the form of something (as by making a sketch or outline or plan)",
+            "segment": 0
+          },
+          {
+            "id": "02949691-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "cannabis",
+              "ru": "конопля"
+            },
+            "definition_en": "the most commonly used illicit drug",
+            "segment": 0
+          },
+          {
+            "id": "03186399-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "diagram",
+              "ru": "план"
+            },
+            "definition_en": "a drawing intended to explain how something works",
+            "segment": 0
+          },
+          {
+            "id": "00502180-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "compact",
+              "ru": "компактный"
+            },
+            "definition_en": "closely and firmly united or packed together",
+            "segment": 1
+          },
+          {
+            "id": "00973056-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "air",
+              "ru": "вещать"
+            },
+            "definition_en": "broadcast over the airwaves, as in radio or television",
+            "segment": 1
+          },
+          {
+            "id": "02144835-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "hide",
+              "ru": "скрывать"
+            },
+            "definition_en": "prevent from being seen or discovered",
+            "segment": 1
+          },
+          {
+            "id": "02147109-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "cover",
+              "ru": "прятать"
+            },
+            "definition_en": "spread over a surface to conceal or protect",
+            "segment": 1
+          },
+          {
+            "id": "02231473-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "pass",
+              "ru": "проходить"
+            },
+            "definition_en": "throw (a ball) to another player",
+            "segment": 1
+          },
+          {
+            "id": "02253956-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "owe",
+              "ru": "должен"
+            },
+            "definition_en": "be in debt",
+            "segment": 1
+          }
+        ],
+        "relations": [
+          {
+            "source": "user",
+            "relation": "mentions",
+            "target": "00547317-a"
+          },
+          {
+            "source": "00547317-a",
+            "relation": "context_with",
+            "target": "00548316-a"
+          }
+        ],
+        "constraints": [
+          {
+            "type": "execution",
+            "value": "prefer_local_or_private"
+          }
+        ],
+        "protected_spans": [],
+        "uncertainty": [
+          {
+            "type": "unknown_tokens",
+            "sample": [
+              "сделай",
+              "компилировать",
+              "русский",
+              "текст",
+              "семантику",
+              "передавать",
+              "пакет",
+              "модели",
+              "проверять",
+              "ответ",
+              "через",
+              "reloop"
+            ],
+            "count": 12
+          }
+        ],
+        "stats": {
+          "chars": 153,
+          "tokens": 21,
+          "segments": 2,
+          "concepts": 12,
+          "unknown_token_rate": 0.5714
+        }
+      },
+      "raw_answer": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, компактный, вещать. Защищенные данные не обнаружены.\nSIR anchors: 00547317-a 00548316-a 00795720-n 00928077-n 02949691-n 03186399-n 00502180-a 00973056-v",
+      "answer_packet": {
+        "version": "sir.v1",
+        "packet_id": "answer",
+        "source_lang": "ru",
+        "target_lang": "ru",
+        "intent": {
+          "label": "plan",
+          "confidence": 0.85,
+          "signals": [
+            "question",
+            "planning"
+          ]
+        },
+        "scrubbed_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, компактный, вещать. Защищенные данные не обнаружены.\nSIR anchors: 00547317-a 00548316-a 00795720-n 00928077-n 02949691-n 03186399-n 00502180-a 00973056-v",
+        "concepts": [
+          {
+            "id": "06476200-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "requisition",
+              "ru": "запрос"
+            },
+            "definition_en": "an official form on which a request in made",
+            "segment": 0
+          },
+          {
+            "id": "06513366-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "request",
+              "ru": "запрос"
+            },
+            "definition_en": "a formal message requesting something that is submitted to an authority",
+            "segment": 0
+          },
+          {
+            "id": "07185325-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "request",
+              "ru": "запрос"
+            },
+            "definition_en": "the verbal act of requesting",
+            "segment": 0
+          },
+          {
+            "id": "07193596-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "question",
+              "ru": "запрос"
+            },
+            "definition_en": "an instance of questioning",
+            "segment": 0
+          },
+          {
+            "id": "00752764-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "request",
+              "ru": "запрашивать"
+            },
+            "definition_en": "express the need or desire for",
+            "segment": 0
+          },
+          {
+            "id": "00502180-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "compact",
+              "ru": "компактный"
+            },
+            "definition_en": "closely and firmly united or packed together",
+            "segment": 2
+          },
+          {
+            "id": "00547317-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "compendious",
+              "ru": "краткий"
+            },
+            "definition_en": "briefly giving the gist of something",
+            "segment": 2
+          },
+          {
+            "id": "00548316-a",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "pithy",
+              "ru": "афористичный"
+            },
+            "definition_en": "concise and full of meaning",
+            "segment": 2
+          },
+          {
+            "id": "00795720-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "undertaking",
+              "ru": "план"
+            },
+            "definition_en": "any piece of work that is undertaken or attempted",
+            "segment": 2
+          },
+          {
+            "id": "00928077-n",
+            "role": "action",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "design",
+              "ru": "план"
+            },
+            "definition_en": "the act of working out the form of something (as by making a sketch or outline or plan)",
+            "segment": 2
+          },
+          {
+            "id": "00973056-v",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "air",
+              "ru": "вещать"
+            },
+            "definition_en": "broadcast over the airwaves, as in radio or television",
+            "segment": 2
+          },
+          {
+            "id": "08462320-n",
+            "role": "concept",
+            "score": 0.92,
+            "source": "alias",
+            "surface": {
+              "en": "data",
+              "ru": "данные"
+            },
+            "definition_en": "a collection of facts from which conclusions may be drawn",
+            "segment": 3
+          },
+          {
+            "id": "00598954-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "learn",
+              "ru": "узнавать"
+            },
+            "definition_en": "get to know or become aware of, usually accidentally",
+            "segment": 3
+          },
+          {
+            "id": "01637982-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "discover",
+              "ru": "открывать"
+            },
+            "definition_en": "make a discovery, make a new finding",
+            "segment": 3
+          },
+          {
+            "id": "02154508-v",
+            "role": "concept",
+            "score": 0.72,
+            "source": "loose_alias",
+            "surface": {
+              "en": "detect",
+              "ru": "обнаруживать"
+            },
+            "definition_en": "discover or determine the existence, presence, or fact of",
+            "segment": 3
+          },
+          {
+            "id": "02949691-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "cannabis",
+              "ru": "конопля"
+            },
+            "definition_en": "the most commonly used illicit drug",
+            "segment": -1
+          },
+          {
+            "id": "03186399-n",
+            "role": "anchor",
+            "score": 1.0,
+            "source": "sir_anchor",
+            "surface": {
+              "en": "diagram",
+              "ru": "план"
+            },
+            "definition_en": "a drawing intended to explain how something works",
+            "segment": -1
+          }
+        ],
+        "relations": [
+          {
+            "source": "user",
+            "relation": "mentions",
+            "target": "06476200-n"
+          },
+          {
+            "source": "06476200-n",
+            "relation": "context_with",
+            "target": "06513366-n"
+          }
+        ],
+        "constraints": [],
+        "protected_spans": [],
+        "uncertainty": [
+          {
+            "type": "unknown_tokens",
+            "sample": [
+              "понял",
+              "intent",
+              "command",
+              "ключевые",
+              "понятия",
+              "конопля",
+              "защищенные",
+              "обнаружены",
+              "anchors",
+              "00547317-a",
+              "00548316-a",
+              "00795720-n"
+            ],
+            "count": 17
+          },
+          {
+            "type": "low_confidence_concepts",
+            "sample": [
+              "00752764-v",
+              "00598954-v",
+              "01637982-v",
+              "02154508-v"
+            ],
+            "count": 4
+          }
+        ],
+        "stats": {
+          "chars": 246,
+          "tokens": 28,
+          "segments": 6,
+          "concepts": 17,
+          "unknown_token_rate": 0.6071
+        }
+      },
+      "answer_check": {
+        "preserved_concepts": 0.6667,
+        "request_concepts": 12,
+        "answer_concepts": 17,
+        "shared_concepts": 8,
+        "lost_concepts": [
+          "02144835-v",
+          "02147109-v",
+          "02231473-v",
+          "02253956-v"
+        ],
+        "new_concepts": [
+          "00598954-v",
+          "00752764-v",
+          "01637982-v",
+          "02154508-v",
+          "06476200-n",
+          "06513366-n",
+          "07185325-n",
+          "07193596-n",
+          "08462320-n"
+        ],
+        "lost_constraints": [],
+        "needs_revision": false
+      },
+      "final_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, компактный, вещать. Защищенные данные не обнаружены.",
+      "backend": "deterministic",
+      "latency_ms": 2.09,
+      "case_id": "agent_ru",
+      "pii_leaked": false,
+      "model_prompt_chars": 4753
+    }
+  ]
+}

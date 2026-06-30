@@ -29,9 +29,9 @@ The direct baseline keeps only one dictionary-level concept per segment, then it
 
 Current local result:
 
-- long-text SIR roundtrip: `concept_f1=0.4905`, `segment_coverage=0.9583`, `latency_ms=2.935`;
-- direct transpiler baseline: `concept_f1=0.1870`;
-- SIR delta over direct baseline: `+0.3035`;
+- long-text SIR roundtrip: `concept_f1=0.4819`, `segment_coverage=0.9583`, `latency_ms=~4.1`;
+- direct transpiler baseline: `concept_f1=0.2068`;
+- SIR delta over direct baseline: `+0.2751`;
 - existing synthetic translator bench: `exact_match=0.72`, `cycle_consistency=0.9704`, `semantic_gap=0.6380`.
 
 Stabilization priorities exposed by the benchmark:

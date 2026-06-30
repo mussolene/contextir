@@ -133,6 +133,45 @@ if missing constraints or unsupported claims:
 The reloop should be bounded. It is a quality control loop, not an unbounded
 agent reflection loop.
 
+## Runtime Prototype
+
+The current working prototype is `semantic_core/sir_runtime.py` with CLI wrappers:
+
+```bash
+python3 scripts/sir_agent_demo.py \
+  --text "Проверь SIR локально и не публикуй max@example.com" \
+  --source-lang ru \
+  --target-lang en
+
+python3 scripts/evaluate_sir_runtime.py
+```
+
+Runtime path:
+
+```text
+raw text
+  -> privacy scrubber
+  -> SIR v1 request packet
+  -> deterministic | ollama | agent backend
+  -> SIR v1 answer packet
+  -> concept preservation + constraint check
+  -> final target-language text
+```
+
+Current smoke result:
+
+```text
+cases: 2
+avg_preserved_concepts: 0.6667
+needs_revision: 0
+pii_leaks: 0
+avg_latency_ms: ~2.5
+```
+
+The `agent` and `ollama` modes are optional backends. If they are unavailable or
+time out, the runtime falls back to the deterministic local backend so the SIR
+pipeline remains testable without network or model state.
+
 ## Non-Goals for v1
 
 SIR v1 should not try to be a fluent universal generator. That would recreate a
