@@ -1,0 +1,276 @@
+{
+  "relations": 7126,
+  "hit1": 0.2548,
+  "hit5": 0.5267,
+  "hit10": 0.6214,
+  "mrr10": 0.3689,
+  "latency_ms_per_relation": 2.3133,
+  "by_relation": {
+    "also_see": {
+      "n": 93,
+      "hit1": 0.0753,
+      "hit5": 0.4086,
+      "hit10": 0.5161,
+      "mrr10": 0.207
+    },
+    "antonym": {
+      "n": 152,
+      "hit1": 0.2961,
+      "hit5": 0.6908,
+      "hit10": 0.7829,
+      "mrr10": 0.4597
+    },
+    "attribute": {
+      "n": 46,
+      "hit1": 0.2391,
+      "hit5": 0.6522,
+      "hit10": 0.7609,
+      "mrr10": 0.4061
+    },
+    "cause": {
+      "n": 5,
+      "hit1": 0.2,
+      "hit5": 0.4,
+      "hit10": 0.6,
+      "mrr10": 0.27
+    },
+    "derivationally_related": {
+      "n": 1342,
+      "hit1": 0.2079,
+      "hit5": 0.5894,
+      "hit10": 0.696,
+      "mrr10": 0.3654
+    },
+    "domain_region": {
+      "n": 28,
+      "hit1": 0.25,
+      "hit5": 0.8214,
+      "hit10": 0.9286,
+      "mrr10": 0.4686
+    },
+    "domain_topic": {
+      "n": 153,
+      "hit1": 0.4837,
+      "hit5": 0.7908,
+      "hit10": 0.902,
+      "mrr10": 0.6119
+    },
+    "domain_usage": {
+      "n": 26,
+      "hit1": 0.5769,
+      "hit5": 0.8462,
+      "hit10": 0.9615,
+      "mrr10": 0.7101
+    },
+    "entailment": {
+      "n": 18,
+      "hit1": 0.0,
+      "hit5": 0.1111,
+      "hit10": 0.2222,
+      "mrr10": 0.0506
+    },
+    "hypernym": {
+      "n": 1610,
+      "hit1": 0.4677,
+      "hit5": 0.7298,
+      "hit10": 0.7727,
+      "mrr10": 0.5772
+    },
+    "hyponym": {
+      "n": 1672,
+      "hit1": 0.0712,
+      "hit5": 0.314,
+      "hit10": 0.4438,
+      "mrr10": 0.1721
+    },
+    "instance_hypernym": {
+      "n": 189,
+      "hit1": 0.6296,
+      "hit5": 0.8836,
+      "hit10": 0.9206,
+      "mrr10": 0.7393
+    },
+    "instance_hyponym": {
+      "n": 185,
+      "hit1": 0.0324,
+      "hit5": 0.1243,
+      "hit10": 0.2,
+      "mrr10": 0.0729
+    },
+    "member_holonym": {
+      "n": 54,
+      "hit1": 0.3889,
+      "hit5": 0.7407,
+      "hit10": 0.8519,
+      "mrr10": 0.5151
+    },
+    "member_meronym": {
+      "n": 69,
+      "hit1": 0.3478,
+      "hit5": 0.4928,
+      "hit10": 0.6232,
+      "mrr10": 0.4199
+    },
+    "member_of_domain_region": {
+      "n": 25,
+      "hit1": 0.04,
+      "hit5": 0.08,
+      "hit10": 0.12,
+      "mrr10": 0.0544
+    },
+    "member_of_domain_topic": {
+      "n": 167,
+      "hit1": 0.012,
+      "hit5": 0.0958,
+      "hit10": 0.2036,
+      "mrr10": 0.054
+    },
+    "member_of_domain_usage": {
+      "n": 30,
+      "hit1": 0.0,
+      "hit5": 0.0333,
+      "hit10": 0.0667,
+      "mrr10": 0.0167
+    },
+    "part_holonym": {
+      "n": 430,
+      "hit1": 0.3953,
+      "hit5": 0.6651,
+      "hit10": 0.7558,
+      "mrr10": 0.5118
+    },
+    "part_meronym": {
+      "n": 431,
+      "hit1": 0.1137,
+      "hit5": 0.3434,
+      "hit10": 0.478,
+      "mrr10": 0.2144
+    },
+    "pertainym": {
+      "n": 104,
+      "hit1": 0.375,
+      "hit5": 0.5865,
+      "hit10": 0.6538,
+      "mrr10": 0.4795
+    },
+    "similar_to": {
+      "n": 201,
+      "hit1": 0.2587,
+      "hit5": 0.4577,
+      "hit10": 0.5423,
+      "mrr10": 0.3483
+    },
+    "substance_holonym": {
+      "n": 35,
+      "hit1": 0.2571,
+      "hit5": 0.5143,
+      "hit10": 0.6571,
+      "mrr10": 0.3627
+    },
+    "substance_meronym": {
+      "n": 32,
+      "hit1": 0.2188,
+      "hit5": 0.4688,
+      "hit10": 0.5938,
+      "mrr10": 0.312
+    },
+    "verb_group": {
+      "n": 29,
+      "hit1": 0.2069,
+      "hit5": 0.5517,
+      "hit10": 0.7241,
+      "mrr10": 0.3622
+    }
+  },
+  "train_relations": 28502,
+  "valid_relations": 7126,
+  "relation_types": 25,
+  "epochs": 12,
+  "train_seconds": 574.548,
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 0.184709,
+      "valid_hit1": 0.0584,
+      "valid_hit10": 0.1593,
+      "valid_mrr10": 0.0868
+    },
+    {
+      "epoch": 2,
+      "loss": 0.392936,
+      "valid_hit1": 0.1155,
+      "valid_hit10": 0.2915,
+      "valid_mrr10": 0.1675
+    },
+    {
+      "epoch": 3,
+      "loss": 0.114022,
+      "valid_hit1": 0.1013,
+      "valid_hit10": 0.2522,
+      "valid_mrr10": 0.1447
+    },
+    {
+      "epoch": 4,
+      "loss": 0.329206,
+      "valid_hit1": 0.1469,
+      "valid_hit10": 0.3936,
+      "valid_mrr10": 0.2202
+    },
+    {
+      "epoch": 5,
+      "loss": 0.074305,
+      "valid_hit1": 0.1433,
+      "valid_hit10": 0.3392,
+      "valid_mrr10": 0.2018
+    },
+    {
+      "epoch": 6,
+      "loss": 0.282912,
+      "valid_hit1": 0.1848,
+      "valid_hit10": 0.469,
+      "valid_mrr10": 0.2716
+    },
+    {
+      "epoch": 7,
+      "loss": 0.048166,
+      "valid_hit1": 0.177,
+      "valid_hit10": 0.4197,
+      "valid_mrr10": 0.2502
+    },
+    {
+      "epoch": 8,
+      "loss": 0.247473,
+      "valid_hit1": 0.214,
+      "valid_hit10": 0.5313,
+      "valid_mrr10": 0.3112
+    },
+    {
+      "epoch": 9,
+      "loss": 0.032969,
+      "valid_hit1": 0.2118,
+      "valid_hit10": 0.5018,
+      "valid_mrr10": 0.3011
+    },
+    {
+      "epoch": 10,
+      "loss": 0.218557,
+      "valid_hit1": 0.2337,
+      "valid_hit10": 0.5813,
+      "valid_mrr10": 0.3415
+    },
+    {
+      "epoch": 11,
+      "loss": 0.021505,
+      "valid_hit1": 0.2322,
+      "valid_hit10": 0.5518,
+      "valid_mrr10": 0.3321
+    },
+    {
+      "epoch": 12,
+      "loss": 0.194642,
+      "valid_hit1": 0.2548,
+      "valid_hit10": 0.6214,
+      "valid_mrr10": 0.3689
+    }
+  ]
+}

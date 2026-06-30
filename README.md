@@ -91,6 +91,27 @@ This trains concept and relation embeddings with negative sampling. It is the
 first trainable graph substrate and currently beats the relation-matrix core on
 held-out hit@10.
 
+For a longer run with hard negatives:
+
+```bash
+python3 scripts/train_sir_graph_embedding_core.py train --dim 128 --epochs 12 --lr 0.02 --hard-negative-every 2 --hard-negative-k 32 --out checkpoints/sir_graph_embedding_core_long.npz --report reports/sir_graph_embedding_long_valid_eval.json
+```
+
+## Export Hugging Face Dataset
+
+```bash
+python3 scripts/export_hf_dataset.py --out-dir data/hf_sir_dataset
+```
+
+This writes:
+
+- `concepts.jsonl`
+- `relations.jsonl`
+- `train.jsonl`
+- `validation.jsonl`
+- `test.jsonl`
+- `README.md`
+
 ## Outputs
 
 - `data/processed/*.jsonl` synthetic train/valid/test splits.
@@ -101,6 +122,7 @@ held-out hit@10.
 - `checkpoints/sir_ml_core_smoke.npz`
 - `checkpoints/sir_graph_core_smoke.npz`
 - `checkpoints/sir_graph_embedding_core_smoke.npz`
+- `checkpoints/sir_graph_embedding_core_long.npz`
 - `reports/metrics.json`
 - `reports/examples.md`
 - `reports/sir_ml_core_smoke_eval.json`
@@ -108,6 +130,9 @@ held-out hit@10.
 - `reports/sir_graph_core_eval.json`
 - `reports/sir_graph_embedding_valid_eval.json`
 - `reports/sir_graph_embedding_eval.json`
+- `reports/sir_graph_embedding_long_valid_eval.json`
+- `reports/sir_graph_embedding_long_eval.json`
+- `data/hf_sir_dataset/*`
 
 ## Metrics
 

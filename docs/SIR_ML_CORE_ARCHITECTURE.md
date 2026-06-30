@@ -152,3 +152,44 @@ embedding hit@10: 0.2397
 
 The `cat + hypernym` probe now puts `animal` in the top 2. That is not yet good
 enough for product inference, but it confirms the training direction.
+
+## Long Training + Hard Negatives
+
+The next run used 12 epochs, 128 dimensions, and hard negatives every second
+epoch:
+
+```bash
+python3 scripts/train_sir_graph_embedding_core.py train \
+  --dim 128 \
+  --epochs 12 \
+  --lr 0.02 \
+  --hard-negative-every 2 \
+  --hard-negative-k 32 \
+  --out checkpoints/sir_graph_embedding_core_long.npz \
+  --report reports/sir_graph_embedding_long_valid_eval.json
+```
+
+Held-out result:
+
+```text
+relations: 7,126
+hit@1: 0.2548
+hit@5: 0.5267
+hit@10: 0.6214
+MRR@10: 0.3689
+```
+
+This is a large improvement over the first embedding run:
+
+```text
+short hit@10: 0.2397
+long  hit@10: 0.6214
+```
+
+Caveat: full-graph eval is much higher because it includes training edges. The
+held-out report remains the decision metric.
+
+The `cat + hypernym` demo is still not perfect: it retrieves `domestic cat`
+before broader concepts. That exposes the next data/model issue: relation tasks
+need typed negatives and ancestor-aware evaluation, not only random and nearest
+hard negatives.

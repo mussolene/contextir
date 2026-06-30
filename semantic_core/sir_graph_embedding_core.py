@@ -106,6 +106,8 @@ def main() -> None:
     train.add_argument("--epochs", type=int, default=6)
     train.add_argument("--lr", type=float, default=0.03)
     train.add_argument("--margin", type=float, default=0.35)
+    train.add_argument("--hard-negative-every", type=int, default=2)
+    train.add_argument("--hard-negative-k", type=int, default=32)
     train.add_argument("--valid-ratio", type=float, default=0.2)
     train.add_argument("--seed", type=int, default=42)
     train.add_argument("--out", default=str(CHECKPOINT))
@@ -155,7 +157,10 @@ def train_command(args: argparse.Namespace) -> None:
         rng.shuffle(train_edges)
         losses = []
         for source_idx, relation_idx, target_idx in train_edges:
-            negative_idx = sample_negative(rng, len(core.concepts), source_idx, target_idx)
+            if args.hard_negative_every and epoch % args.hard_negative_every == 0:
+                negative_idx = sample_hard_negative(core, source_idx, relation_idx, target_idx, args.hard_negative_k, rng)
+            else:
+                negative_idx = sample_negative(rng, len(core.concepts), source_idx, target_idx)
             losses.append(core.train_edge(source_idx, relation_idx, target_idx, negative_idx, args.lr, args.margin))
         metrics = evaluate(core, valid_edges)
         row = {
@@ -221,6 +226,16 @@ def sample_negative(rng: random.Random, count: int, source_idx: int, target_idx:
         idx = rng.randrange(count)
         if idx != source_idx and idx != target_idx:
             return idx
+
+
+def sample_hard_negative(core: SIRGraphEmbeddingCore, source_idx: int, relation_idx: int, target_idx: int, k: int, rng: random.Random) -> int:
+    query = core.concept_embeddings[source_idx] + core.relation_embeddings[relation_idx]
+    distances = np.linalg.norm(core.concept_embeddings - query, axis=1)
+    distances[source_idx] = np.inf
+    distances[target_idx] = np.inf
+    count = min(max(k, 1), len(core.concepts) - 2)
+    indexes = np.argpartition(distances, count - 1)[:count]
+    return int(rng.choice([int(i) for i in indexes if int(i) not in {source_idx, target_idx}]))
 
 
 def split_relations(relations: list[ConceptRelation], seed: int, valid_ratio: float) -> tuple[list[ConceptRelation], list[ConceptRelation]]:
@@ -289,4 +304,3 @@ def normalize_vector(vector: np.ndarray) -> np.ndarray:
 
 if __name__ == "__main__":
     main()
-
