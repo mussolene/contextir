@@ -1,0 +1,6 @@
+{
+  "examples": 8.0,
+  "concept_f1": 1.0,
+  "intent_accuracy": 1.0,
+  "privacy_accuracy": 1.0
+}

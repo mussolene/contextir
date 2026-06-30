@@ -1,0 +1,12 @@
+{"id":"sir_arch_ru","source_lang":"ru","target_lang":"en","text":"SIR должен компилировать русский текст в семантический контракт, скрывать PII и передавать модели компактную область рассуждения."}
+{"id":"sir_arch_en","source_lang":"en","target_lang":"ru","text":"The semantic core should compile text into a language independent SIR packet and decompile the answer into the target language."}
+{"id":"privacy_ru","source_lang":"ru","target_lang":"en","text":"Не публикуй person@example.test и телефон +1 555 010-0100, замени личные данные защищенными placeholder."}
+{"id":"privacy_en","source_lang":"en","target_lang":"ru","text":"Hide the API token sk-example000000000000 and keep protected placeholders inside the local SIR contour."}
+{"id":"agent_ru","source_lang":"ru","target_lang":"en","text":"Агентный контур получает SIR контракт, вызывает инструмент, проверяет ответ через reloop и возвращает текст пользователю."}
+{"id":"agent_en","source_lang":"en","target_lang":"ru","text":"The agent runtime should route a semantic packet to tools, memory, or a model, then validate the answer contract."}
+{"id":"moe_ru","source_lang":"ru","target_lang":"en","text":"Снижение языковой энтропии помогает MoE активировать меньше экспертов и стабильнее выбирать маршрут рассуждения."}
+{"id":"moe_en","source_lang":"en","target_lang":"ru","text":"Semantic compression reduces prompt noise and may improve expert routing for local and frontier models."}
+{"id":"kernel_ru","source_lang":"ru","target_lang":"en","text":"Вход текст, выход контракт семантики. Вход контракт семантики, выход текст на нужном языке."}
+{"id":"kernel_en","source_lang":"en","target_lang":"ru","text":"The neural SIR kernel should learn text to contract and contract to text, not only a scripted transformation."}
+{"id":"roundtrip_ru","source_lang":"ru","target_lang":"en","text":"Проверка roundtrip должна показать, какие смысловые узлы сохраняются после перевода через SIR и обратно."}
+{"id":"decompiler_ru","source_lang":"ru","target_lang":"en","text":"Декомпилятор восстанавливает человеческий текст из семантического контракта, но не должен раскрывать приватные значения."}

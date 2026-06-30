@@ -1,2 +1,2 @@
-{"id":"kernel_privacy","source_lang":"ru","target_lang":"en","text":"SIR должен скрыть max@example.com и скомпилировать текст в семантический контракт про маленькое ядро."}
+{"id":"kernel_privacy","source_lang":"ru","target_lang":"en","text":"SIR должен скрыть person@example.test и скомпилировать текст в семантический контракт про маленькое ядро."}
 {"id":"kernel_semantics","source_lang":"ru","target_lang":"ru","text":"Вход текст выход контракт семантики. Вход контракт семантики выход текст."}

@@ -1,0 +1,6 @@
+{
+  "examples": 2.0,
+  "concept_f1": 0.4886,
+  "intent_accuracy": 0.5,
+  "privacy_accuracy": 1.0
+}

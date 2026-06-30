@@ -1,0 +1,77 @@
+{
+  "aggregate": {
+    "texts": 1,
+    "avg_path_f1": 0.77,
+    "pii_leaks": 0,
+    "avg_neural_vs_teacher_f1": 0.32
+  },
+  "results": [
+    {
+      "id": "sir_big_ru",
+      "source_concepts": 21,
+      "protected_spans": 1,
+      "paths": {
+        "en": {
+          "decompiled_text": "semantic core, semantic intermediate representation, entropy reduction, reloop, shot. privacy scrubber, entrance, next, then, compact. no longer, already, raw, noisy, wet. decompiler, subsequently, bag. MoE routing. Protected placeholders: PII_EMAIL_1\nSIR anchors: sir:semantic_core sir:semantic_intermediate_representation sir:entropy_reduction sir:reloop 04206070-n 05434927-n sir:privacy_scrubber 00049003-n 00054212-r 00117620-r 00502180-a 00031515-r 00031798-r 00619433-a 01919931-a 02547317-a 02548820-a sir:decompiler 00061203-r 02773037-n sir:moe_routing",
+          "metrics": {
+            "left_concepts": 21,
+            "right_concepts": 46,
+            "shared_concepts": 21,
+            "precision": 0.4565,
+            "recall": 1.0,
+            "f1": 0.6269
+          },
+          "pii_leaked": false
+        },
+        "ru": {
+          "decompiled_text": "семантическое ядро, семантическое промежуточное представление, снижение энтропии, reloop, ядро. скрытие PII, вхождение, затем, компактный. уже не, уже, сырой, шумный, мокрый. декомпилятор, после, сумка. маршрутизация MoE. Protected placeholders: PII_EMAIL_1\nSIR anchors: sir:semantic_core sir:semantic_intermediate_representation sir:entropy_reduction sir:reloop 04206070-n 05434927-n sir:privacy_scrubber 00049003-n 00054212-r 00117620-r 00502180-a 00031515-r 00031798-r 00619433-a 01919931-a 02547317-a 02548820-a sir:decompiler 00061203-r 02773037-n sir:moe_routing",
+          "metrics": {
+            "left_concepts": 21,
+            "right_concepts": 25,
+            "shared_concepts": 21,
+            "precision": 0.84,
+            "recall": 1.0,
+            "f1": 0.913
+          },
+          "pii_leaked": false
+        }
+      },
+      "neural_prediction": {
+        "concepts": [
+          {
+            "id": "sir:entropy_reduction",
+            "score": 0.9589
+          },
+          {
+            "id": "sir:semantic_core",
+            "score": 0.5008
+          },
+          {
+            "id": "sir:reloop",
+            "score": 0.4998
+          },
+          {
+            "id": "sir:semantic_intermediate_representation",
+            "score": 0.487
+          }
+        ],
+        "intent": {
+          "label": "ask",
+          "confidence": 1.0
+        },
+        "privacy": {
+          "has_protected_span": false,
+          "confidence": 0.0248
+        }
+      },
+      "neural_vs_teacher": {
+        "left_concepts": 21,
+        "right_concepts": 4,
+        "shared_concepts": 4,
+        "precision": 1.0,
+        "recall": 0.1905,
+        "f1": 0.32
+      }
+    }
+  ]
+}

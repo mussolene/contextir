@@ -208,6 +208,43 @@ pii_leaks: 0
 avg_contract_concepts: 6.0
 ```
 
+## Neural Kernel Training
+
+The first neural SIR kernel is now trainable:
+
+```bash
+python3 scripts/build_sir_training_dataset.py
+python3 scripts/train_sir_neural_kernel.py train --epochs 120 --hidden-dim 160 --lr 0.1 --threshold 0.42
+python3 scripts/train_sir_neural_kernel.py eval --data data/sir_training/test.jsonl --threshold 0.42
+python3 scripts/evaluate_sir_resemantic.py
+```
+
+Current model shape:
+
+```text
+text features
+  -> tiny hidden semantic layer
+  -> concept multi-label head
+  -> intent head
+  -> privacy head
+```
+
+Current results:
+
+```text
+train concept_f1: 1.0
+test concept_f1: 0.4886
+test intent_accuracy: 0.5
+test privacy_accuracy: 1.0
+large-text teacher resemantic path_f1: 0.77
+large-text neural_vs_teacher_f1: 0.32
+```
+
+Interpretation: the neural architecture is wired and learns the tiny teacher
+dataset, but it is not yet a useful general model. The next quality jump should
+come from expanding and cleaning `data/sir_training`, especially ambiguity and
+negative examples, not from simply adding more epochs.
+
 Cursor Agent note: `agent` without `--print` is an interactive TUI meant for a
 human terminal session. Runtime automation must use the headless path
 `agent --print --mode ask --trust <prompt>`, and should keep the deterministic

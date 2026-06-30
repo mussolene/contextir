@@ -26,7 +26,7 @@ def main() -> None:
         result = runtime.run(case["text"], source_lang=case["source_lang"], target_lang=case["target_lang"])
         row = result_to_dict(result, include_prompt=True)
         row["case_id"] = case["id"]
-        row["pii_leaked"] = any(secret in row["model_prompt"] or secret in row["raw_answer"] for secret in ["max@example.com", "+7 999 123-45-67"])
+        row["pii_leaked"] = any(secret in row["model_prompt"] or secret in row["raw_answer"] for secret in ["person@example.test", "+1 555 010-0100"])
         row["model_prompt_chars"] = len(row["model_prompt"])
         row.pop("model_prompt", None)
         results.append(row)

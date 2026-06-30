@@ -30,7 +30,7 @@ def main() -> None:
         source_ids = {item["id"] for item in contract["concepts"]}
         round_ids = {item["id"] for item in round_contract["concepts"]}
         shared = source_ids & round_ids
-        pii_leaked = "max@example.com" in json.dumps(contract, ensure_ascii=False) or "max@example.com" in text
+        pii_leaked = "person@example.test" in json.dumps(contract, ensure_ascii=False) or "person@example.test" in text
         results.append(
             {
                 "case_id": case["id"],

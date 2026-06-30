@@ -1,0 +1,8 @@
+{
+  "examples": 12,
+  "train": 8,
+  "valid": 2,
+  "test": 2,
+  "avg_concepts": 6.0,
+  "privacy_examples": 2
+}

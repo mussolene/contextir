@@ -4,7 +4,7 @@
     "avg_preserved_concepts": 1.0,
     "needs_revision": 0,
     "pii_leaks": 0,
-    "avg_latency_ms": 3.66
+    "avg_latency_ms": 3.11
   },
   "results": [
     {
@@ -193,14 +193,14 @@
           {
             "placeholder": "PII_EMAIL_1",
             "kind": "email",
-            "local_ref": "local:014a6af13a31d034",
-            "surface_hash": "6980d1a190b28b77a120cc2f2cf2cff1"
+            "local_ref": "local:f76c502bbc95fc86",
+            "surface_hash": "0d6c53721e2f5e6f44f0d719b0fcae20"
           },
           {
             "placeholder": "PII_PHONE_1",
             "kind": "phone",
-            "local_ref": "local:6424d01c41f2290a",
-            "surface_hash": "1c01ddee8a9505b318e494782c7afafc"
+            "local_ref": "local:9855978314f58bbe",
+            "surface_hash": "570bbd33e64dc3e49f8eccf23cc260c8"
           }
         ],
         "uncertainty": [
@@ -833,7 +833,7 @@
       },
       "final_text": "SIR understood the request as: intent=command; key concepts=semantic intermediate representation, reloop, earphone, telephone, check, call, semantic core, language independent semantics. Protected data remains local.",
       "backend": "deterministic",
-      "latency_ms": 4.79,
+      "latency_ms": 3.64,
       "case_id": "privacy_ru",
       "pii_leaked": false,
       "model_prompt_chars": 5821
@@ -1394,7 +1394,7 @@
       },
       "final_text": "SIR понял запрос как: intent=command; ключевые понятия=краткий, афористичный, план, конопля, скрытие PII, reloop. Защищенные данные не обнаружены.",
       "backend": "deterministic",
-      "latency_ms": 2.53,
+      "latency_ms": 2.58,
       "case_id": "agent_ru",
       "pii_leaked": false,
       "model_prompt_chars": 5443
