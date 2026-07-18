@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import re
+import sys
 import time
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -667,7 +668,10 @@ def read_contract(path: str) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="contextir", description="Compile text into compact ContextIR or render it for an LLM.")
+    parser = argparse.ArgumentParser(
+        prog="contextir",
+        description="Compile context, invoke a model, or render ContextIR for an LLM.",
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
     compile_p = sub.add_parser("compile", help="Compile text into ContextIR v2.")
     compile_p.add_argument("--text", required=True)
@@ -681,7 +685,59 @@ def main() -> None:
     render_p = sub.add_parser("render", help="Render a compact model prompt from a contract.")
     render_p.add_argument("--contract", required=True, help="Path to JSON contract, or '-' for stdin.")
     render_p.add_argument("--out", default="-")
+    run_p = sub.add_parser("run", help="Compile context and invoke a model endpoint.")
+    run_p.add_argument("--text", required=True, help="Input text, or '-' for stdin.")
+    run_p.add_argument("--backend", choices=["ollama", "openai"], default="ollama")
+    run_p.add_argument("--model", required=True)
+    run_p.add_argument("--base-url", default="")
+    run_p.add_argument("--api-key-env", default="OPENAI_API_KEY")
+    run_p.add_argument("--source-lang", default="en")
+    run_p.add_argument("--target-lang", default="en")
+    run_p.add_argument("--risk", choices=["low", "standard", "high"], default="standard")
+    run_p.add_argument("--task", choices=["reasoning", "transform"], default="reasoning")
+    run_p.add_argument("--timeout", type=float, default=180)
+    run_p.add_argument("--context-length", type=int, default=32768)
+    run_p.add_argument("--max-output-tokens", type=int, default=256)
+    run_p.add_argument("--json", action="store_true", help="Emit answer and payload-free trace as JSON.")
     args = parser.parse_args()
+
+    if args.cmd == "run":
+        import os
+
+        from contextir.clients import OllamaClient, OpenAICompatibleClient
+        from contextir.pipeline import ContextPipeline
+
+        text = sys.stdin.read() if args.text == "-" else args.text
+        if args.backend == "ollama":
+            client = OllamaClient(
+                args.model,
+                base_url=args.base_url or "http://127.0.0.1:11434",
+                timeout=args.timeout,
+                context_length=args.context_length,
+                max_output_tokens=args.max_output_tokens,
+            )
+        else:
+            client = OpenAICompatibleClient(
+                args.model,
+                base_url=args.base_url or "http://127.0.0.1:1234/v1",
+                api_key=os.environ.get(args.api_key_env, ""),
+                timeout=args.timeout,
+                max_output_tokens=args.max_output_tokens,
+            )
+        result = ContextPipeline(invoke=client).run(
+            text,
+            source_lang=args.source_lang,
+            target_lang=args.target_lang,
+            risk=args.risk,
+            task=args.task,
+        )
+        if args.json:
+            print(json.dumps({"answer": result.answer, "trace": result.public_trace()}, ensure_ascii=False))
+        else:
+            print(result.answer)
+        if not result.accepted:
+            raise SystemExit(2)
+        return
 
     gateway = load_contextir(lexical=getattr(args, "lexical", False), privacy=getattr(args, "privacy", "regex"))
     if args.cmd == "compile":

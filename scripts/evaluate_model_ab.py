@@ -8,8 +8,6 @@ import statistics
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -17,7 +15,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from contextir import ContextIR, ContextPipeline
+from contextir import ContextIR, ContextPipeline, OllamaClient, OpenAICompatibleClient
 from contextir.pipeline import approximate_token_count
 from contextir.sir_sources import PROJECT_ROOT
 
@@ -176,64 +174,32 @@ def prepare_prompt(gateway: ContextIR, pipeline: ContextPipeline, case: Case, re
     return rendered, metadata
 
 
-def post_json(url: str, payload: dict[str, Any], timeout: int) -> dict[str, Any]:
-    request = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
-
-
 def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, Any]]:
     started = time.perf_counter()
     if args.backend == "ollama":
-        result = post_json(
-            "http://127.0.0.1:11434/api/chat",
-            {
-                "model": args.model,
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-                "think": False,
-                "options": {
-                    "temperature": 0,
-                    "seed": 42,
-                    "num_ctx": args.context_length,
-                    "num_predict": args.max_output_tokens,
-                },
-            },
-            args.timeout,
-        )
-        answer = result["message"]["content"].strip()
+        result = OllamaClient(
+            args.model,
+            timeout=args.timeout,
+            context_length=args.context_length,
+            max_output_tokens=args.max_output_tokens,
+        ).complete(prompt)
+        answer = result.text
         usage = {
-            "backend_prompt_tokens": result.get("prompt_eval_count"),
-            "backend_output_tokens": result.get("eval_count"),
-            "backend_prompt_ms": ns_to_ms(result.get("prompt_eval_duration")),
-            "backend_generation_ms": ns_to_ms(result.get("eval_duration")),
+            "backend_prompt_tokens": result.prompt_tokens,
+            "backend_output_tokens": result.output_tokens,
+            "backend_prompt_ms": result.prompt_ms,
+            "backend_generation_ms": result.generation_ms,
         }
     elif args.backend == "lmstudio":
-        result = post_json(
-            "http://127.0.0.1:1234/v1/chat/completions",
-            {
-                "model": args.model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0,
-                "max_tokens": args.max_output_tokens,
-                "seed": 42,
-            },
-            args.timeout,
-        )
-        answer = result["choices"][0]["message"]["content"].strip()
-        raw_usage = result.get("usage", {})
+        result = OpenAICompatibleClient(
+            args.model,
+            timeout=args.timeout,
+            max_output_tokens=args.max_output_tokens,
+        ).complete(prompt)
+        answer = result.text
         usage = {
-            "backend_prompt_tokens": raw_usage.get("prompt_tokens"),
-            "backend_output_tokens": raw_usage.get("completion_tokens"),
+            "backend_prompt_tokens": result.prompt_tokens,
+            "backend_output_tokens": result.output_tokens,
         }
     else:
         command = ["agent", "--print", "--mode", "ask", "--trust", "--model", args.model, prompt]
@@ -244,10 +210,6 @@ def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, 
         usage = {"backend_prompt_tokens": None, "backend_output_tokens": None}
     usage["model_latency_ms"] = round((time.perf_counter() - started) * 1000, 3)
     return answer, usage
-
-
-def ns_to_ms(value: Any) -> float | None:
-    return round(float(value) / 1_000_000, 3) if value is not None else None
 
 
 def normalize_answer(value: str) -> list[str]:

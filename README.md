@@ -5,30 +5,33 @@ language models. It turns text into a compact, inspectable intermediate
 representation while retaining critical source fragments when a lossy summary
 would be unsafe.
 
-Status: **public pre-1.0 developer preview**. The product API and `contextir.v2`
-schema are versioned and usable for integrations, but the project does not yet
-claim production-grade semantic preservation or PII detection.
+Status: **stable 1.0 API**. ContextIR follows semantic versioning for the public
+Python surface and the `contextir.v2` contract. Semantic compression and PII
+detection still require evaluation on each deployment's data.
 
 ## Quick Start
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.5.0'
+python3 -m pip install \
+  https://github.com/mussolene/contextir/releases/download/v1.0.0/contextir-1.0.0-py3-none-any.whl
+ollama pull qwen3:0.6b
+contextir run --model qwen3:0.6b --text "Reply with only READY."
 ```
 
 ```python
-from contextir import ContextPipeline
+from contextir import ContextPipeline, OllamaClient
 
-pipeline = ContextPipeline()
+pipeline = ContextPipeline(invoke=OllamaClient("qwen3:0.6b"))
 result = pipeline.run(
     "If payment 42 is complete, do not send it again.",
-    invoke=my_model_call,
     source_lang="en",
     target_lang="en",
 )
+print(result.answer)
 ```
 
-PyPI publication is planned after Trusted Publishing is configured. The tagged
-GitHub install above is the current reproducible path.
+The release wheel avoids a source checkout and Git dependency. A pinned Git
+install remains available for environments that prefer source builds.
 
 For a two-minute integration and safe restoration example, see
 [Quick start](docs/QUICKSTART.md).
@@ -68,7 +71,7 @@ Optional Presidio integration:
 python3 -m pip install -e '.[privacy]'
 ```
 
-## Python API
+## Advanced Compiler API
 
 ```python
 from contextir import ContextIR
@@ -101,6 +104,11 @@ request.
 ## CLI
 
 ```bash
+contextir run \
+  --backend ollama \
+  --model qwen3:0.6b \
+  --text "Summarize the current agent state."
+
 contextir compile \
   --text "Если платеж 42 выполнен, не отправляй его повторно." \
   --source-lang ru \

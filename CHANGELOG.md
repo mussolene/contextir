@@ -2,6 +2,22 @@
 
 All notable changes to ContextIR are documented here.
 
+## 1.0.0 - 2026-07-18
+
+- stabilized `ContextPipeline` as the primary model-boundary API while keeping
+  the existing per-call invoker compatible;
+- added dependency-free callable `OllamaClient` and `OpenAICompatibleClient`
+  transports with normalized usage metadata and endpoint errors;
+- added `contextir run` for one-command local and OpenAI-compatible model
+  invocation, including stdin and payload-free JSON trace modes;
+- moved the quick start to the runnable client-plus-pipeline path and documented
+  the direct release-wheel install;
+- documented SemVer guarantees, stable exports, contract evolution, and the
+  migration from the 0.x API;
+- verified the built wheel in a clean virtual environment and exercised the
+  installed CLI against local Ollama;
+- retained the `contextir.v2` contract without a schema migration.
+
 ## 0.5.0 - 2026-07-18
 
 - added strict agent tool-routing and agent-state diagnostics to the existing

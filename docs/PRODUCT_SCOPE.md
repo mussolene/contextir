@@ -29,7 +29,7 @@ compilation remains available for infrastructure that owns routing itself.
 - query-aware verbatim evidence selection for long document QA;
 - raw routing for exhaustive counting and low-coverage retrieval;
 - measurable prompt reduction and semantic-preservation checks;
-- RU and EN heuristics in the current public preview.
+- RU and EN heuristics in the stable 1.x package.
 
 ## Out of Scope
 
@@ -41,10 +41,11 @@ compilation remains available for infrastructure that owns routing itself.
 - production claims based only on WordNet overlap;
 - Japanese support before RU/EN evaluation is stable.
 
-## Preview Exit Criteria
+## Production Evidence Gates
 
-The project should not claim beta readiness until a representative benchmark
-shows all of the following:
+The stable API is suitable for integrations. A deployment should not claim
+production readiness until its representative benchmark shows all of the
+following:
 
 - at least 40% median input-token reduction on compression-eligible contexts;
 - no more than 3% task-quality loss against masked raw input;
@@ -53,13 +54,34 @@ shows all of the following:
 - results on at least one 1-3B local model and one 7-8B model;
 - bounded fallback to raw source whenever confidence is insufficient.
 
-Version `1.0` additionally requires a stable public policy API, migration notes
-for the contract, and at least one production-shaped integration using an
-application-owned model adapter and tokenizer.
+## 1.0 Stability Contract
+
+ContextIR uses semantic versioning from `1.0.0`. The following public imports
+are stable within the 1.x line:
+
+- `ContextPipeline`, `PipelinePolicy`, `PipelineResult`, `PreparedContext`, and
+  `ResponseVerification`;
+- `OllamaClient`, `OpenAICompatibleClient`, and `ModelResponse`;
+- `ContextIR`, `ContextBundle`, `ContractCheck`, and `load_contextir`;
+- `contextir.schemas.load_contract_schema` and the `contextir.v2` JSON shape.
+
+New optional fields may be added to `contextir.v2` in a minor release. Removing
+or changing existing fields, public call semantics, or stable imports requires
+a major release. Heuristic routing decisions, confidence values, benchmark
+scores, and private helpers are not compatibility guarantees.
+
+### Migrating From 0.x
+
+No contract migration is required: 1.0 retains `contextir.v2`. Existing code
+that passes `invoke` to `ContextPipeline.run()` remains valid. New integrations
+may instead provide a callable once through `ContextPipeline(invoke=...)` and
+call `run(text)` repeatedly. Direct `ContextIR` compilation remains supported,
+but `ContextPipeline` is the recommended model boundary.
 
 The v0.5.0 nine-case 8B run clears its aggregate quality and token gates with no
 per-case raw/auto regression. The external privacy run measures the supported
 email/phone/card profile, but its `0.8471` precision and synthetic source are not
-deployment evidence. The project therefore remains preview until official task
-coverage, application-owned integration, and deployment-specific privacy
-evaluation are broad enough to make the result representative.
+deployment evidence. The 1.0 designation stabilizes the integration surface;
+it does not turn the bounded benchmark into a universal model-quality or
+compliance claim. Official task coverage and deployment-specific privacy
+evaluation remain required.

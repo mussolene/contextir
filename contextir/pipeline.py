@@ -109,10 +109,12 @@ class ContextPipeline:
         gateway: ContextIR | None = None,
         policy: PipelinePolicy | None = None,
         token_counter: TokenCounter | None = None,
+        invoke: Invoker | None = None,
     ) -> None:
         self.gateway = gateway or ContextIR()
         self.policy = policy or PipelinePolicy()
         self.token_counter = token_counter or approximate_token_count
+        self.invoke = invoke
 
     def prepare(
         self,
@@ -164,7 +166,7 @@ class ContextPipeline:
     def run(
         self,
         text: str,
-        invoke: Invoker,
+        invoke: Invoker | None = None,
         source_lang: str = "ru",
         target_lang: str = "ru",
         risk: Risk = "standard",
@@ -175,6 +177,9 @@ class ContextPipeline:
     ) -> PipelineResult:
         if task not in {"reasoning", "transform"}:
             raise ValueError(f"unsupported task: {task}")
+        model_invoke = invoke or self.invoke
+        if model_invoke is None:
+            raise ValueError("invoke is required; pass it to ContextPipeline() or run()")
 
         initial = self.prepare(text, source_lang, target_lang, risk, packet_id)
         modes = fallback_modes(initial.mode)[: self.policy.max_attempts]
@@ -193,7 +198,7 @@ class ContextPipeline:
                 mode,
                 "verification_fallback",
             )
-            answer = invoke(prepared.prompt)
+            answer = model_invoke(prepared.prompt)
             verification = (
                 verifier(prepared, answer)
                 if verifier

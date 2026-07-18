@@ -9,6 +9,25 @@ LONG_TRANSFORM = " ".join(["Do not send payment 42 twice."] * 30)
 
 
 class ContextPipelineTests(unittest.TestCase):
+    def test_pipeline_can_store_default_invoker(self) -> None:
+        pipeline = ContextPipeline(invoke=lambda _prompt: "READY")
+
+        result = pipeline.run("Reply with READY.", source_lang="en", target_lang="en")
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.answer, "READY")
+
+    def test_run_invoker_overrides_pipeline_default(self) -> None:
+        pipeline = ContextPipeline(invoke=lambda _prompt: "default")
+
+        result = pipeline.run("Reply briefly.", invoke=lambda _prompt: "override")
+
+        self.assertEqual(result.answer, "override")
+
+    def test_pipeline_requires_an_invoker(self) -> None:
+        with self.assertRaisesRegex(ValueError, "invoke is required"):
+            ContextPipeline().run("Reply briefly.")
+
     def test_successful_candidate_uses_one_compilation_pass(self) -> None:
         class CountingGateway(ContextIR):
             def __init__(self) -> None:

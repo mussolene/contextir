@@ -9,11 +9,17 @@ when semantic-only compression would be risky.
 Python 3.10 or newer is required.
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.5.0'
+python3 -m pip install \
+  https://github.com/mussolene/contextir/releases/download/v1.0.0/contextir-1.0.0-py3-none-any.whl
 ```
 
-PyPI publication is intentionally deferred until Trusted Publishing is
-configured. Tagged GitHub releases are the current reproducible install path.
+The wheel install needs neither a source checkout nor Git. For a local first
+run with Ollama:
+
+```bash
+ollama pull qwen3:0.6b
+contextir run --model qwen3:0.6b --text "Reply with only READY."
+```
 
 ## Run A Model Safely
 
@@ -21,12 +27,11 @@ configured. Tagged GitHub releases are the current reproducible install path.
 that accepts a prompt and returns text:
 
 ```python
-from contextir import ContextPipeline
+from contextir import ContextPipeline, OllamaClient
 
-pipeline = ContextPipeline(token_counter=target_model_token_count)
+pipeline = ContextPipeline(invoke=OllamaClient("qwen3:0.6b"))
 result = pipeline.run(
     "If payment 42 is complete, do not send it again. Email person@example.test.",
-    invoke=model_client.generate,
     source_lang="en",
     target_lang="en",
     risk="standard",
@@ -38,6 +43,22 @@ if not result.accepted:
 
 answer = result.answer
 ```
+
+For LM Studio, vLLM, LocalAI, or a hosted OpenAI-compatible endpoint:
+
+```python
+import os
+from contextir import ContextPipeline, OpenAICompatibleClient
+
+client = OpenAICompatibleClient(
+    "model-name",
+    base_url="http://127.0.0.1:1234/v1",
+    api_key=os.environ.get("OPENAI_API_KEY", ""),
+)
+result = ContextPipeline(invoke=client).run("Summarize the agent state.")
+```
+
+Existing integrations may continue passing `invoke` directly to `run()`.
 
 Pass the real tokenizer for the target model. The built-in counter is only a
 dependency-free estimate. ContextIR uses compressed context only when measured
@@ -79,7 +100,6 @@ specific output field:
 ```python
 result = pipeline.run(
     "Send the receipt to person@example.test.",
-    invoke=model_client.generate,
     source_lang="en",
     target_lang="en",
     allowed_restore={"PII_EMAIL_1"},

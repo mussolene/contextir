@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
+import sys
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
 from contextir import ContextIR
+from contextir.gateway import main
 from contextir.schemas import load_contract_schema
 from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
 
@@ -22,6 +27,28 @@ class ContextIRGatewayTests(unittest.TestCase):
         self.assertEqual(contract["mode"], "raw")
         self.assertEqual(self.gateway.render_prompt(contract), text)
         self.assertLessEqual(contract["stats"]["prompt_ratio"], 1.0)
+
+    @patch("contextir.clients.OllamaClient")
+    def test_run_cli_emits_answer_and_safe_trace(self, client_class) -> None:
+        client_class.return_value.return_value = "READY"
+        stdout = io.StringIO()
+        argv = [
+            "contextir",
+            "run",
+            "--model",
+            "local-model",
+            "--text",
+            "Reply with READY.",
+            "--json",
+        ]
+
+        with patch.object(sys, "argv", argv), redirect_stdout(stdout):
+            main()
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["answer"], "READY")
+        self.assertTrue(payload["trace"]["accepted"])
+        self.assertNotIn("prompt", payload["trace"])
 
     def test_hybrid_preserves_condition_negation_number_and_privacy(self) -> None:
         secret = "person@example.test"

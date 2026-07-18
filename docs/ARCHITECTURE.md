@@ -5,6 +5,11 @@
 `ContextIR` is the public entry point. Its default path has no third-party
 runtime dependencies and does not load the research WordNet graph.
 
+For model-facing applications, `ContextPipeline` is the primary public entry
+point. `OllamaClient` and `OpenAICompatibleClient` are optional callable
+transports implemented with the Python standard library; applications can pass
+any callable with the same `prompt -> text` contract instead.
+
 ```text
                     +---------------- local only ----------------+
 input -> detector -> placeholders + vault -> source segment store
