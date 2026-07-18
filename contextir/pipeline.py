@@ -125,8 +125,8 @@ class ContextPipeline:
         if risk not in {"low", "standard", "high"}:
             raise ValueError(f"unsupported risk: {risk}")
 
-        raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "raw_baseline")
         if len(text) <= self.gateway.raw_threshold:
+            raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "short_input")
             raw.decision = "short_input"
             return raw
 
@@ -156,6 +156,7 @@ class ContextPipeline:
             candidate.decision = "compiler_selected_raw"
             return candidate
         if candidate.token_savings < self.policy.min_token_savings:
+            raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "raw_baseline")
             raw.decision = "insufficient_token_savings"
             return raw
         return candidate

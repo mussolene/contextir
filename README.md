@@ -12,7 +12,7 @@ claim production-grade semantic preservation or PII detection.
 ## Quick Start
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.4.0'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.4.1'
 ```
 
 ```python

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber, SIRRuntime, SIRV1Packet, detect_constraints, guess_intent, load_runtime
+from contextir.sir_sources import normalize
 
 
 Mode = Literal["auto", "raw", "hybrid", "semantic"]
@@ -80,20 +81,34 @@ class ContextIR:
         segments = split_source(scrubbed.scrubbed_text)
         sources = {segment_id: value for segment_id, value in segments}
         task_profile = analyze_task(scrubbed.scrubbed_text, segments)
-        intent = asdict(guess_intent(scrubbed.scrubbed_text))
-        events = extract_events(segments, source_lang)
-        entities = extract_entities(segments, scrubbed.protected_spans)
-        constraints = detect_constraints(scrubbed.scrubbed_text)
+        normalized_tokens = set(normalize(scrubbed.scrubbed_text).split())
+        intent = asdict(guess_intent(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens))
+        constraints = detect_constraints(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens)
         if scrubbed.protected_spans:
             constraints.insert(0, {"type": "privacy", "value": "keep_placeholders_private"})
 
-        confidence = semantic_confidence(events, segments)
-        selected_mode = choose_mode(mode, len(text), confidence, segments, self.raw_threshold, task_profile)
+        retrieval_mode = choose_mode(
+            mode,
+            len(text),
+            task_profile.retrieval_confidence,
+            segments,
+            self.raw_threshold,
+            task_profile,
+        )
+        if task_profile.kind == "retrieval" and retrieval_mode != "raw":
+            events: list[dict[str, Any]] = []
+            entities = extract_entities(segments, scrubbed.protected_spans, include_numbers=False)
+            confidence = task_profile.retrieval_confidence
+            selected_mode = retrieval_mode
+        else:
+            events = extract_events(segments, source_lang)
+            entities = extract_entities(segments, scrubbed.protected_spans)
+            confidence = semantic_confidence(events, segments)
+            selected_mode = choose_mode(mode, len(text), confidence, segments, self.raw_threshold, task_profile)
         included_refs = select_source_refs(selected_mode, segments, task_profile)
         if task_profile.kind == "retrieval" and selected_mode != "raw":
-            events = []
             included_text = " ".join(sources[ref] for ref in included_refs)
-            entities = [item for item in entities if item["type"] != "number" and item["value"] in included_text]
+            entities = [item for item in entities if item["value"] in included_text]
         concepts = self._compact_concepts(scrubbed.scrubbed_text, source_lang, packet_id, selected_mode)
         public_spans = [{"placeholder": span.placeholder, "kind": span.kind} for span in scrubbed.protected_spans]
         if task_profile.kind == "retrieval" and selected_mode != "raw":
@@ -260,6 +275,17 @@ ACTION_PATTERNS = [
     ("call", r"\b(call|phone|звон\w*)\b"),
     ("use", r"\b(use|using|использ\w*)\b"),
 ]
+ACTION_RE = re.compile(
+    "|".join(f"(?P<a{index}>{pattern})" for index, (_name, pattern) in enumerate(ACTION_PATTERNS)),
+    re.IGNORECASE,
+)
+POLARITY_RE = re.compile(r"\b(no|not|never|не|нельзя|никогда)\b")
+REQUIREMENT_RE = re.compile(r"\b(must|should|need|долж\w*|нужно|надо)\b")
+PROHIBITION_RE = re.compile(r"\b(must not|do not|don't|нельзя|не должен\w*)\b")
+CONDITION_RE = re.compile(r"\b(if|unless|when|если|когда)\b")
+SOURCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|[\n]+")
+SALIENT_TOKEN_RE = re.compile(r"PII_[A-Z_]+_\d+|[\wё-]+", re.IGNORECASE)
+NUMBER_RE = re.compile(r"(?<!\w)\d+(?:[.,:]\d+)*(?!\w)")
 
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "we", "with", "you",
@@ -269,7 +295,7 @@ STOPWORDS = {
 
 
 def split_source(text: str) -> list[tuple[str, str]]:
-    parts = [part.strip() for part in re.split(r"(?<=[.!?])\s+|[\n]+", text) if part.strip()]
+    parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
     return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
 
 
@@ -278,12 +304,13 @@ def extract_events(segments: list[tuple[str, str]], source_lang: str) -> list[di
     by_signature: dict[tuple[Any, ...], dict[str, Any]] = {}
     for source_ref, text in segments:
         norm = text.lower()
-        predicate = next((name for name, pattern in ACTION_PATTERNS if re.search(pattern, norm, re.IGNORECASE)), "state")
-        polarity = "negative" if re.search(r"\b(no|not|never|не|нельзя|никогда)\b", norm) else "positive"
-        modality = "requirement" if re.search(r"\b(must|should|need|долж\w*|нужно|надо)\b", norm) else "none"
-        if re.search(r"\b(must not|do not|don't|нельзя|не должен\w*)\b", norm):
+        action_indexes = {int(match.lastgroup[1:]) for match in ACTION_RE.finditer(norm) if match.lastgroup}
+        predicate = ACTION_PATTERNS[min(action_indexes)][0] if action_indexes else "state"
+        polarity = "negative" if POLARITY_RE.search(norm) else "positive"
+        modality = "requirement" if REQUIREMENT_RE.search(norm) else "none"
+        if PROHIBITION_RE.search(norm):
             modality = "prohibition"
-        condition = "if" if re.search(r"\b(if|unless|when|если|когда)\b", norm) else ""
+        condition = "if" if CONDITION_RE.search(norm) else ""
         arguments = salient_terms(text, predicate)
         confidence = 0.82 if predicate != "state" else 0.48
         if polarity == "negative" or condition:
@@ -310,7 +337,7 @@ def extract_events(segments: list[tuple[str, str]], source_lang: str) -> list[di
 
 
 def salient_terms(text: str, predicate: str, limit: int = 5) -> list[str]:
-    tokens = re.findall(r"PII_[A-Z_]+_\d+|[\wё-]+", text.lower(), flags=re.IGNORECASE)
+    tokens = SALIENT_TOKEN_RE.findall(text.lower())
     out = []
     for token in tokens:
         if token in STOPWORDS or len(token) < 3 or token.startswith(predicate):
@@ -322,13 +349,19 @@ def salient_terms(text: str, predicate: str, limit: int = 5) -> list[str]:
     return out
 
 
-def extract_entities(segments: list[tuple[str, str]], protected_spans: list[Any]) -> list[dict[str, str]]:
+def extract_entities(
+    segments: list[tuple[str, str]],
+    protected_spans: list[Any],
+    include_numbers: bool = True,
+) -> list[dict[str, str]]:
     entities = []
     for span in protected_spans:
         entities.append({"id": f"p{len(entities) + 1}", "type": span.kind, "value": span.placeholder})
+    if not include_numbers:
+        return entities
     seen = {item["value"] for item in entities}
     for source_ref, text in segments:
-        for value in re.findall(r"(?<!\w)\d+(?:[.,:]\d+)*(?!\w)", text):
+        for value in NUMBER_RE.findall(text):
             if value not in seen:
                 entities.append({"id": f"n{len(entities) + 1}", "type": "number", "value": value, "source_ref": source_ref})
                 seen.add(value)
@@ -406,15 +439,13 @@ def select_source_refs(
 
 
 def paragraph_owner_refs(segments: list[tuple[str, str]], evidence_refs: tuple[str, ...]) -> set[str]:
-    positions = {ref: index for index, (ref, _text) in enumerate(segments)}
-    owners = set()
-    for evidence_ref in evidence_refs:
-        position = positions[evidence_ref]
-        for ref, text in reversed(segments[: position + 1]):
-            if re.match(r"Paragraph\s+\d+\s*:", text, re.IGNORECASE):
-                owners.add(ref)
-                break
-    return owners
+    owner_by_ref: dict[str, str] = {}
+    current_owner = ""
+    for ref, text in segments:
+        if re.match(r"Paragraph\s+\d+\s*:", text, re.IGNORECASE):
+            current_owner = ref
+        owner_by_ref[ref] = current_owner
+    return {owner_by_ref[ref] for ref in evidence_refs if owner_by_ref.get(ref)}
 
 
 EXHAUSTIVE_PATTERNS = [
@@ -456,7 +487,8 @@ def analyze_task(text: str, segments: list[tuple[str, str]], evidence_limit: int
     query_terms = content_terms(query)
     if not query_terms:
         return TaskProfile(kind="operational")
-    query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, query))
+    normalized_query = " ".join(query.lower().split())
+    query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, normalized_query))
     evidence, confidence = retrieve_evidence(segments, query_terms, set(query_refs), evidence_limit)
     explicit_retrieval = any(marker in normalized for marker in RETRIEVAL_MARKERS)
     if not explicit_retrieval and confidence < 0.12:
@@ -487,10 +519,9 @@ def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
     return ""
 
 
-def segment_belongs_to_query(segment: str, query: str) -> bool:
+def segment_belongs_to_query(segment: str, normalized_query: str) -> bool:
     segment_norm = " ".join(segment.lower().split())
-    query_norm = " ".join(query.lower().split())
-    return len(segment_norm) >= 8 and segment_norm in query_norm
+    return len(segment_norm) >= 8 and segment_norm in normalized_query
 
 
 def content_terms(text: str) -> set[str]:

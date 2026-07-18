@@ -299,31 +299,31 @@ def guess_role(hit: ConceptHit) -> str:
     return "concept"
 
 
-def guess_intent(text: str) -> IntentGuess:
-    norm = normalize(text)
+def guess_intent(text: str, normalized_tokens: set[str] | None = None) -> IntentGuess:
+    tokens = normalized_tokens if normalized_tokens is not None else set(normalize(text).split())
     signals: list[str] = []
     label = "ask"
-    if "?" in text or any(word in norm.split() for word in ["как", "что", "why", "how", "what"]):
+    if "?" in text or tokens.intersection({"как", "что", "why", "how", "what"}):
         signals.append("question")
-    if any(word in norm.split() for word in ["сделай", "запусти", "проверь", "добей", "run", "build", "check"]):
+    if tokens.intersection({"сделай", "запусти", "проверь", "добей", "run", "build", "check"}):
         label = "command"
         signals.append("imperative")
-    if any(word in norm.split() for word in ["переведи", "translate", "язык", "language"]):
+    if tokens.intersection({"переведи", "translate", "язык", "language"}):
         label = "translate"
         signals.append("translation")
-    if any(word in norm.split() for word in ["план", "архитектура", "architecture", "design"]):
+    if tokens.intersection({"план", "архитектура", "architecture", "design"}):
         label = "plan" if label == "ask" else label
         signals.append("planning")
     confidence = 0.55 + min(len(signals) * 0.15, 0.4)
     return IntentGuess(label=label, confidence=round(confidence, 2), signals=signals or ["default"])
 
 
-def detect_constraints(text: str) -> list[dict[str, Any]]:
-    norm = normalize(text)
+def detect_constraints(text: str, normalized_tokens: set[str] | None = None) -> list[dict[str, Any]]:
+    tokens = normalized_tokens if normalized_tokens is not None else set(normalize(text).split())
     constraints: list[dict[str, Any]] = []
-    if any(word in norm.split() for word in ["локально", "local", "private", "приватно", "pii"]):
+    if tokens.intersection({"локально", "local", "private", "приватно", "pii"}):
         constraints.append({"type": "execution", "value": "prefer_local_or_private"})
-    if any(word in norm.split() for word in ["быстро", "маленький", "small", "cheap", "утюге"]):
+    if tokens.intersection({"быстро", "маленький", "small", "cheap", "утюге"}):
         constraints.append({"type": "runtime", "value": "small_fast_core"})
     return constraints
 

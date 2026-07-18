@@ -30,12 +30,14 @@ input -> detector -> placeholders + vault -> source segment store
 
 `ContextPipeline` applies one bounded decision loop:
 
-1. build a masked raw baseline and keep its vault local;
-2. classify exhaustive, retrieval, and operational context shapes;
+1. compile the risk-appropriate candidate and keep its vault local;
+2. classify exhaustive, retrieval, and operational context shapes during that
+   single compilation pass;
 3. keep exhaustive tasks raw, retrieve query-relevant evidence for document
    QA, or compile operational events and constraints;
-4. count baseline and candidate tokens with the caller's target-model tokenizer;
-5. use the candidate only when it clears the configured savings threshold;
+4. count candidate tokens with the caller's target-model tokenizer;
+5. build a raw baseline only when the candidate does not clear the configured
+   savings threshold;
 6. invoke the caller-provided model adapter;
 7. reject unknown placeholders and newly generated PII;
 8. for transform tasks, verify numbers, negation, constraints, events, and issued
@@ -98,6 +100,11 @@ clears the confidence threshold, auto mode returns masked raw input.
 
 Tasks that require exhaustive access, such as unique-passage counting, always
 remain raw because top-k retrieval cannot preserve their answer space.
+
+For accepted retrieval candidates, the compiler does not construct semantic
+events or enumerate numeric entities. Those structures are unused by the plain
+verbatim retrieval prompt, so omitting them reduces CPU work without changing
+the model-facing text. Exhaustive and operational paths retain full extraction.
 
 ## Semantic Representation
 

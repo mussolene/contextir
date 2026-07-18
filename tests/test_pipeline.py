@@ -2,13 +2,58 @@ from __future__ import annotations
 
 import unittest
 
-from contextir import ContextPipeline, PipelinePolicy, ResponseVerification
+from contextir import ContextIR, ContextPipeline, PipelinePolicy, ResponseVerification
 
 
 LONG_TRANSFORM = " ".join(["Do not send payment 42 twice."] * 30)
 
 
 class ContextPipelineTests(unittest.TestCase):
+    def test_successful_candidate_uses_one_compilation_pass(self) -> None:
+        class CountingGateway(ContextIR):
+            def __init__(self) -> None:
+                super().__init__()
+                self.modes = []
+
+            def compile_private(self, *args, **kwargs):
+                self.modes.append(kwargs.get("mode", args[4] if len(args) > 4 else "auto"))
+                return super().compile_private(*args, **kwargs)
+
+        gateway = CountingGateway()
+        context = " ".join(f"Record {index}: Cedar value is {1000 + index}." for index in range(60))
+        text = (
+            f"Read the following text and answer briefly. {context} "
+            "The Juniper access phrase is cobalt-seven. "
+            "Question: What is the Juniper access phrase? Answer:"
+        )
+
+        prepared = ContextPipeline(gateway=gateway).prepare(text, source_lang="en", target_lang="en")
+
+        self.assertEqual(prepared.mode, "hybrid")
+        self.assertEqual(gateway.modes, ["auto"])
+
+    def test_exhaustive_auto_result_does_not_compile_raw_twice(self) -> None:
+        class CountingGateway(ContextIR):
+            def __init__(self) -> None:
+                super().__init__()
+                self.calls = 0
+
+            def compile_private(self, *args, **kwargs):
+                self.calls += 1
+                return super().compile_private(*args, **kwargs)
+
+        gateway = CountingGateway()
+        paragraphs = " ".join(f"Paragraph {index}: value {index}." for index in range(40))
+
+        prepared = ContextPipeline(gateway=gateway).prepare(
+            f"How many unique paragraphs remain after removing duplicates? {paragraphs}",
+            source_lang="en",
+            target_lang="en",
+        )
+
+        self.assertEqual(prepared.mode, "raw")
+        self.assertEqual(gateway.calls, 1)
+
     def test_short_input_stays_raw(self) -> None:
         prepared = ContextPipeline().prepare("Summarize this note.", source_lang="en", target_lang="en")
 

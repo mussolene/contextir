@@ -2,6 +2,19 @@
 
 All notable changes to ContextIR are documented here.
 
+## 0.4.1 - 2026-07-18
+
+- changed the product pipeline to compile the candidate first and build a raw
+  baseline only when the savings gate needs it;
+- avoided duplicate compilation when auto mode already selects raw;
+- skipped event and numeric-entity extraction for query-aware retrieval, where
+  the model receives selected verbatim evidence instead;
+- precompiled hot-path regular expressions and reused normalized token sets;
+- replaced repeated paragraph-owner scans with a linear ownership pass;
+- added deterministic tests for single-pass candidate and exhaustive routing;
+- preserved all 16 sampled contracts and all seven saved model-facing prompt
+  token counts exactly.
+
 ## 0.4.0 - 2026-07-18
 
 - added query-aware lexical evidence selection for long document QA;
