@@ -12,7 +12,7 @@ semantic preservation or PII detection.
 ## Quick Start
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.2.0'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.2.1'
 contextir compile --text "If payment 42 is complete, do not send it again." \
   --source-lang en --target-lang en --mode hybrid --out context.json
 contextir render --contract context.json

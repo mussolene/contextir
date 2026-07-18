@@ -2,6 +2,12 @@
 
 All notable changes to ContextIR are documented here.
 
+## 0.2.1 - 2026-07-18
+
+- installed development dependencies before release validation;
+- updated GitHub Actions to Node.js 24-compatible major versions;
+- pinned Gitleaks 8.30.1 and verified its release checksum in CI.
+
 ## 0.2.0 - 2026-07-18
 
 - renamed the public package and product from SIR Translator to ContextIR;

@@ -8,9 +8,9 @@
     "expectation_failures": 0,
     "compression_eligible_cases": 1,
     "avg_eligible_prompt_ratio": 0.3067,
-    "compile_latency_ms_p50": 0.1048,
-    "compile_latency_ms_p95": 0.9922,
-    "compile_throughput_docs_s": 3130.7,
+    "compile_latency_ms_p50": 0.1047,
+    "compile_latency_ms_p95": 0.9817,
+    "compile_throughput_docs_s": 3148.1,
     "performance_iterations": 5000
   },
   "results": [
