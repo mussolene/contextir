@@ -6,10 +6,10 @@ from pathlib import Path
 
 import numpy as np
 
-from semantic_core.models.baseline_translator import BaselineTranslator
-from semantic_core.models.semantic_encoder import SemanticEncoder
-from semantic_core.models.semantic_translator import SemanticTranslator, cosine
-from semantic_core.tokenizer import normalize, token_accuracy
+from contextir.models.baseline_translator import BaselineTranslator
+from contextir.models.semantic_encoder import SemanticEncoder
+from contextir.models.semantic_translator import SemanticTranslator, cosine
+from contextir.tokenizer import normalize, token_accuracy
 
 
 def char_similarity(pred: str, gold: str) -> float:

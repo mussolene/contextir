@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.dataset import read_jsonl
-from semantic_core.evaluation.metrics import (
+from contextir.dataset import read_jsonl
+from contextir.evaluation.metrics import (
     ablation_quality,
     cycle_consistency,
     evaluate_baseline,
@@ -20,10 +20,10 @@ from semantic_core.evaluation.metrics import (
     latency_ms,
     semantic_coherence,
 )
-from semantic_core.models.baseline_translator import BaselineTranslator
-from semantic_core.models.semantic_encoder import SemanticEncoder
-from semantic_core.models.semantic_translator import SemanticTranslator
-from semantic_core.utils.config import ensure_dirs, load_config
+from contextir.models.baseline_translator import BaselineTranslator
+from contextir.models.semantic_encoder import SemanticEncoder
+from contextir.models.semantic_translator import SemanticTranslator
+from contextir.utils.config import ensure_dirs, load_config
 
 
 def maybe_plot_clusters(rows, encoder: SemanticEncoder) -> None:

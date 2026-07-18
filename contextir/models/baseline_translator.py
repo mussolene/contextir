@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from semantic_core.tokenizer import normalize
+from contextir.tokenizer import normalize
 
 
 class BaselineTranslator:

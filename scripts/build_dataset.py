@@ -7,8 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.dataset import build_meanings, paired_examples, split_examples, write_jsonl
-from semantic_core.utils.config import ensure_dirs, load_config
+from contextir.dataset import build_meanings, paired_examples, split_examples, write_jsonl
+from contextir.utils.config import ensure_dirs, load_config
 
 
 def main() -> None:

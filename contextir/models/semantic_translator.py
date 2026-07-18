@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from semantic_core.models.semantic_encoder import SemanticEncoder
+from contextir.models.semantic_encoder import SemanticEncoder
 
 
 def cosine(a: np.ndarray, b: np.ndarray) -> float:

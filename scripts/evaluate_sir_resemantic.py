@@ -8,9 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.sir_kernel import load_kernel
-from semantic_core.sir_neural_kernel import NeuralSIRKernel
-from semantic_core.sir_sources import PROJECT_ROOT
+from contextir.gateway import load_kernel
+from contextir.sir_neural_kernel import NeuralSIRKernel
+from contextir.sir_sources import PROJECT_ROOT
 
 
 def concept_ids(contract: dict) -> set[str]:
@@ -44,12 +44,12 @@ def main() -> None:
     rows = [json.loads(line) for line in Path(args.texts).read_text(encoding="utf-8").splitlines() if line.strip()]
     results = []
     for row in rows:
-        source = kernel.compile(row["text"], source_lang=row["source_lang"], target_lang=row["target_langs"][0], packet_id=row["id"])
+        source = kernel.compile_legacy(row["text"], source_lang=row["source_lang"], target_lang=row["target_langs"][0], packet_id=row["id"])
         source_ids = concept_ids(source)
         paths = {}
         for lang in row["target_langs"]:
             text = kernel.decompile(source, target_lang=lang, include_anchors=True)
-            back = kernel.compile(text, source_lang=lang, target_lang=row["source_lang"], packet_id=f"{row['id']}:{lang}")
+            back = kernel.compile_legacy(text, source_lang=lang, target_lang=row["source_lang"], packet_id=f"{row['id']}:{lang}")
             paths[lang] = {
                 "decompiled_text": text,
                 "metrics": f1(source_ids, concept_ids(back)),

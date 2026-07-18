@@ -8,8 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.models.semantic_encoder import SemanticEncoder
-from semantic_core.models.semantic_translator import SemanticTranslator
+from contextir.models.semantic_encoder import SemanticEncoder
+from contextir.models.semantic_translator import SemanticTranslator
 
 
 def main() -> None:

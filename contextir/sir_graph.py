@@ -6,7 +6,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from semantic_core.sir_sources import PROJECT_ROOT, WN30_DIR, load_records_jsonl
+from contextir.sir_sources import PROJECT_ROOT, WN30_DIR, load_records_jsonl
 
 
 RELATION_NAMES = {

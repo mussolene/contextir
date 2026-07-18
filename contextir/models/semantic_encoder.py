@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from semantic_core.tokenizer import normalize
+from contextir.tokenizer import normalize
 
 
 class SemanticEncoder:
@@ -67,7 +67,7 @@ class SemanticEncoder:
 
 
 def default_atom_aliases() -> dict[str, str]:
-    from semantic_core.dataset import ACTIONS, ENTITIES, PLACES
+    from contextir.dataset import ACTIONS, ENTITIES, PLACES
 
     aliases: dict[str, str] = {}
     for eid, ru, en, ru_alts, en_alts in ENTITIES:

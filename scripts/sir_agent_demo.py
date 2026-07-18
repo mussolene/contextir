@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.sir_runtime import main
+from contextir.sir_runtime import main
 
 
 if __name__ == "__main__":

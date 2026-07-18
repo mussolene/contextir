@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 from typing import Iterable
 
-from semantic_core.tokenizer import normalize
+from contextir.tokenizer import normalize
 
 
 ENTITIES = [

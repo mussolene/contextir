@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import defaultdict
 from typing import Iterable
 
-from semantic_core.sir_sources import PROJECT_ROOT, ConceptRecord, LexicalSIRCore, load_record_bundle, normalize
+from contextir.sir_sources import PROJECT_ROOT, ConceptRecord, LexicalSIRCore, load_record_bundle, normalize
 
 
 @dataclass

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from semantic_core.sir_sources import (
+from contextir.sir_sources import (
     PROJECT_ROOT,
     ConceptRecord,
     LexicalSIRCore,

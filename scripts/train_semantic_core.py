@@ -7,9 +7,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.dataset import read_jsonl
-from semantic_core.models.semantic_encoder import train_encoder
-from semantic_core.utils.config import ensure_dirs, load_config
+from contextir.dataset import read_jsonl
+from contextir.models.semantic_encoder import train_encoder
+from contextir.utils.config import ensure_dirs, load_config
 
 
 def main() -> None:

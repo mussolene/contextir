@@ -10,8 +10,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.sir_kernel import load_kernel
-from semantic_core.sir_sources import PROJECT_ROOT
+from contextir.gateway import load_kernel
+from contextir.sir_sources import PROJECT_ROOT
 
 
 def build_examples(seed_path: Path) -> list[dict[str, Any]]:
@@ -19,7 +19,7 @@ def build_examples(seed_path: Path) -> list[dict[str, Any]]:
     rows = [json.loads(line) for line in seed_path.read_text(encoding="utf-8").splitlines() if line.strip()]
     examples: list[dict[str, Any]] = []
     for row in rows:
-        contract = kernel.compile(row["text"], source_lang=row["source_lang"], target_lang=row["target_lang"], packet_id=row["id"])
+        contract = kernel.compile_legacy(row["text"], source_lang=row["source_lang"], target_lang=row["target_lang"], packet_id=row["id"])
         target_text = kernel.decompile(contract, target_lang=row["target_lang"], include_anchors=True)
         examples.append(
             {

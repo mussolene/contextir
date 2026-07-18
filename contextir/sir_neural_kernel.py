@@ -11,8 +11,8 @@ from typing import Any, Iterable
 
 import numpy as np
 
-from semantic_core.sir_ml_core import featurize
-from semantic_core.sir_sources import PROJECT_ROOT
+from contextir.sir_ml_core import featurize
+from contextir.sir_sources import PROJECT_ROOT
 
 
 @dataclass

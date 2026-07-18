@@ -7,8 +7,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
-from semantic_core.sir_graph import ConceptRelation, load_relations_jsonl
-from semantic_core.sir_sources import PROJECT_ROOT, ConceptRecord, load_records_jsonl, normalize
+from contextir.sir_graph import ConceptRelation, load_relations_jsonl
+from contextir.sir_sources import PROJECT_ROOT, ConceptRecord, load_records_jsonl, normalize
 
 
 def main() -> None:

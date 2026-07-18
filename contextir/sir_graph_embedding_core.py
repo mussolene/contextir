@@ -8,8 +8,8 @@ from pathlib import Path
 
 import numpy as np
 
-from semantic_core.sir_graph import ConceptRelation, load_relations_jsonl
-from semantic_core.sir_sources import PROJECT_ROOT, ConceptRecord, LexicalSIRCore, load_records_jsonl
+from contextir.sir_graph import ConceptRelation, load_relations_jsonl
+from contextir.sir_sources import PROJECT_ROOT, ConceptRecord, LexicalSIRCore, load_records_jsonl
 
 
 CHECKPOINT = PROJECT_ROOT / "checkpoints" / "sir_graph_embedding_core.npz"

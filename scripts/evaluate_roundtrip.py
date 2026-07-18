@@ -8,8 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.sir_roundtrip import load_roundtrip, read_roundtrip_rows
-from semantic_core.sir_sources import PROJECT_ROOT
+from contextir.sir_roundtrip import load_roundtrip, read_roundtrip_rows
+from contextir.sir_sources import PROJECT_ROOT
 
 
 def aggregate(results: list[dict]) -> dict[str, float | int]:

@@ -10,8 +10,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from semantic_core.sir_roundtrip import ConceptHit, SIRRoundtrip, load_roundtrip, split_segments
-from semantic_core.sir_sources import PROJECT_ROOT, normalize
+from contextir.sir_roundtrip import ConceptHit, SIRRoundtrip, load_roundtrip, split_segments
+from contextir.sir_sources import PROJECT_ROOT, normalize
 
 
 @dataclass

@@ -9,8 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from semantic_core.sir_runtime import load_runtime, result_to_dict
-from semantic_core.sir_sources import PROJECT_ROOT
+from contextir.sir_runtime import load_runtime, result_to_dict
+from contextir.sir_sources import PROJECT_ROOT
 
 
 def main() -> None:
