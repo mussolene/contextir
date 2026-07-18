@@ -84,7 +84,7 @@ class PrivacyScrubber:
         ("api_key", re.compile(r"\b(?:sk|pk|api|key|token)[-_]?[A-Za-z0-9]{16,}\b")),
     ]
 
-    def scrub(self, text: str) -> PrivacyScrubResult:
+    def scrub(self, text: str, language: str = "en") -> PrivacyScrubResult:
         protected: list[ProtectedSpan] = []
         vault: dict[str, str] = {}
         scrubbed = text
@@ -109,6 +109,55 @@ class PrivacyScrubber:
                 vault[placeholder] = surface
                 scrubbed = scrubbed[: match.start()] + placeholder + scrubbed[match.end() :]
         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
+
+
+class PresidioPrivacyScrubber:
+    """Optional Presidio-backed detector with the same local-vault contract."""
+
+    def __init__(self, analyzer: Any | None = None, score_threshold: float = 0.5):
+        if analyzer is None:
+            try:
+                from presidio_analyzer import AnalyzerEngine
+            except ImportError as exc:  # pragma: no cover - optional dependency
+                raise RuntimeError("install ContextIR with the 'privacy' extra to use Presidio") from exc
+            analyzer = AnalyzerEngine()
+        self.analyzer = analyzer
+        self.score_threshold = score_threshold
+
+    def scrub(self, text: str, language: str = "en") -> PrivacyScrubResult:
+        findings = self.analyzer.analyze(text=text, language=language, score_threshold=self.score_threshold)
+        accepted: list[Any] = []
+        occupied: list[tuple[int, int]] = []
+        for item in sorted(findings, key=lambda value: (-float(value.score), value.start, value.end)):
+            if any(item.start < end and item.end > start for start, end in occupied):
+                continue
+            accepted.append(item)
+            occupied.append((item.start, item.end))
+        accepted.sort(key=lambda value: value.start)
+
+        counters: dict[str, int] = {}
+        protected: list[ProtectedSpan] = []
+        vault: dict[str, str] = {}
+        chunks: list[str] = []
+        cursor = 0
+        for item in accepted:
+            kind = str(item.entity_type).lower()
+            counters[kind] = counters.get(kind, 0) + 1
+            placeholder = f"PII_{kind.upper()}_{counters[kind]}"
+            surface = text[item.start : item.end]
+            chunks.extend([text[cursor : item.start], placeholder])
+            cursor = item.end
+            protected.append(
+                ProtectedSpan(
+                    placeholder=placeholder,
+                    kind=kind,
+                    local_ref=f"local:{stable_hash(kind + ':' + surface)[:16]}",
+                    surface_hash=stable_hash(surface),
+                )
+            )
+            vault[placeholder] = surface
+        chunks.append(text[cursor:])
+        return PrivacyScrubResult(scrubbed_text="".join(chunks), protected_spans=protected, vault=vault)
 
 
 class SIRRuntime:

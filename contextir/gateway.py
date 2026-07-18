@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from contextir.sir_runtime import PrivacyScrubber, SIRRuntime, SIRV1Packet, detect_constraints, guess_intent, load_runtime
+from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber, SIRRuntime, SIRV1Packet, detect_constraints, guess_intent, load_runtime
 
 
 Mode = Literal["auto", "raw", "hybrid", "semantic"]
@@ -23,12 +23,23 @@ class ContextBundle:
     sources: dict[str, str]
 
 
+@dataclass
+class ContractCheck:
+    event_recall: float
+    constraint_recall: float
+    entity_recall: float
+    lost_events: list[str]
+    lost_constraints: list[str]
+    lost_entities: list[str]
+    needs_source: bool
+
+
 class ContextIR:
     """Adaptive context compiler with an optional lexical SIR enrichment layer."""
 
-    def __init__(self, runtime: SIRRuntime | None = None, raw_threshold: int = 240):
+    def __init__(self, runtime: SIRRuntime | None = None, raw_threshold: int = 240, privacy: Any | None = None):
         self.runtime = runtime
-        self.scrubber = runtime.scrubber if runtime else PrivacyScrubber()
+        self.scrubber = privacy or (runtime.scrubber if runtime else PrivacyScrubber())
         self.raw_threshold = raw_threshold
 
     def compile(
@@ -55,7 +66,7 @@ class ContextIR:
             raise ValueError(f"unsupported mode: {mode}")
 
         started = time.perf_counter()
-        scrubbed = self.scrubber.scrub(text)
+        scrubbed = self.scrubber.scrub(text, language=source_lang)
         segments = split_source(scrubbed.scrubbed_text)
         sources = {segment_id: value for segment_id, value in segments}
         intent = asdict(guess_intent(scrubbed.scrubbed_text))
@@ -150,6 +161,35 @@ class ContextIR:
                 rendered.append(f"{prefix}{event.get('predicate', 'state')} {' '.join(event.get('arguments', []))}".strip())
             return ". ".join(rendered)
         return decompile_v1(contract, target_lang, include_anchors)
+
+    def restore(self, text: str, bundle: ContextBundle, allowed: set[str] | None = None) -> str:
+        """Restore only placeholders issued by this compilation and explicitly allowed."""
+
+        allowlist = set(bundle.vault) if allowed is None else set(bundle.vault) & allowed
+        restored = text
+        for placeholder in sorted(allowlist, key=len, reverse=True):
+            restored = restored.replace(placeholder, bundle.vault[placeholder])
+        return restored
+
+    def compare(self, expected: dict[str, Any], observed: dict[str, Any], threshold: float = 0.9) -> ContractCheck:
+        expected_events = {event_signature(item) for item in expected.get("events", [])}
+        observed_events = {event_signature(item) for item in observed.get("events", [])}
+        expected_constraints = {constraint_signature(item) for item in expected.get("constraints", [])}
+        observed_constraints = {constraint_signature(item) for item in observed.get("constraints", [])}
+        expected_entities = {entity_signature(item) for item in expected.get("entities", []) if item.get("type") == "number"}
+        observed_entities = {entity_signature(item) for item in observed.get("entities", []) if item.get("type") == "number"}
+        event_recall = overlap_recall(expected_events, observed_events)
+        constraint_recall = overlap_recall(expected_constraints, observed_constraints)
+        entity_recall = overlap_recall(expected_entities, observed_entities)
+        return ContractCheck(
+            event_recall=event_recall,
+            constraint_recall=constraint_recall,
+            entity_recall=entity_recall,
+            lost_events=sorted(expected_events - observed_events),
+            lost_constraints=sorted(expected_constraints - observed_constraints),
+            lost_entities=sorted(expected_entities - observed_entities),
+            needs_source=min(event_recall, constraint_recall, entity_recall) < threshold,
+        )
 
     def compile_legacy(
         self,
@@ -308,6 +348,31 @@ def is_critical_source(text: str) -> bool:
     )
 
 
+def event_signature(event: dict[str, Any]) -> str:
+    return "|".join(
+        [
+            str(event.get("predicate", "")),
+            str(event.get("polarity", "positive")),
+            str(event.get("modality", "none")),
+            str(event.get("condition", "")),
+        ]
+    )
+
+
+def constraint_signature(item: dict[str, Any]) -> str:
+    return f"{item.get('type', '')}|{item.get('value', '')}"
+
+
+def entity_signature(item: dict[str, Any]) -> str:
+    return f"{item.get('type', '')}|{item.get('value', '')}"
+
+
+def overlap_recall(expected: set[str], observed: set[str]) -> float:
+    if not expected:
+        return 1.0
+    return round(len(expected & observed) / len(expected), 4)
+
+
 def decompile_v1(contract: dict[str, Any], target_lang: str | None, include_anchors: bool) -> str:
     lang = target_lang or str(contract.get("target_lang") or contract.get("source_lang") or "en")
     segments: dict[int, list[str]] = {}
@@ -353,8 +418,9 @@ def packet_to_v1_contract(packet: SIRV1Packet) -> dict[str, Any]:
 packet_to_contract = packet_to_v1_contract
 
 
-def load_contextir(records: Path | None = None, lexical: bool = False) -> ContextIR:
-    return ContextIR(load_runtime(records) if lexical else None)
+def load_contextir(records: Path | None = None, lexical: bool = False, privacy: str = "regex") -> ContextIR:
+    scrubber = PresidioPrivacyScrubber() if privacy == "presidio" else PrivacyScrubber()
+    return ContextIR(load_runtime(records) if lexical else None, privacy=scrubber)
 
 
 def load_kernel(records: Path | None = None) -> ContextIR:
@@ -381,13 +447,14 @@ def main() -> None:
     compile_p.add_argument("--packet-id", default="context")
     compile_p.add_argument("--mode", choices=["auto", "raw", "hybrid", "semantic"], default="auto")
     compile_p.add_argument("--lexical", action="store_true", help="Load optional WordNet concept enrichment.")
+    compile_p.add_argument("--privacy", choices=["regex", "presidio"], default="regex")
     compile_p.add_argument("--out", default="-")
     render_p = sub.add_parser("render", help="Render a compact model prompt from a contract.")
     render_p.add_argument("--contract", required=True, help="Path to JSON contract, or '-' for stdin.")
     render_p.add_argument("--out", default="-")
     args = parser.parse_args()
 
-    gateway = load_contextir(lexical=getattr(args, "lexical", False))
+    gateway = load_contextir(lexical=getattr(args, "lexical", False), privacy=getattr(args, "privacy", "regex"))
     if args.cmd == "compile":
         contract = gateway.compile(args.text, args.source_lang, args.target_lang, args.packet_id, args.mode)
         payload = json.dumps(contract, ensure_ascii=False, indent=2) + "\n"

@@ -1,0 +1,66 @@
+{
+  "aggregate": {
+    "cases": 4,
+    "avg_prompt_ratio": 0.8049,
+    "compressed_cases": 2,
+    "critical_events": 2,
+    "pii_leaks": 0,
+    "expectation_failures": 0,
+    "compression_eligible_cases": 1,
+    "avg_eligible_prompt_ratio": 0.3067
+  },
+  "results": [
+    {
+      "case_id": "kernel_privacy",
+      "mode": "raw",
+      "events": 1,
+      "critical_events": 0,
+      "protected_spans": 1,
+      "pii_leaked": false,
+      "prompt_ratio": 0.913,
+      "source_chars": 92,
+      "prompt_chars": 84,
+      "prompt": "ContextIR должен скрыть PII_EMAIL_1 и скомпилировать текст в семантический контракт.",
+      "expectations_passed": true
+    },
+    {
+      "case_id": "kernel_semantics",
+      "mode": "raw",
+      "events": 2,
+      "critical_events": 0,
+      "protected_spans": 0,
+      "pii_leaked": false,
+      "prompt_ratio": 1.0,
+      "source_chars": 73,
+      "prompt_chars": 73,
+      "prompt": "Вход текст выход контракт семантики. Вход контракт семантики выход текст.",
+      "expectations_passed": true
+    },
+    {
+      "case_id": "kernel_logic",
+      "mode": "raw",
+      "events": 1,
+      "critical_events": 1,
+      "protected_spans": 0,
+      "pii_leaked": false,
+      "prompt_ratio": 1.0,
+      "source_chars": 55,
+      "prompt_chars": 55,
+      "prompt": "Если платеж 42 уже выполнен, не отправляй его повторно.",
+      "expectations_passed": true
+    },
+    {
+      "case_id": "kernel_compression",
+      "mode": "hybrid",
+      "events": 2,
+      "critical_events": 1,
+      "protected_spans": 0,
+      "pii_leaked": false,
+      "prompt_ratio": 0.3067,
+      "source_chars": 965,
+      "prompt_chars": 296,
+      "prompt": "CTXIR/2 mode=hybrid src=ru out=ru intent=ask\nENT=n1:number=17\nEV s1*20 preserve(агент,завершил,проверку,сохранил,результат)\nEV s21 NOT+IF:state(код,изменится,публикуй,результат)\nSRC s21=Если код 17 изменится, не публикуй результат.\nAnswer naturally. Preserve RULE, NOT, numbers, and placeholders.",
+      "expectations_passed": true
+    }
+  ]
+}
