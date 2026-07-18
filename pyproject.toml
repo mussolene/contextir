@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "contextir"
+version = "0.2.0"
+description = "Local-first adaptive context compiler and privacy gateway for language models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{name = "Maxim Matvienko"}]
+keywords = ["llm", "context", "compression", "privacy", "agents", "semantic-ir"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/mussolene/contextir"
+Documentation = "https://github.com/mussolene/contextir#readme"
+Issues = "https://github.com/mussolene/contextir/issues"
+Changelog = "https://github.com/mussolene/contextir/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+privacy = ["presidio-analyzer>=2.2"]
+research = ["numpy>=1.26", "PyYAML>=6.0"]
+dev = [
+  "build>=1.2",
+  "hatch>=1.14",
+  "jsonschema>=4.20",
+  "twine>=5.1",
+]
+
+[project.scripts]
+contextir = "contextir.gateway:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["contextir"]
+
+[tool.hatch.build]
+exclude = [
+  "**/__pycache__",
+  "**/*.pyc",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/contextir",
+  "/tests",
+  "/README.md",
+  "/LICENSE",
+  "/NOTICE",
+  "/THIRD_PARTY_NOTICES.md",
+  "/CHANGELOG.md",
+  "/pyproject.toml",
+]

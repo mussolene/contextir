@@ -122,12 +122,12 @@ def write_dataset_card(path: Path, records: list[ConceptRecord], relations: list
         "- feature-extraction",
         "- sentence-similarity",
         "- text-classification",
-        "pretty_name: SIR Translator Concept Graph",
+        "pretty_name: ContextIR Research Concept Graph",
         "---",
         "",
-        "# SIR Translator Concept Graph",
+        "# ContextIR Research Concept Graph",
         "",
-        "Normalized concept and relation triples for the SIR Translator experiment.",
+        "Normalized concept and relation triples for the ContextIR research layer.",
         "",
         "## Files",
         "",
@@ -170,4 +170,3 @@ def write_dataset_card(path: Path, records: list[ConceptRecord], relations: list
 
 if __name__ == "__main__":
     main()
-

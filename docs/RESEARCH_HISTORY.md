@@ -135,7 +135,7 @@ agent reflection loop.
 
 ## Runtime Prototype
 
-The current working prototype is `semantic_core/sir_runtime.py` with CLI wrappers:
+The current working prototype is `contextir/sir_runtime.py` with CLI wrappers:
 
 ```bash
 python3 scripts/sir_agent_demo.py \
@@ -184,13 +184,13 @@ decompile(contract, target_lang) -> target-language text
 CLI:
 
 ```bash
-python3 scripts/sir_kernel.py compile \
+python3 scripts/contextir.py compile \
   --text "Вход текст выход контракт семантики" \
   --source-lang ru \
   --target-lang en \
   --out /tmp/sir_contract.json
 
-python3 scripts/sir_kernel.py decompile \
+python3 scripts/contextir.py decompile \
   --contract /tmp/sir_contract.json \
   --target-lang en
 ```
@@ -367,7 +367,7 @@ graph encoder trained with negative sampling and relation-aware neighborhoods.
 
 ## Trainable Graph Embedding Milestone
 
-`semantic_core/sir_graph_embedding_core.py` adds a trainable TransE-style graph
+`contextir/sir_graph_embedding_core.py` adds a trainable TransE-style graph
 core:
 
 ```text

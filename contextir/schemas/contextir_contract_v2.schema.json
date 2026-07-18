@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://contextir.dev/schemas/contextir_contract_v2.schema.json",
+  "$id": "https://raw.githubusercontent.com/mussolene/contextir/main/contextir/schemas/contextir_contract_v2.schema.json",
   "title": "ContextIR Contract v2",
   "type": "object",
   "required": [

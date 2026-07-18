@@ -6,12 +6,12 @@ task_categories:
 - feature-extraction
 - sentence-similarity
 - text-classification
-pretty_name: SIR Translator Concept Graph
+pretty_name: ContextIR Research Concept Graph
 ---
 
-# SIR Translator Concept Graph
+# ContextIR Research Concept Graph
 
-Normalized concept and relation triples for the SIR Translator experiment.
+Normalized concept and relation triples for the ContextIR research layer.
 
 ## Files
 
@@ -63,3 +63,5 @@ Normalized concept and relation triples for the SIR Translator experiment.
 
 Russian definitions are not yet populated. Russian lexical grounding currently comes from OMW/Wiktionary-derived lemmas.
 This dataset is a research artifact, not a production lexical database.
+It is not included in the ContextIR Python distribution. Review the upstream
+terms in `THIRD_PARTY_NOTICES.md` before publishing or redistributing it.

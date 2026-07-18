@@ -3,15 +3,12 @@ from __future__ import annotations
 import copy
 import json
 import unittest
-from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
 from contextir import ContextIR
+from contextir.schemas import load_contract_schema
 from contextir.sir_runtime import PresidioPrivacyScrubber
-
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 class ContextIRGatewayTests(unittest.TestCase):
@@ -74,7 +71,7 @@ class ContextIRGatewayTests(unittest.TestCase):
 
     def test_contract_matches_published_schema(self) -> None:
         contract = self.gateway.compile("Если задача 7 завершена, не запускай ее снова.", mode="hybrid")
-        schema = json.loads((ROOT / "schemas" / "contextir_contract_v2.schema.json").read_text(encoding="utf-8"))
+        schema = load_contract_schema()
 
         Draft202012Validator(schema).validate(contract)
 

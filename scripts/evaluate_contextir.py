@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import json
+import statistics
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -17,6 +20,9 @@ def main() -> None:
     parser.add_argument("--cases", default=str(PROJECT_ROOT / "data" / "roundtrip" / "contextir_gateway_cases.jsonl"))
     parser.add_argument("--out", default=str(PROJECT_ROOT / "reports" / "contextir_gateway_eval.json"))
     parser.add_argument("--mode", choices=["auto", "raw", "hybrid", "semantic"], default="auto")
+    parser.add_argument("--performance-iterations", type=int, default=5000)
+    parser.add_argument("--max-eligible-ratio", type=float, default=0.6)
+    parser.add_argument("--check", action="store_true", help="Exit non-zero when release gates fail.")
     args = parser.parse_args()
 
     gateway = ContextIR()
@@ -79,12 +85,56 @@ def main() -> None:
         "compression_eligible_cases": len(eligible),
         "avg_eligible_prompt_ratio": round(sum(row["prompt_ratio"] for row in eligible) / max(len(eligible), 1), 4),
     }
+    timings = []
+    if args.performance_iterations > 0 and cases:
+        def compile_case(index: int) -> None:
+            case = cases[index % len(cases)]
+            gateway.compile(
+                case["text"],
+                source_lang=case["source_lang"],
+                target_lang=case["target_lang"],
+                packet_id=case["id"],
+                mode=args.mode,
+            )
+
+        for index in range(min(100, args.performance_iterations)):
+            compile_case(index)
+        gc_enabled = gc.isenabled()
+        gc.disable()
+        try:
+            for index in range(args.performance_iterations):
+                started = time.perf_counter()
+                compile_case(index)
+                timings.append((time.perf_counter() - started) * 1000)
+        finally:
+            if gc_enabled:
+                gc.enable()
+        ordered = sorted(timings)
+        p95_index = min(len(ordered) - 1, int(len(ordered) * 0.95))
+        aggregate["compile_latency_ms_p50"] = round(statistics.median(ordered), 4)
+        aggregate["compile_latency_ms_p95"] = round(ordered[p95_index], 4)
+        aggregate["compile_throughput_docs_s"] = round(1000 / statistics.mean(ordered), 1)
+        aggregate["performance_iterations"] = len(ordered)
     report = {"aggregate": aggregate, "results": results}
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
     print(f"wrote {out}")
+    if args.check:
+        failures = []
+        if aggregate["pii_leaks"]:
+            failures.append("PII leaked into a public contract or prompt")
+        if aggregate["expectation_failures"]:
+            failures.append("semantic expectations failed")
+        if not eligible:
+            failures.append("no compression-eligible cases")
+        elif aggregate["avg_eligible_prompt_ratio"] > args.max_eligible_ratio:
+            failures.append(
+                f"eligible prompt ratio {aggregate['avg_eligible_prompt_ratio']} exceeds {args.max_eligible_ratio}"
+            )
+        if failures:
+            raise SystemExit("release gate failed: " + "; ".join(failures))
 
 
 if __name__ == "__main__":

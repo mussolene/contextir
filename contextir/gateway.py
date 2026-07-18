@@ -420,6 +420,14 @@ packet_to_contract = packet_to_v1_contract
 
 def load_contextir(records: Path | None = None, lexical: bool = False, privacy: str = "regex") -> ContextIR:
     scrubber = PresidioPrivacyScrubber() if privacy == "presidio" else PrivacyScrubber()
+    if lexical and records is None:
+        default_records = Path(__file__).resolve().parents[1] / "data" / "concepts" / "concept_records.jsonl"
+        if not default_records.exists():
+            raise RuntimeError(
+                "lexical enrichment data is not bundled in the package; "
+                "pass records=Path(...) or run from the source checkout"
+            )
+        records = default_records
     return ContextIR(load_runtime(records) if lexical else None, privacy=scrubber)
 
 
