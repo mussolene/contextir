@@ -15,6 +15,10 @@ The evaluator checks:
 - expected numeric entities;
 - prompt characters divided by source characters;
 - adaptive mode selection.
+- measured product-mode selection and rejection of uneconomic compression;
+- no false semantic roundtrip requirement for reasoning;
+- bounded transform fallback after semantic loss;
+- rejection of newly generated PII.
 
 Current checked-in result:
 
@@ -23,6 +27,9 @@ Current checked-in result:
   "cases": 4,
   "pii_leaks": 0,
   "expectation_failures": 0,
+  "pipeline_cases": 4,
+  "pipeline_failures": 0,
+  "pipeline_fallbacks": 1,
   "compression_eligible_cases": 1,
   "avg_eligible_prompt_ratio": 0.3067
 }

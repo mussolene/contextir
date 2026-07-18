@@ -9,13 +9,46 @@ when semantic-only compression would be risky.
 Python 3.10 or newer is required.
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.2.1'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.3.0'
 ```
 
 PyPI publication is intentionally deferred until Trusted Publishing is
 configured. Tagged GitHub releases are the current reproducible install path.
 
-## Compile For A Model
+## Run A Model Safely
+
+`ContextPipeline` is the default product API. The model adapter is any callable
+that accepts a prompt and returns text:
+
+```python
+from contextir import ContextPipeline
+
+pipeline = ContextPipeline(token_counter=target_model_token_count)
+result = pipeline.run(
+    "If payment 42 is complete, do not send it again. Email person@example.test.",
+    invoke=model_client.generate,
+    source_lang="en",
+    target_lang="en",
+    risk="standard",
+    task="reasoning",
+)
+
+if not result.accepted:
+    raise RuntimeError(result.public_trace())
+
+answer = result.answer
+```
+
+Pass the real tokenizer for the target model. The built-in counter is only a
+dependency-free estimate. ContextIR uses compressed context only when measured
+savings exceed policy; otherwise it sends masked raw text.
+
+Use `task="transform"` for translation, rewriting, extraction, or summarization.
+That enables retention checks and bounded fallback through semantic, hybrid,
+and raw representations. A normal reasoning answer is not required to repeat
+the input contract.
+
+## Compile Without Invocation
 
 ```python
 from contextir import ContextIR
@@ -42,11 +75,14 @@ Restoration is an application decision. Allow only placeholders expected in the
 specific output field:
 
 ```python
-answer = gateway.restore(
-    "Send the receipt to PII_EMAIL_1.",
-    bundle,
-    allowed={"PII_EMAIL_1"},
+result = pipeline.run(
+    "Send the receipt to person@example.test.",
+    invoke=model_client.generate,
+    source_lang="en",
+    target_lang="en",
+    allowed_restore={"PII_EMAIL_1"},
 )
+answer = result.answer
 ```
 
 Do not send `bundle.vault` to the model, write it to normal logs, or restore all

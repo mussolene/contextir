@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from contextir import ContextIR
+from contextir import ContextIR, ContextPipeline, PipelinePolicy
 from contextir.sir_sources import PROJECT_ROOT
 
 
@@ -85,6 +85,10 @@ def main() -> None:
         "compression_eligible_cases": len(eligible),
         "avg_eligible_prompt_ratio": round(sum(row["prompt_ratio"] for row in eligible) / max(len(eligible), 1), 4),
     }
+    pipeline_results = evaluate_pipeline(gateway)
+    aggregate["pipeline_cases"] = len(pipeline_results)
+    aggregate["pipeline_failures"] = sum(1 for item in pipeline_results if not item["passed"])
+    aggregate["pipeline_fallbacks"] = sum(int(item.get("fallbacks", 0)) for item in pipeline_results)
     timings = []
     if args.performance_iterations > 0 and cases:
         def compile_case(index: int) -> None:
@@ -115,7 +119,7 @@ def main() -> None:
         aggregate["compile_latency_ms_p95"] = round(ordered[p95_index], 4)
         aggregate["compile_throughput_docs_s"] = round(1000 / statistics.mean(ordered), 1)
         aggregate["performance_iterations"] = len(ordered)
-    report = {"aggregate": aggregate, "results": results}
+    report = {"aggregate": aggregate, "results": results, "pipeline_results": pipeline_results}
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -127,6 +131,8 @@ def main() -> None:
             failures.append("PII leaked into a public contract or prompt")
         if aggregate["expectation_failures"]:
             failures.append("semantic expectations failed")
+        if aggregate["pipeline_failures"]:
+            failures.append("product pipeline expectations failed")
         if not eligible:
             failures.append("no compression-eligible cases")
         elif aggregate["avg_eligible_prompt_ratio"] > args.max_eligible_ratio:
@@ -135,6 +141,60 @@ def main() -> None:
             )
         if failures:
             raise SystemExit("release gate failed: " + "; ".join(failures))
+
+
+def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
+    repeated = " ".join(["Do not send payment 42 twice."] * 30)
+    pipeline = ContextPipeline(gateway=gateway)
+    prepared = pipeline.prepare(repeated, source_lang="en", target_lang="en", risk="low")
+
+    reasoning = pipeline.run(
+        "What is the safest next step?",
+        lambda _prompt: "Ask the operator to confirm.",
+        source_lang="en",
+        target_lang="en",
+    )
+    responses = iter(["Payment completed.", "Do not send payment 42 twice."])
+    transform = pipeline.run(
+        repeated,
+        lambda _prompt: next(responses),
+        source_lang="en",
+        target_lang="en",
+        risk="low",
+        task="transform",
+    )
+    privacy = ContextPipeline(gateway=gateway, policy=PipelinePolicy(max_attempts=1)).run(
+        "Draft a response.",
+        lambda _prompt: "Contact leaked@example.test.",
+        source_lang="en",
+        target_lang="en",
+    )
+    return [
+        {
+            "case_id": "measured_semantic_selection",
+            "passed": prepared.mode == "semantic" and prepared.token_savings >= pipeline.policy.min_token_savings,
+            "mode": prepared.mode,
+            "token_savings": prepared.token_savings,
+        },
+        {
+            "case_id": "reasoning_without_false_roundtrip",
+            "passed": reasoning.accepted and len(reasoning.attempts) == 1,
+            "mode": reasoning.selected_mode,
+            "fallbacks": len(reasoning.attempts) - 1,
+        },
+        {
+            "case_id": "transform_bounded_fallback",
+            "passed": transform.accepted and [item.mode for item in transform.attempts] == ["semantic", "hybrid"],
+            "mode": transform.selected_mode,
+            "fallbacks": len(transform.attempts) - 1,
+        },
+        {
+            "case_id": "new_pii_rejected",
+            "passed": not privacy.accepted and "new_pii" in privacy.attempts[0].verification.reasons,
+            "mode": privacy.selected_mode,
+            "fallbacks": len(privacy.attempts) - 1,
+        },
+    ]
 
 
 if __name__ == "__main__":

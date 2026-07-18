@@ -15,6 +15,9 @@ text or agent history
   -> allowlisted placeholder restoration
 ```
 
+The supported product entry point is `ContextPipeline`. Direct `ContextIR`
+compilation remains available for infrastructure that owns routing itself.
+
 ## In Scope
 
 - deterministic local preprocessing;
@@ -24,7 +27,7 @@ text or agent history
 - optional Presidio detection;
 - provider-independent model prompts;
 - measurable prompt reduction and semantic-preservation checks;
-- RU and EN heuristics in the alpha release.
+- RU and EN heuristics in the current public preview.
 
 ## Out of Scope
 
@@ -48,3 +51,6 @@ shows all of the following:
 - results on at least one 1-3B local model and one 7-8B model;
 - bounded fallback to raw source whenever confidence is insufficient.
 
+Version `1.0` additionally requires a stable public policy API, migration notes
+for the contract, and at least one production-shaped integration using an
+application-owned model adapter and tokenizer.

@@ -5,17 +5,26 @@ language models. It turns text into a compact, inspectable intermediate
 representation while retaining critical source fragments when a lossy summary
 would be unsafe.
 
-Status: **alpha research software**. The public API and `contextir.v2` schema
-are usable for experiments, but the project does not yet claim production-grade
-semantic preservation or PII detection.
+Status: **public pre-1.0 developer preview**. The product API and `contextir.v2`
+schema are versioned and usable for integrations, but the project does not yet
+claim production-grade semantic preservation or PII detection.
 
 ## Quick Start
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.2.1'
-contextir compile --text "If payment 42 is complete, do not send it again." \
-  --source-lang en --target-lang en --mode hybrid --out context.json
-contextir render --contract context.json
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.3.0'
+```
+
+```python
+from contextir import ContextPipeline
+
+pipeline = ContextPipeline()
+result = pipeline.run(
+    "If payment 42 is complete, do not send it again.",
+    invoke=my_model_call,
+    source_lang="en",
+    target_lang="en",
+)
 ```
 
 PyPI publication is planned after Trusted Publishing is configured. The tagged
@@ -36,6 +45,11 @@ formatting, and sensitive values. ContextIR provides three explicit modes:
 
 `auto` selects one of these modes from input length, semantic confidence, and
 critical-source signals.
+
+`ContextPipeline` is the product entry point. It measures candidate prompts
+with a configurable target-model tokenizer, rejects compression without useful
+savings, verifies output safety, and performs bounded fallback from semantic to
+hybrid to raw context.
 
 ## Install
 
@@ -74,6 +88,12 @@ answer = gateway.restore("Contact PII_EMAIL_1", bundle, allowed={"PII_EMAIL_1"})
 `compile()` returns only the public contract. `compile_private()` additionally
 returns the local PII vault and source-reference map. Neither is inserted into
 the model prompt.
+
+For model-facing applications, prefer `ContextPipeline` over calling the
+compiler directly. Use `task="transform"` for translation, rewriting, and
+summarization where numbers, negation, constraints, and placeholders must
+survive. Normal reasoning answers are not incorrectly required to echo the
+request.
 
 ## CLI
 
@@ -124,13 +144,15 @@ evaluate recognizers on data representative of the deployment.
 
 The checked-in ContextIR smoke benchmark currently reports:
 
-- 4 deterministic cases;
+- 4 compiler and 4 product-pipeline cases;
 - 0 expectation failures;
+- 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;
 - `0.3067` prompt/source ratio on the one compression-eligible repeated-context
   case.
 
-That result demonstrates the mechanism, not general compression quality. The
+That result demonstrates the mechanism and bounded fallback, not general
+compression quality. The
 case is intentionally repetitive, and there is not yet a model-level A/B result
 on a representative corpus. See [BENCHMARKS.md](docs/BENCHMARKS.md).
 

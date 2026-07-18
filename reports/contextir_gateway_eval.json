@@ -8,9 +8,12 @@
     "expectation_failures": 0,
     "compression_eligible_cases": 1,
     "avg_eligible_prompt_ratio": 0.3067,
-    "compile_latency_ms_p50": 0.1047,
-    "compile_latency_ms_p95": 0.9817,
-    "compile_throughput_docs_s": 3148.1,
+    "pipeline_cases": 4,
+    "pipeline_failures": 0,
+    "pipeline_fallbacks": 1,
+    "compile_latency_ms_p50": 0.1043,
+    "compile_latency_ms_p95": 0.9774,
+    "compile_throughput_docs_s": 3204.3,
     "performance_iterations": 5000
   },
   "results": [
@@ -65,6 +68,32 @@
       "prompt_chars": 296,
       "prompt": "CTXIR/2 mode=hybrid src=ru out=ru intent=ask\nENT=n1:number=17\nEV s1*20 preserve(агент,завершил,проверку,сохранил,результат)\nEV s21 NOT+IF:state(код,изменится,публикуй,результат)\nSRC s21=Если код 17 изменится, не публикуй результат.\nAnswer naturally. Preserve RULE, NOT, numbers, and placeholders.",
       "expectations_passed": true
+    }
+  ],
+  "pipeline_results": [
+    {
+      "case_id": "measured_semantic_selection",
+      "passed": true,
+      "mode": "semantic",
+      "token_savings": 0.7667
+    },
+    {
+      "case_id": "reasoning_without_false_roundtrip",
+      "passed": true,
+      "mode": "raw",
+      "fallbacks": 0
+    },
+    {
+      "case_id": "transform_bounded_fallback",
+      "passed": true,
+      "mode": "hybrid",
+      "fallbacks": 1
+    },
+    {
+      "case_id": "new_pii_rejected",
+      "passed": true,
+      "mode": "raw",
+      "fallbacks": 0
     }
   ]
 }

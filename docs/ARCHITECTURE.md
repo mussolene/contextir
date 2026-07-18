@@ -24,6 +24,29 @@ input -> detector -> placeholders + vault -> source segment store
                              LLM
 ```
 
+## Product Algorithm
+
+`ContextPipeline` applies one bounded decision loop:
+
+1. build a masked raw baseline and keep its vault local;
+2. select a semantic or hybrid candidate from input risk and compiler
+   confidence;
+3. count baseline and candidate tokens with the caller's target-model tokenizer;
+4. use the candidate only when it clears the configured savings threshold;
+5. invoke the caller-provided model adapter;
+6. reject unknown placeholders and newly generated PII;
+7. for transform tasks, verify numbers, negation, constraints, events, and issued
+   placeholders;
+8. on verification failure, retry at most once per richer source mode;
+9. restore only explicitly allowlisted placeholders after acceptance.
+
+The fallback order is `semantic -> hybrid -> raw`; it never loops indefinitely.
+Reasoning tasks use safety verification but not semantic equivalence, because a
+valid answer normally does not restate the request.
+
+`PipelineResult.public_trace()` exposes decisions and counts without prompts,
+answers, source fragments, or vault values.
+
 ## Adaptive Modes
 
 ### Raw
@@ -88,4 +111,3 @@ caller should use hybrid or raw mode.
 Modules prefixed with `sir_` implement previous lexical, graph, embedding, and
 neural experiments. They remain useful for optional topic enrichment and
 research reproduction, but they are not required by the default gateway.
-

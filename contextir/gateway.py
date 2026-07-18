@@ -316,7 +316,8 @@ def extract_entities(segments: list[tuple[str, str]], protected_spans: list[Any]
 def semantic_confidence(events: list[dict[str, Any]], segments: list[tuple[str, str]]) -> float:
     if not segments:
         return 0.0
-    return round(sum(float(event["confidence"]) for event in events) / len(segments), 4)
+    weighted = sum(float(event["confidence"]) * int(event.get("count", 1)) for event in events)
+    return round(weighted / len(segments), 4)
 
 
 def choose_mode(requested: Mode, chars: int, confidence: float, segments: list[tuple[str, str]], raw_threshold: int) -> str:

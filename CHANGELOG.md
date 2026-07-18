@@ -2,6 +2,17 @@
 
 All notable changes to ContextIR are documented here.
 
+## 0.3.0 - 2026-07-18
+
+- added `ContextPipeline`, the policy-driven product entry point;
+- added target-tokenizer-aware mode selection with a minimum savings gate;
+- separated normal reasoning verification from strict transform retention;
+- added bounded semantic-to-hybrid-to-raw fallback;
+- rejected unknown, missing, and newly generated PII placeholders;
+- added payload-free public traces and explicit restoration allowlists;
+- fixed repeated-event semantic confidence weighting;
+- promoted product pipeline scenarios into the release benchmark gate.
+
 ## 0.2.1 - 2026-07-18
 
 - installed development dependencies before release validation;
