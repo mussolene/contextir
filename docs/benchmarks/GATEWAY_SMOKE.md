@@ -3,7 +3,7 @@
 ## Identity
 
 - Component: deterministic `contextir.v2` gateway
-- Version: 0.3.0
+- Version: 0.4.0
 - Cases: 4 checked-in RU/EN fixtures
 - Command: `python3 scripts/evaluate_contextir.py --check`
 - Hardware: developer machine; latency is not normalized across hardware
@@ -18,10 +18,10 @@
 | Product pipeline failures | 0 |
 | Exercised bounded fallbacks | 1 |
 | Compression-eligible cases | 1 |
-| Eligible prompt/source character ratio | 0.3067 |
-| Compile latency p50 | 0.1043 ms |
-| Compile latency p95 | 0.9774 ms |
-| Compile throughput | 3204.3 docs/s |
+| Eligible prompt/source character ratio | 0.3627 |
+| Compile latency p50 | 0.1131 ms |
+| Compile latency p95 | 1.1010 ms |
+| Compile throughput | 2901.0 docs/s |
 
 Performance uses a 100-operation warm-up followed by 5,000 repeated compilations
 over the four fixtures with Python garbage collection paused. The ratio uses

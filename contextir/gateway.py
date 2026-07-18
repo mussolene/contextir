@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import time
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -32,6 +34,14 @@ class ContractCheck:
     lost_constraints: list[str]
     lost_entities: list[str]
     needs_source: bool
+
+
+@dataclass(frozen=True)
+class TaskProfile:
+    kind: Literal["operational", "retrieval", "exhaustive"]
+    query_refs: tuple[str, ...] = ()
+    evidence_refs: tuple[str, ...] = ()
+    retrieval_confidence: float = 0.0
 
 
 class ContextIR:
@@ -69,6 +79,7 @@ class ContextIR:
         scrubbed = self.scrubber.scrub(text, language=source_lang)
         segments = split_source(scrubbed.scrubbed_text)
         sources = {segment_id: value for segment_id, value in segments}
+        task_profile = analyze_task(scrubbed.scrubbed_text, segments)
         intent = asdict(guess_intent(scrubbed.scrubbed_text))
         events = extract_events(segments, source_lang)
         entities = extract_entities(segments, scrubbed.protected_spans)
@@ -77,10 +88,16 @@ class ContextIR:
             constraints.insert(0, {"type": "privacy", "value": "keep_placeholders_private"})
 
         confidence = semantic_confidence(events, segments)
-        selected_mode = choose_mode(mode, len(text), confidence, segments, self.raw_threshold)
-        included_refs = select_source_refs(selected_mode, segments)
+        selected_mode = choose_mode(mode, len(text), confidence, segments, self.raw_threshold, task_profile)
+        included_refs = select_source_refs(selected_mode, segments, task_profile)
+        if task_profile.kind == "retrieval" and selected_mode != "raw":
+            events = []
+            included_text = " ".join(sources[ref] for ref in included_refs)
+            entities = [item for item in entities if item["type"] != "number" and item["value"] in included_text]
         concepts = self._compact_concepts(scrubbed.scrubbed_text, source_lang, packet_id, selected_mode)
         public_spans = [{"placeholder": span.placeholder, "kind": span.kind} for span in scrubbed.protected_spans]
+        if task_profile.kind == "retrieval" and selected_mode != "raw":
+            public_spans = [item for item in public_spans if item["placeholder"] in included_text]
 
         contract: dict[str, Any] = {
             "version": "contextir.v2",
@@ -120,6 +137,11 @@ class ContextIR:
             return json.dumps(contract, ensure_ascii=False, separators=(",", ":"))
         if contract.get("mode") == "raw":
             return " ".join(str(item["text"]) for item in contract["source"]["included"])
+        if contract.get("mode") == "hybrid" and contract["source"]["included"]:
+            included_refs = {item["ref"] for item in contract["source"]["included"]}
+            events_covered = all(event["source_ref"] in included_refs for event in contract.get("events", []))
+            if events_covered:
+                return "\n\n".join(str(item["text"]) for item in contract["source"]["included"])
         language = contract["language"]
         lines = [
             f"CTXIR/2 mode={contract['mode']} src={language['source']} out={language['target']} intent={contract['intent']['label']}",
@@ -320,26 +342,193 @@ def semantic_confidence(events: list[dict[str, Any]], segments: list[tuple[str, 
     return round(weighted / len(segments), 4)
 
 
-def choose_mode(requested: Mode, chars: int, confidence: float, segments: list[tuple[str, str]], raw_threshold: int) -> str:
+def choose_mode(
+    requested: Mode,
+    chars: int,
+    confidence: float,
+    segments: list[tuple[str, str]],
+    raw_threshold: int,
+    task_profile: TaskProfile | None = None,
+) -> str:
     if requested != "auto":
         return requested
     if chars <= raw_threshold:
         return "raw"
+    if task_profile and task_profile.kind == "exhaustive":
+        return "raw"
+    if task_profile and task_profile.kind == "retrieval":
+        has_evidence = task_profile.evidence_refs and task_profile.retrieval_confidence >= 0.12
+        return "hybrid" if has_evidence else "raw"
     critical = sum(1 for _ref, text in segments if is_critical_source(text))
     if confidence < 0.65 or critical:
         return "hybrid"
     return "semantic"
 
 
-def select_source_refs(mode: str, segments: list[tuple[str, str]]) -> list[str]:
+def select_source_refs(
+    mode: str,
+    segments: list[tuple[str, str]],
+    task_profile: TaskProfile | None = None,
+) -> list[str]:
     if mode == "raw":
         return [ref for ref, _text in segments]
     if mode == "semantic":
         return []
-    selected = [ref for ref, text in segments if is_critical_source(text)]
+    if task_profile and task_profile.kind == "retrieval":
+        selected = set(task_profile.query_refs) | set(task_profile.evidence_refs)
+        selected.update(paragraph_owner_refs(segments, task_profile.evidence_refs))
+        selected.update(ref for ref, _text in segments[:2])
+        selected.update(ref for ref, _text in segments[-2:])
+        edge_segments = segments[:4] + segments[-6:]
+        selected.update(
+            ref
+            for ref, text in edge_segments
+            if re.search(r"\b(answer|enter|format|output|respond)\b", text, re.IGNORECASE)
+        )
+        return [ref for ref, _text in segments if ref in selected]
+    selected = []
+    seen_source = set()
+    for ref, text in segments:
+        if not is_critical_source(text):
+            continue
+        signature = " ".join(text.lower().split())
+        if signature in seen_source:
+            continue
+        seen_source.add(signature)
+        selected.append(ref)
+        if len(selected) == 6:
+            break
     if not selected and segments:
         selected.append(segments[0][0])
-    return selected[:8]
+    selected_set = set(selected)
+    selected_set.update(ref for ref, _text in segments[-2:])
+    return [ref for ref, _text in segments if ref in selected_set][:8]
+
+
+def paragraph_owner_refs(segments: list[tuple[str, str]], evidence_refs: tuple[str, ...]) -> set[str]:
+    positions = {ref: index for index, (ref, _text) in enumerate(segments)}
+    owners = set()
+    for evidence_ref in evidence_refs:
+        position = positions[evidence_ref]
+        for ref, text in reversed(segments[: position + 1]):
+            if re.match(r"Paragraph\s+\d+\s*:", text, re.IGNORECASE):
+                owners.add(ref)
+                break
+    return owners
+
+
+EXHAUSTIVE_PATTERNS = [
+    r"how many unique paragraphs",
+    r"count (?:the )?(?:number|total|occurrences)",
+    r"after removing duplicates",
+    r"сколько (?:уникальн|различн|всего)",
+    r"подсчита\w+ (?:количество|число)",
+]
+
+RETRIEVAL_MARKERS = [
+    "based on the above text",
+    "based on the following text",
+    "which paragraph",
+    "abstract is from",
+    "read the following text and answer",
+    "ответьте на вопрос по тексту",
+    "на основе приведенного текста",
+]
+
+RETRIEVAL_STOPWORDS = STOPWORDS | {
+    "above", "abstract", "answer", "based", "briefly", "context", "determine", "following",
+    "give", "only", "output", "paragraph", "paragraphs", "please", "question", "read",
+    "records", "text", "which",
+    "ответ", "вопрос", "текст", "только", "прочитайте", "основе",
+}
+
+
+def analyze_task(text: str, segments: list[tuple[str, str]], evidence_limit: int = 6) -> TaskProfile:
+    normalized = text.lower()
+    if any(re.search(pattern, normalized, re.IGNORECASE) for pattern in EXHAUSTIVE_PATTERNS):
+        return TaskProfile(kind="exhaustive")
+    if len(segments) < 6:
+        return TaskProfile(kind="operational")
+
+    query = extract_query(text, segments)
+    if not query:
+        return TaskProfile(kind="operational")
+    query_terms = content_terms(query)
+    if not query_terms:
+        return TaskProfile(kind="operational")
+    query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, query))
+    evidence, confidence = retrieve_evidence(segments, query_terms, set(query_refs), evidence_limit)
+    explicit_retrieval = any(marker in normalized for marker in RETRIEVAL_MARKERS)
+    if not explicit_retrieval and confidence < 0.12:
+        return TaskProfile(kind="operational")
+    return TaskProfile(
+        kind="retrieval",
+        query_refs=query_refs,
+        evidence_refs=tuple(evidence),
+        retrieval_confidence=confidence,
+    )
+
+
+def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
+    patterns = [
+        r"Question:\s*(.+?)(?:\s*Answer:|$)",
+        r"The following is an abstract\.\s*(.+?)(?:\s*Please enter|\s*The answer is:|$)",
+    ]
+    for pattern in patterns:
+        matches = list(re.finditer(pattern, text, re.IGNORECASE | re.DOTALL))
+        if matches:
+            return matches[-1].group(1).strip()
+    questions = [segment for _ref, segment in segments if "?" in segment]
+    if questions:
+        return " ".join(questions[-3:])
+    for _ref, segment in segments[:4]:
+        if re.search(r"\b(answer|respond)\b", segment, re.IGNORECASE):
+            return segment
+    return ""
+
+
+def segment_belongs_to_query(segment: str, query: str) -> bool:
+    segment_norm = " ".join(segment.lower().split())
+    query_norm = " ".join(query.lower().split())
+    return len(segment_norm) >= 8 and segment_norm in query_norm
+
+
+def content_terms(text: str) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"[\wё-]+", text.lower(), flags=re.UNICODE)
+        if len(token) >= 3 and token not in RETRIEVAL_STOPWORDS and not token.isdigit()
+    }
+
+
+def retrieve_evidence(
+    segments: list[tuple[str, str]],
+    query_terms: set[str],
+    excluded_refs: set[str],
+    limit: int,
+) -> tuple[list[str], float]:
+    document_frequency: Counter[str] = Counter()
+    terms_by_ref: dict[str, set[str]] = {}
+    for ref, segment in segments:
+        terms = content_terms(segment)
+        terms_by_ref[ref] = terms
+        document_frequency.update(terms)
+
+    total = max(len(segments), 1)
+    scored = []
+    for index, (ref, _segment) in enumerate(segments):
+        if ref in excluded_refs or index < 2 or index >= len(segments) - 2:
+            continue
+        overlap = query_terms & terms_by_ref[ref]
+        if not overlap:
+            continue
+        score = sum(math.log((total + 1) / (document_frequency[term] + 1)) + 1 for term in overlap)
+        score *= 1 + len(overlap) / max(len(query_terms), 1)
+        scored.append((score, ref, len(overlap) / max(len(query_terms), 1)))
+    scored.sort(key=lambda item: (-item[0], int(item[1][1:])))
+    selected = [ref for _score, ref, _coverage in scored[:limit]]
+    confidence = max((coverage for _score, _ref, coverage in scored), default=0.0)
+    return selected, round(confidence, 4)
 
 
 def is_critical_source(text: str) -> bool:

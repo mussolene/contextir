@@ -26,6 +26,8 @@ compilation remains available for infrastructure that owns routing itself.
 - PII placeholders backed by a local vault;
 - optional Presidio detection;
 - provider-independent model prompts;
+- query-aware verbatim evidence selection for long document QA;
+- raw routing for exhaustive counting and low-coverage retrieval;
 - measurable prompt reduction and semantic-preservation checks;
 - RU and EN heuristics in the current public preview.
 
@@ -39,7 +41,7 @@ compilation remains available for infrastructure that owns routing itself.
 - production claims based only on WordNet overlap;
 - Japanese support before RU/EN evaluation is stable.
 
-## Alpha Exit Criteria
+## Preview Exit Criteria
 
 The project should not claim beta readiness until a representative benchmark
 shows all of the following:
@@ -54,3 +56,8 @@ shows all of the following:
 Version `1.0` additionally requires a stable public policy API, migration notes
 for the contract, and at least one production-shaped integration using an
 application-owned model adapter and tokenizer.
+
+The v0.4.0 seven-case follow-up clears the token and aggregate-quality gates on
+the tested 1.7B model, but it is not representative enough to exit preview:
+one QA case regressed, no 7-8B result exists, and privacy precision/recall has
+not yet been measured on a labelled deployment-shaped corpus.

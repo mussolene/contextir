@@ -12,7 +12,7 @@ claim production-grade semantic preservation or PII detection.
 ## Quick Start
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.3.0'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.4.0'
 ```
 
 ```python
@@ -43,8 +43,11 @@ formatting, and sensitive values. ContextIR provides three explicit modes:
   conditions, numbers, quotes, or protected placeholders;
 - `semantic`: compact events only, for callers that accept lossy compression.
 
-`auto` selects one of these modes from input length, semantic confidence, and
-critical-source signals.
+`auto` first distinguishes exhaustive tasks, document retrieval, and
+operational history. Exhaustive tasks stay raw. Document QA uses local lexical
+retrieval to keep the query, formatting instructions, and evidence spans
+verbatim. Operational history continues to use inspectable events and critical
+source fragments.
 
 `ContextPipeline` is the product entry point. It measures candidate prompts
 with a configurable target-model tokenizer, rejects compression without useful
@@ -148,15 +151,15 @@ The checked-in compiler smoke benchmark reports:
 - 0 expectation failures;
 - 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;
-- `0.3067` prompt/source ratio on the one compression-eligible repeated-context
+- `0.3627` prompt/source ratio on the one compression-eligible repeated-context
   case.
 
-The first model-level A/B adds Ollama and LM Studio runs on Qwen3 0.6B and 1.7B,
-five official LongBench examples, and two diagnostics. `auto` reduced
-model-reported input tokens by about 46%, but caused 21-28% relative aggregate
-quality loss versus masked raw input. This is a useful negative result: v0.3.0
-is not ready to claim general semantic compression. The local privacy boundary,
-raw routing, and provider-independent adapter remain valid building blocks.
+The first model-level A/B exposed a large quality loss in v0.3.0. The v0.4.0
+query-aware follow-up on the same seven cases reduced Qwen3 1.7B input tokens by
+69.0% while increasing measured quality from `0.5570` raw to `0.6595` auto.
+Query-aware auto also improved both tested 0.6B backends. This is promising
+small-sample evidence, not a general compression claim; one QA case still
+regressed and broader model, privacy, and application benchmarks remain open.
 
 See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
 [benchmark roadmap](docs/BENCHMARKS.md).

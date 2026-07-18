@@ -1,19 +1,19 @@
 {
   "aggregate": {
     "cases": 4,
-    "avg_prompt_ratio": 0.8049,
+    "avg_prompt_ratio": 0.8189,
     "compressed_cases": 2,
     "critical_events": 2,
     "pii_leaks": 0,
     "expectation_failures": 0,
     "compression_eligible_cases": 1,
-    "avg_eligible_prompt_ratio": 0.3067,
+    "avg_eligible_prompt_ratio": 0.3627,
     "pipeline_cases": 4,
     "pipeline_failures": 0,
     "pipeline_fallbacks": 1,
-    "compile_latency_ms_p50": 0.1043,
-    "compile_latency_ms_p95": 0.9774,
-    "compile_throughput_docs_s": 3204.3,
+    "compile_latency_ms_p50": 0.1131,
+    "compile_latency_ms_p95": 1.101,
+    "compile_throughput_docs_s": 2901.0,
     "performance_iterations": 5000
   },
   "results": [
@@ -63,10 +63,10 @@
       "critical_events": 1,
       "protected_spans": 0,
       "pii_leaked": false,
-      "prompt_ratio": 0.3067,
+      "prompt_ratio": 0.3627,
       "source_chars": 965,
-      "prompt_chars": 296,
-      "prompt": "CTXIR/2 mode=hybrid src=ru out=ru intent=ask\nENT=n1:number=17\nEV s1*20 preserve(агент,завершил,проверку,сохранил,результат)\nEV s21 NOT+IF:state(код,изменится,публикуй,результат)\nSRC s21=Если код 17 изменится, не публикуй результат.\nAnswer naturally. Preserve RULE, NOT, numbers, and placeholders.",
+      "prompt_chars": 350,
+      "prompt": "CTXIR/2 mode=hybrid src=ru out=ru intent=ask\nENT=n1:number=17\nEV s1*20 preserve(агент,завершил,проверку,сохранил,результат)\nEV s21 NOT+IF:state(код,изменится,публикуй,результат)\nSRC s20=Агент завершил проверку и сохранил результат.\nSRC s21=Если код 17 изменится, не публикуй результат.\nAnswer naturally. Preserve RULE, NOT, numbers, and placeholders.",
       "expectations_passed": true
     }
   ],

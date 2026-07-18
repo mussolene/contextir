@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "backend": "ollama",
+    "backend_scope": "local_model",
+    "model": "qwen3:0.6b",
+    "context_length": 32768,
+    "max_output_tokens": 64,
+    "cases": 7,
+    "modes": [
+      "auto"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "auto",
+      "cases": 7,
+      "mean_quality": 0.3791,
+      "exact_matches": 1,
+      "estimated_prompt_ratio": 0.3083,
+      "backend_prompt_tokens": 17961,
+      "mean_model_latency_ms": 510.2,
+      "selected_modes": {
+        "hybrid": 6,
+        "raw": 1
+      }
+    }
+  ],
+  "results": [
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "South West Ultras",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 241,
+      "estimated_token_savings": 0.7801,
+      "compile_latency_ms": 15.671,
+      "source_chars": 5225,
+      "prompt_chars": 1237,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": 302,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 66.369,
+      "backend_generation_ms": 34.214,
+      "model_latency_ms": 309.091
+    },
+    {
+      "case_id": "multifieldqa_en_1",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "No, it is not necessary."
+      ],
+      "prediction": "No.",
+      "quality": 0.3333,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 9249,
+      "estimated_prompt_tokens": 281,
+      "estimated_token_savings": 0.9696,
+      "compile_latency_ms": 99.691,
+      "source_chars": 45867,
+      "prompt_chars": 1520,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5633,
+      "backend_prompt_tokens": 355,
+      "backend_output_tokens": 3,
+      "backend_prompt_ms": 17.734,
+      "backend_generation_ms": 21.602,
+      "model_latency_ms": 220.428
+    },
+    {
+      "case_id": "passage_retrieval_en_0",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "Paragraph 15"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10150,
+      "estimated_prompt_tokens": 270,
+      "estimated_token_savings": 0.9734,
+      "compile_latency_ms": 120.328,
+      "source_chars": 51296,
+      "prompt_chars": 1406,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5198,
+      "backend_prompt_tokens": 314,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 15.357,
+      "backend_generation_ms": 27.653,
+      "model_latency_ms": 213.011
+    },
+    {
+      "case_id": "passage_retrieval_en_1",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "Paragraph 8"
+      ],
+      "prediction": "Paragraph 8.",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10278,
+      "estimated_prompt_tokens": 472,
+      "estimated_token_savings": 0.9541,
+      "compile_latency_ms": 116.782,
+      "source_chars": 52650,
+      "prompt_chars": 2491,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5308,
+      "backend_prompt_tokens": 490,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 18.139,
+      "backend_generation_ms": 31.884,
+      "model_latency_ms": 229.713
+    },
+    {
+      "case_id": "passage_count_0",
+      "dataset": "passage_count",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "8"
+      ],
+      "prediction": "After removing duplicates, the final count of unique paragraphs is:\n\n**1**.  \n**2**.  \n**3**.  \n**4**.  \n**5**.  \n**6**.  \n**7**.  \n**8**.  \n**9**.  \n**10**.  \n**",
+      "quality": 0.1,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "compiler_selected_raw",
+      "estimated_source_tokens": 13261,
+      "estimated_prompt_tokens": 13261,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 141.021,
+      "source_chars": 66162,
+      "prompt_chars": 66109,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5188,
+      "backend_prompt_tokens": 16287,
+      "backend_output_tokens": 64,
+      "backend_prompt_ms": 36.72,
+      "backend_generation_ms": 1152.688,
+      "model_latency_ms": 1863.931
+    },
+    {
+      "case_id": "needle_middle",
+      "dataset": "ruler_style_needle",
+      "source": "RULER-style diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "cobalt-seven"
+      ],
+      "prediction": "/record/179",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 2727,
+      "estimated_prompt_tokens": 117,
+      "estimated_token_savings": 0.9571,
+      "compile_latency_ms": 40.111,
+      "source_chars": 14428,
+      "prompt_chars": 615,
+      "protected_spans": 0,
+      "semantic_confidence": 0.4837,
+      "backend_prompt_tokens": 167,
+      "backend_output_tokens": 7,
+      "backend_prompt_ms": 17.648,
+      "backend_generation_ms": 47.878,
+      "model_latency_ms": 414.15
+    },
+    {
+      "case_id": "operational_privacy",
+      "dataset": "contextir_operational",
+      "source": "ContextIR diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "send payment 42 twice"
+      ],
+      "prediction": "Prohibited action: Do not send payment 42 twice to contact PII_EMAIL_1.",
+      "quality": 0.4706,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 814,
+      "estimated_prompt_tokens": 24,
+      "estimated_token_savings": 0.9705,
+      "compile_latency_ms": 17.15,
+      "source_chars": 5036,
+      "prompt_chars": 131,
+      "protected_spans": 1,
+      "semantic_confidence": 0.8159,
+      "backend_prompt_tokens": 46,
+      "backend_output_tokens": 21,
+      "backend_prompt_ms": 38.703,
+      "backend_generation_ms": 119.904,
+      "model_latency_ms": 321.294
+    }
+  ]
+}

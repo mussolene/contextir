@@ -1,0 +1,205 @@
+{
+  "metadata": {
+    "backend": "lmstudio",
+    "backend_scope": "local_model",
+    "model": "qwen3-0.6b",
+    "context_length": 32768,
+    "max_output_tokens": 64,
+    "cases": 7,
+    "modes": [
+      "auto"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "auto",
+      "cases": 7,
+      "mean_quality": 0.2052,
+      "exact_matches": 1,
+      "estimated_prompt_ratio": 0.3083,
+      "backend_prompt_tokens": 17905,
+      "mean_model_latency_ms": 3567.0,
+      "selected_modes": {
+        "hybrid": 6,
+        "raw": 1
+      }
+    }
+  ],
+  "results": [
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "<think>\nOkay, let's see. The user is asking for the name of the most active fan club based on the provided text.\n\nFirst, I need to look through the text again. The text mentions that the South West Ultras fan club is composed of residents from several neighborhoods in Yerevan's Malat",
+      "quality": 0.1961,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 241,
+      "estimated_token_savings": 0.7801,
+      "compile_latency_ms": 15.393,
+      "source_chars": 5225,
+      "prompt_chars": 1237,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": 294,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 6154.311
+    },
+    {
+      "case_id": "multifieldqa_en_1",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "No, it is not necessary."
+      ],
+      "prediction": "<think>\nOkay, let's see. The user is asking if the ISR is necessary for transgene reactivation. I need to look back at the provided text to find the answer.\n\nThe first sentence says that the ISR isn't sufficient or necessary for transgene reactivation in HepG2 cells. Then there's",
+      "quality": 0.08,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 9249,
+      "estimated_prompt_tokens": 281,
+      "estimated_token_savings": 0.9696,
+      "compile_latency_ms": 112.974,
+      "source_chars": 45867,
+      "prompt_chars": 1520,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5633,
+      "backend_prompt_tokens": 347,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 1414.23
+    },
+    {
+      "case_id": "passage_retrieval_en_0",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "Paragraph 15"
+      ],
+      "prediction": "<think>\nOkay, let's see. The user provided three paragraphs from Wikipedia and an abstract. They want to determine which paragraph the abstract is from.\n\nFirst, I need to look at the abstract and compare it with each of the three paragraphs. Let me read through the abstract again. \n\nThe abstract says: \"",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10150,
+      "estimated_prompt_tokens": 270,
+      "estimated_token_savings": 0.9734,
+      "compile_latency_ms": 120.657,
+      "source_chars": 51296,
+      "prompt_chars": 1406,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5198,
+      "backend_prompt_tokens": 306,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 1021.986
+    },
+    {
+      "case_id": "passage_retrieval_en_1",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "Paragraph 8"
+      ],
+      "prediction": "<think>\nOkay, let me try to figure this out. The user provided three paragraphs from Wikipedia and an abstract, and I need to determine which paragraph contains the abstract. \n\nFirst, I'll look at the content of each paragraph. Let's start with Paragraph 8. It talks about how parameters in procedures are",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10278,
+      "estimated_prompt_tokens": 472,
+      "estimated_token_savings": 0.9541,
+      "compile_latency_ms": 117.142,
+      "source_chars": 52650,
+      "prompt_chars": 2491,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5308,
+      "backend_prompt_tokens": 482,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 1319.858
+    },
+    {
+      "case_id": "passage_count_0",
+      "dataset": "passage_count",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "8"
+      ],
+      "prediction": "<think>\nOkay, let's see. I need to figure out how many unique paragraphs remain after removing duplicates. So first, I'll go through each paragraph provided and check if they are duplicates.\n\nLooking at the list, there are 40 paragraphs. Now, some of them might be duplicates. Let me scan",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "compiler_selected_raw",
+      "estimated_source_tokens": 13261,
+      "estimated_prompt_tokens": 13261,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 142.407,
+      "source_chars": 66162,
+      "prompt_chars": 66109,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5188,
+      "backend_prompt_tokens": 16279,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 10765.266
+    },
+    {
+      "case_id": "needle_middle",
+      "dataset": "ruler_style_needle",
+      "source": "RULER-style diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "cobalt-seven"
+      ],
+      "prediction": "<think>\nOkay, let's see. The user provided a series of records related to project Cedar and their status codes. Each record shows the status code (from 1000 to 1179) for an unrelated archived item. Then they mentioned that the access phrase for project Juniper is \"",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 2727,
+      "estimated_prompt_tokens": 117,
+      "estimated_token_savings": 0.9571,
+      "compile_latency_ms": 38.219,
+      "source_chars": 14428,
+      "prompt_chars": 615,
+      "protected_spans": 0,
+      "semantic_confidence": 0.4837,
+      "backend_prompt_tokens": 159,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 3479.115
+    },
+    {
+      "case_id": "operational_privacy",
+      "dataset": "contextir_operational",
+      "source": "ContextIR diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "send payment 42 twice"
+      ],
+      "prediction": "<think>\nOkay, let's see. The user provided a question in Chinese and wants me to figure out what action is prohibited based on the given instruction. The original instruction says, \"Do not send payment 42 twice to contact PII_EMAIL_1.\" \n\nFirst, I need to understand what exactly is",
+      "quality": 0.16,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 814,
+      "estimated_prompt_tokens": 24,
+      "estimated_token_savings": 0.9705,
+      "compile_latency_ms": 22.067,
+      "source_chars": 5036,
+      "prompt_chars": 131,
+      "protected_spans": 1,
+      "semantic_confidence": 0.8159,
+      "backend_prompt_tokens": 38,
+      "backend_output_tokens": 64,
+      "model_latency_ms": 814.275
+    }
+  ]
+}

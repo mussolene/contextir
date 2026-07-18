@@ -21,6 +21,20 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(prepared.mode, "semantic")
         self.assertGreaterEqual(prepared.token_savings, 0.15)
 
+    def test_document_qa_uses_retrieved_hybrid_context(self) -> None:
+        context = " ".join(f"Record {index}: Cedar value is {1000 + index}." for index in range(60))
+        text = (
+            f"Read the following text and answer briefly. {context} "
+            "The Juniper access phrase is cobalt-seven. "
+            "Question: What is the Juniper access phrase? Answer:"
+        )
+
+        prepared = ContextPipeline().prepare(text, source_lang="en", target_lang="en")
+
+        self.assertEqual(prepared.mode, "hybrid")
+        self.assertIn("cobalt-seven", prepared.prompt)
+        self.assertGreater(prepared.token_savings, 0.5)
+
     def test_custom_tokenizer_can_force_raw_fallback(self) -> None:
         def expensive_protocol(text: str) -> int:
             return 1000 if text.startswith("CTXIR/") else max(len(text.split()), 1)

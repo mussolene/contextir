@@ -89,24 +89,28 @@ class PrivacyScrubber:
         vault: dict[str, str] = {}
         scrubbed = text
         counters: dict[str, int] = {}
+        placeholders: dict[tuple[str, str], str] = {}
         for kind, pattern in self.patterns:
             while True:
                 match = pattern.search(scrubbed)
                 if not match:
                     break
-                counters[kind] = counters.get(kind, 0) + 1
-                placeholder = f"PII_{kind.upper()}_{counters[kind]}"
                 surface = match.group(0)
-                local_ref = f"local:{stable_hash(kind + ':' + surface)[:16]}"
-                protected.append(
-                    ProtectedSpan(
-                        placeholder=placeholder,
-                        kind=kind,
-                        local_ref=local_ref,
-                        surface_hash=stable_hash(surface),
+                key = (kind, surface)
+                placeholder = placeholders.get(key)
+                if placeholder is None:
+                    counters[kind] = counters.get(kind, 0) + 1
+                    placeholder = f"PII_{kind.upper()}_{counters[kind]}"
+                    placeholders[key] = placeholder
+                    protected.append(
+                        ProtectedSpan(
+                            placeholder=placeholder,
+                            kind=kind,
+                            local_ref=f"local:{stable_hash(kind + ':' + surface)[:16]}",
+                            surface_hash=stable_hash(surface),
+                        )
                     )
-                )
-                vault[placeholder] = surface
+                    vault[placeholder] = surface
                 scrubbed = scrubbed[: match.start()] + placeholder + scrubbed[match.end() :]
         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
 
@@ -136,26 +140,31 @@ class PresidioPrivacyScrubber:
         accepted.sort(key=lambda value: value.start)
 
         counters: dict[str, int] = {}
+        placeholders: dict[tuple[str, str], str] = {}
         protected: list[ProtectedSpan] = []
         vault: dict[str, str] = {}
         chunks: list[str] = []
         cursor = 0
         for item in accepted:
             kind = str(item.entity_type).lower()
-            counters[kind] = counters.get(kind, 0) + 1
-            placeholder = f"PII_{kind.upper()}_{counters[kind]}"
             surface = text[item.start : item.end]
+            key = (kind, surface)
+            placeholder = placeholders.get(key)
+            if placeholder is None:
+                counters[kind] = counters.get(kind, 0) + 1
+                placeholder = f"PII_{kind.upper()}_{counters[kind]}"
+                placeholders[key] = placeholder
+                protected.append(
+                    ProtectedSpan(
+                        placeholder=placeholder,
+                        kind=kind,
+                        local_ref=f"local:{stable_hash(kind + ':' + surface)[:16]}",
+                        surface_hash=stable_hash(surface),
+                    )
+                )
+                vault[placeholder] = surface
             chunks.extend([text[cursor : item.start], placeholder])
             cursor = item.end
-            protected.append(
-                ProtectedSpan(
-                    placeholder=placeholder,
-                    kind=kind,
-                    local_ref=f"local:{stable_hash(kind + ':' + surface)[:16]}",
-                    surface_hash=stable_hash(surface),
-                )
-            )
-            vault[placeholder] = surface
         chunks.append(text[cursor:])
         return PrivacyScrubResult(scrubbed_text="".join(chunks), protected_spans=protected, vault=vault)
 

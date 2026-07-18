@@ -11,13 +11,15 @@ input -> detector -> placeholders + vault -> source segment store
                     +--------------------------------------------+
                               |
                               v
-                    event/entity compiler
+                 task and query analysis
                               |
-                 +------------+-------------+
-                 |            |             |
-                raw         hybrid       semantic
-                 |            |             |
-                 +------------+-------------+
+              +---------------+----------------+
+              |               |                |
+          exhaustive       retrieval       operational
+              |               |                |
+             raw      verbatim evidence   events + source
+              |               |                |
+              +---------------+----------------+
                               |
                         prompt renderer
                               |
@@ -29,16 +31,17 @@ input -> detector -> placeholders + vault -> source segment store
 `ContextPipeline` applies one bounded decision loop:
 
 1. build a masked raw baseline and keep its vault local;
-2. select a semantic or hybrid candidate from input risk and compiler
-   confidence;
-3. count baseline and candidate tokens with the caller's target-model tokenizer;
-4. use the candidate only when it clears the configured savings threshold;
-5. invoke the caller-provided model adapter;
-6. reject unknown placeholders and newly generated PII;
-7. for transform tasks, verify numbers, negation, constraints, events, and issued
+2. classify exhaustive, retrieval, and operational context shapes;
+3. keep exhaustive tasks raw, retrieve query-relevant evidence for document
+   QA, or compile operational events and constraints;
+4. count baseline and candidate tokens with the caller's target-model tokenizer;
+5. use the candidate only when it clears the configured savings threshold;
+6. invoke the caller-provided model adapter;
+7. reject unknown placeholders and newly generated PII;
+8. for transform tasks, verify numbers, negation, constraints, events, and issued
    placeholders;
-8. on verification failure, retry at most once per richer source mode;
-9. restore only explicitly allowlisted placeholders after acceptance.
+9. on verification failure, retry at most once per richer source mode;
+10. restore only explicitly allowlisted placeholders after acceptance.
 
 The fallback order is `semantic -> hybrid -> raw`; it never loops indefinitely.
 Reasoning tasks use safety verification but not semantic equivalence, because a
@@ -56,9 +59,11 @@ gateway does not add protocol overhead.
 
 ### Hybrid
 
-Used when long input contains critical fragments or compiler confidence is low.
-The model receives typed events plus exact fragments for negation, conditions,
-numbers, quotes, code-like text, and protected placeholders.
+Used for query-aware document QA or when long operational input contains
+critical fragments. Retrieval prompts contain normal verbatim text rather than
+the internal protocol: task instructions, selected evidence, the original
+query, and output-format requirements. Operational prompts use typed events
+only for facts not already covered by selected source fragments.
 
 ### Semantic
 
@@ -78,6 +83,21 @@ if later expansion is needed.
 The default regex detector is a fallback. `PresidioPrivacyScrubber` accepts a
 configured Presidio analyzer so deployments can provide language and domain
 recognizers without coupling the compiler to one NER model.
+
+Repeated occurrences of the same detected surface reuse one placeholder. This
+keeps restoration deterministic and prevents repeated private values from
+defeating context deduplication.
+
+## Query-Aware Selection
+
+The dependency-free selector uses lexical overlap weighted by document
+frequency. It preserves the original query and edge instructions, selects up
+to six evidence segments, and restores the owning `Paragraph N` segment when
+sentence-level retrieval lands inside a labelled paragraph. If no evidence
+clears the confidence threshold, auto mode returns masked raw input.
+
+Tasks that require exhaustive access, such as unique-passage counting, always
+remain raw because top-k retrieval cannot preserve their answer space.
 
 ## Semantic Representation
 

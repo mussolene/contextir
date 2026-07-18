@@ -9,7 +9,7 @@ when semantic-only compression would be risky.
 Python 3.10 or newer is required.
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.3.0'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.4.0'
 ```
 
 PyPI publication is intentionally deferred until Trusted Publishing is
@@ -65,9 +65,11 @@ prompt = gateway.render_prompt(bundle.contract)
 # Send only prompt to the model. Keep bundle.vault inside your trusted process.
 ```
 
-Short text remains masked raw text. Longer text becomes hybrid or semantic
-depending on confidence and critical fragments. Force `mode="hybrid"` for
-workflows where source evidence matters.
+Short text remains masked raw text. Exhaustive counting stays raw. Longer
+document QA uses query-aware hybrid prompts only when matching evidence and
+measured token savings are available. Operational history continues to use
+semantic events and critical fragments. Force `mode="hybrid"` only when the
+application accepts lossy source selection.
 
 ## Restore An Answer
 

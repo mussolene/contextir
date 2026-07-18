@@ -246,6 +246,17 @@ def token_f1(prediction: str, gold: str) -> float:
 def score(case: Case, prediction: str) -> float:
     if case.dataset in {"multifieldqa_en", "contextir_operational"}:
         return max(token_f1(prediction, answer) for answer in case.answers)
+    if case.dataset == "passage_retrieval_en":
+        predicted = re.findall(r"paragraph\s+(\d+)", prediction, re.IGNORECASE)
+        expected = re.findall(r"paragraph\s+(\d+)", case.answers[0], re.IGNORECASE)
+        if not predicted or not expected:
+            return 0.0
+        return sum(item == expected[0] for item in predicted) / len(predicted)
+    if case.dataset == "passage_count":
+        predicted = re.findall(r"\d+", prediction)
+        if not predicted:
+            return 0.0
+        return sum(item == case.answers[0] for item in predicted) / len(predicted)
     normalized_prediction = " ".join(normalize_answer(prediction))
     return max(float(" ".join(normalize_answer(answer)) == normalized_prediction) for answer in case.answers)
 

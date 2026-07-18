@@ -31,7 +31,7 @@ Current checked-in result:
   "pipeline_failures": 0,
   "pipeline_fallbacks": 1,
   "compression_eligible_cases": 1,
-  "avg_eligible_prompt_ratio": 0.3067
+  "avg_eligible_prompt_ratio": 0.3627
 }
 ```
 
@@ -50,10 +50,12 @@ The first local-model experiment now compares the same downstream tasks using
 masked raw, ContextIR auto, forced hybrid, and forced semantic prompts. It uses
 an official LongBench subset, RULER-style diagnostics, Ollama, and LM Studio.
 
-The result is negative for universal semantic compression: approximately 46%
-model-token reduction came with 21-28% relative aggregate quality loss on the
-tested local models. See the [full card](benchmarks/LOCAL_MODEL_AB.md) and
-machine-readable reports under `reports/model_ab/`.
+The v0.3.0 result was negative for universal semantic compression. The v0.4.0
+query-aware follow-up on the same cases reduced model input by about 69% and
+improved aggregate quality on all three tested local backends. Qwen3 1.7B rose
+from `0.5570` raw to `0.6595` auto. See the
+[full card](benchmarks/LOCAL_MODEL_AB.md) and machine-readable reports under
+`reports/model_ab/`.
 
 The broader release benchmark must still add:
 

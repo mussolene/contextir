@@ -17,7 +17,7 @@
     {
       "requested_mode": "raw",
       "cases": 7,
-      "mean_quality": 0.2101,
+      "mean_quality": 0.2244,
       "exact_matches": 0,
       "estimated_prompt_ratio": 1.0,
       "backend_prompt_tokens": 57972,
@@ -506,7 +506,7 @@
         "8"
       ],
       "prediction": "After removing duplicates, the final count of unique paragraphs is:\n\n**1**.  \n**2**.  \n**3**.  \n**4**.  \n**5**.  \n**6**.  \n**7**.  \n**8**.  \n**9**.  \n**10**.  \n**",
-      "quality": 0.0,
+      "quality": 0.1,
       "error": null,
       "selected_mode": "raw",
       "decision": "forced_mode",

@@ -15,8 +15,8 @@
     {
       "requested_mode": "raw",
       "cases": 7,
-      "mean_quality": 0.4141,
-      "exact_matches": 1,
+      "mean_quality": 0.557,
+      "exact_matches": 2,
       "estimated_prompt_ratio": 1.0,
       "backend_prompt_tokens": 57972,
       "mean_model_latency_ms": 16409.3,
@@ -210,7 +210,7 @@
         "Paragraph 8"
       ],
       "prediction": "The abstract discusses the challenges faced by compilers when invoking procedures with parameters in different programming languages. It specifically mentions Fortran and Pascal, highlighting the differences in parameter passing methods and the need for forward declarations. \n\nThe paragraph that contains this information is:\n\nParagraph 8.",
-      "quality": 0.0,
+      "quality": 1.0,
       "error": null,
       "selected_mode": "raw",
       "decision": "forced_mode",

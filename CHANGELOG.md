@@ -2,6 +2,21 @@
 
 All notable changes to ContextIR are documented here.
 
+## 0.4.0 - 2026-07-18
+
+- added query-aware lexical evidence selection for long document QA;
+- preserved task instructions, output format, paragraph ownership, and queries
+  as normal model-facing text rather than exposing the internal IR protocol;
+- routed exhaustive counting and retrieval without adequate evidence to raw;
+- removed redundant protocol rendering when hybrid source spans cover every
+  compiled event;
+- reused placeholders for repeated occurrences of the same protected value in
+  both built-in and Presidio privacy scrubbers;
+- aligned retrieval and passage-count benchmark scoring with LongBench task
+  semantics;
+- added Ollama and LM Studio follow-up reports showing about 69% token reduction
+  without aggregate quality loss on the tested subset.
+
 ## 0.3.0 - 2026-07-18
 
 - added `ContextPipeline`, the policy-driven product entry point;
