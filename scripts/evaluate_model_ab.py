@@ -103,6 +103,32 @@ def make_synthetic_case(spec: dict[str, Any]) -> Case:
             + "\n\nAnswer:"
         )
         return Case(spec["id"], spec["dataset"], prompt, ["cobalt-seven"], "RULER-style diagnostic")
+    if spec["variant"] == "tool_route":
+        tools = [
+            f"Tool archive_record_{index}: archive historical record type {1000 + index}."
+            for index in range(90)
+        ]
+        tools.insert(45, "Tool create_invoice: create a customer invoice for completed work.")
+        prompt = (
+            "Read the following tool catalog and answer the question.\n\n"
+            + "\n".join(tools)
+            + "\n\nQuestion: Which tool should the agent call to create a customer invoice for completed work? "
+            "Answer with only the tool name.\nAnswer:"
+        )
+        return Case(spec["id"], spec["dataset"], prompt, ["create_invoice"], "Agent tool-routing diagnostic")
+    if spec["variant"] == "agent_state":
+        history = [
+            f"Step {index}: archived Cedar request {2000 + index} with status completed."
+            for index in range(90)
+        ]
+        history.insert(47, "Step 47B: Juniper invoice failed validation and requires finance review via notify_finance.")
+        prompt = (
+            "Read the following agent history and answer the question.\n\n"
+            + "\n".join(history)
+            + "\n\nQuestion: Which exact next action is required for the Juniper invoice that failed validation? "
+            "Answer with only the action name.\nAnswer:"
+        )
+        return Case(spec["id"], spec["dataset"], prompt, ["notify_finance"], "Agent-state diagnostic")
     prompt = " ".join(
         ["Do not send payment 42 twice to contact finance@example.test."] * 80
         + ["Question: What action is prohibited? Answer with only the prohibited action."]
@@ -257,6 +283,9 @@ def score(case: Case, prediction: str) -> float:
         if not predicted:
             return 0.0
         return sum(item == case.answers[0] for item in predicted) / len(predicted)
+    if case.dataset in {"agent_tool_routing", "agent_state"}:
+        tokens = re.findall(r"[a-z][a-z0-9_]*", prediction.lower())
+        return float(tokens == [case.answers[0]])
     normalized_prediction = " ".join(normalize_answer(prediction))
     return max(float(" ".join(normalize_answer(answer)) == normalized_prediction) for answer in case.answers)
 

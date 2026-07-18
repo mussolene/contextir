@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator
 
 from contextir import ContextIR
 from contextir.schemas import load_contract_schema
-from contextir.sir_runtime import PresidioPrivacyScrubber
+from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
 
 
 class ContextIRGatewayTests(unittest.TestCase):
@@ -65,6 +65,26 @@ class ContextIRGatewayTests(unittest.TestCase):
         self.assertEqual(len(bundle.contract["privacy"]["protected"]), 1)
         self.assertEqual(bundle.contract["events"][0]["count"], 40)
         self.assertLess(bundle.contract["stats"]["prompt_ratio"], 0.25)
+
+    def test_privacy_scrubber_classifies_card_before_phone(self) -> None:
+        result = PrivacyScrubber().scrub("Use test card 4111 1111 1111 1111 in the sandbox.")
+
+        self.assertEqual(result.vault, {"PII_CARD_1": "4111 1111 1111 1111"})
+        self.assertEqual(result.protected_spans[0].kind, "card")
+
+    def test_privacy_scrubber_does_not_mask_iso_date(self) -> None:
+        text = "Invoice date 2026-07-18, order 12345678, amount 4200."
+
+        result = PrivacyScrubber().scrub(text)
+
+        self.assertEqual(result.scrubbed_text, text)
+        self.assertEqual(result.vault, {})
+
+    def test_privacy_scrubber_keeps_international_phone_that_passes_luhn(self) -> None:
+        result = PrivacyScrubber().scrub("Call +447700677662 for support.")
+
+        self.assertEqual(result.vault, {"PII_PHONE_1": "+447700677662"})
+        self.assertEqual(result.protected_spans[0].kind, "phone")
 
     def test_covered_hybrid_events_render_as_plain_text(self) -> None:
         text = " ".join(

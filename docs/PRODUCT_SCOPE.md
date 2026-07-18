@@ -57,7 +57,9 @@ Version `1.0` additionally requires a stable public policy API, migration notes
 for the contract, and at least one production-shaped integration using an
 application-owned model adapter and tokenizer.
 
-The v0.4.0 seven-case follow-up clears the token and aggregate-quality gates on
-the tested 1.7B model, but it is not representative enough to exit preview:
-one QA case regressed, no 7-8B result exists, and privacy precision/recall has
-not yet been measured on a labelled deployment-shaped corpus.
+The v0.5.0 nine-case 8B run clears its aggregate quality and token gates with no
+per-case raw/auto regression. The external privacy run measures the supported
+email/phone/card profile, but its `0.8471` precision and synthetic source are not
+deployment evidence. The project therefore remains preview until official task
+coverage, application-owned integration, and deployment-specific privacy
+evaluation are broad enough to make the result representative.

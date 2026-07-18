@@ -3,8 +3,8 @@
 ## Identity
 
 - Component: deterministic `contextir.v2` gateway
-- Version: 0.4.1
-- Cases: 4 checked-in RU/EN fixtures
+- Version: 0.5.0
+- Cases: 9 checked-in RU/EN fixtures
 - Command: `python3 scripts/evaluate_contextir.py --check`
 - Hardware: developer machine; latency is not normalized across hardware
 
@@ -13,18 +13,20 @@
 | Metric | Result |
 |---|---:|
 | PII leaks into public contract or prompt | 0 |
+| Synthetic privacy precision / recall | 1.0000 / 1.0000 |
+| Annotated synthetic PII values | 6 |
 | Semantic expectation failures | 0 |
 | Product pipeline cases | 4 |
 | Product pipeline failures | 0 |
 | Exercised bounded fallbacks | 1 |
 | Compression-eligible cases | 1 |
 | Eligible prompt/source character ratio | 0.3627 |
-| Compile latency p50 | 0.0985 ms |
-| Compile latency p95 | 0.9610 ms |
-| Compile throughput | 3263.8 docs/s |
+| Compile latency p50 | 0.0934 ms |
+| Compile latency p95 | 0.9447 ms |
+| Compile throughput | 5339.9 docs/s |
 
 Performance uses a 100-operation warm-up followed by 5,000 repeated compilations
-over the four fixtures with Python garbage collection paused. The ratio uses
+over the nine fixtures with Python garbage collection paused. The ratio uses
 rendered characters, not a model tokenizer. Re-run on the target hardware for a
 valid comparison; the checked-in latency is only a developer-machine baseline.
 
@@ -45,6 +47,34 @@ compiles an unconditional raw baseline. Exhaustive counting remains the most
 expensive path because correctness requires scanning and preserving the full
 source. Timings are developer-machine diagnostics, not cross-machine targets.
 
+## External Privacy Profile
+
+The optional external run uses all 1,500 rows from
+[Microsoft Presidio Research](https://github.com/microsoft/presidio-research)'s
+MIT-licensed `synth_dataset_v2`. The dependency-free profile is
+scored only on the kinds it claims to support in that corpus: email, phone, and
+payment card.
+
+| Metric | Result |
+|---|---:|
+| Expected supported spans | 277 |
+| True positives | 277 |
+| False positives | 50 |
+| False negatives | 0 |
+| Exact-value precision | 0.8471 |
+| Exact-value recall | 1.0000 |
+
+```bash
+python3 scripts/evaluate_contextir.py --check --performance-iterations 0 \
+  --external-privacy-dataset /path/to/presidio-research/data/synth_dataset_v2.json \
+  --out reports/privacy_presidio_eval.json
+```
+
+This does not measure person names, addresses, identity documents, or Russian
+PII. Use the Presidio adapter with deployment-specific recognizers for those
+classes. The remaining phone false positives also make the default profile
+unsuitable as a standalone compliance boundary.
+
 ## What This Establishes
 
 The test establishes deterministic contract shape, preservation of configured
@@ -53,7 +83,7 @@ for small inputs.
 
 ## What It Does Not Establish
 
-The only long compression fixture is deliberately repetitive. These numbers do
-not establish general semantic fidelity, translation quality, PII recall, model
-task quality, or savings for any specific tokenizer. A representative A/B corpus
-is required before making production claims.
+The only long compiler compression fixture is deliberately repetitive. These
+numbers do not establish general semantic fidelity, translation quality,
+all-class PII recall, or savings for every tokenizer. A deployment-representative
+A/B corpus is still required before production claims.

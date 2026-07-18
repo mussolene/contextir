@@ -1,7 +1,7 @@
 from contextir.gateway import ContractCheck, ContextBundle, ContextIR, SIRKernel, load_contextir, load_kernel
 from contextir.pipeline import ContextPipeline, PipelinePolicy, PipelineResult, PreparedContext, ResponseVerification
 
-__version__ = "0.4.1"
+__version__ = "0.5.0"
 
 __all__ = [
     "ContextIR",

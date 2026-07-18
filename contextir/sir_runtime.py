@@ -79,8 +79,14 @@ class SIRRuntimeResult:
 class PrivacyScrubber:
     patterns = [
         ("email", re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)),
-        ("phone", re.compile(r"(?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)")),
-        ("card", re.compile(r"(?<!\w)(?:\d[ -]*?){13,19}(?!\w)")),
+        ("card", re.compile(r"(?<![\w+])(?:\d[ -]*){11,18}\d(?![ -]*\d)(?!\w)")),
+        (
+            "phone",
+            re.compile(
+                r"(?<!\w)(?!\d{4}[/-]\d{2}[/-]\d{2}\b)(?:\+?[\d(][\d ().-]{4,}\d(?:x\d{1,6})?)(?!\w)",
+                re.IGNORECASE,
+            ),
+        ),
         ("api_key", re.compile(r"\b(?:sk|pk|api|key|token)[-_]?[A-Za-z0-9]{16,}\b")),
     ]
 
@@ -92,7 +98,10 @@ class PrivacyScrubber:
         placeholders: dict[tuple[str, str], str] = {}
         for kind, pattern in self.patterns:
             while True:
-                match = pattern.search(scrubbed)
+                match = next(
+                    (item for item in pattern.finditer(scrubbed) if valid_privacy_match(kind, item.group(0))),
+                    None,
+                )
                 if not match:
                     break
                 surface = match.group(0)
@@ -113,6 +122,40 @@ class PrivacyScrubber:
                     vault[placeholder] = surface
                 scrubbed = scrubbed[: match.start()] + placeholder + scrubbed[match.end() :]
         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
+
+
+def valid_privacy_match(kind: str, surface: str) -> bool:
+    if kind == "card":
+        return luhn_valid(surface)
+    if kind != "phone":
+        return True
+    value = surface.lower()
+    base = value.split("x", 1)[0]
+    digits = re.sub(r"\D", "", base)
+    if not 7 <= len(digits) <= 15:
+        return False
+    if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", base):
+        return False
+    if re.fullmatch(r"\d{3}-\d{2}-\d{4}", base):
+        return False
+    if len(digits) < 9 and base.isdigit():
+        return False
+    return base.startswith("+") or not (12 <= len(digits) <= 19 and luhn_valid(base))
+
+
+def luhn_valid(value: str) -> bool:
+    digits = [int(item) for item in re.sub(r"\D", "", value)]
+    if not 12 <= len(digits) <= 19:
+        return False
+    total = 0
+    parity = len(digits) % 2
+    for index, digit in enumerate(digits):
+        if index % 2 == parity:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    return total % 10 == 0
 
 
 class PresidioPrivacyScrubber:

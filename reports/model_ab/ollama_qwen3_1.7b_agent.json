@@ -1,0 +1,150 @@
+{
+  "metadata": {
+    "backend": "ollama",
+    "backend_scope": "local_model",
+    "model": "qwen3:1.7b",
+    "context_length": 32768,
+    "max_output_tokens": 64,
+    "cases": 2,
+    "modes": [
+      "raw",
+      "auto"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "raw",
+      "cases": 2,
+      "mean_quality": 1.0,
+      "exact_matches": 2,
+      "estimated_prompt_ratio": 1.0,
+      "backend_prompt_tokens": 3176,
+      "mean_model_latency_ms": 4924.1,
+      "selected_modes": {
+        "raw": 2
+      }
+    },
+    {
+      "requested_mode": "auto",
+      "cases": 2,
+      "mean_quality": 1.0,
+      "exact_matches": 2,
+      "estimated_prompt_ratio": 0.0802,
+      "backend_prompt_tokens": 232,
+      "mean_model_latency_ms": 530.7,
+      "selected_modes": {
+        "hybrid": 2
+      }
+    }
+  ],
+  "results": [
+    {
+      "case_id": "agent_tool_route",
+      "dataset": "agent_tool_routing",
+      "source": "Agent tool-routing diagnostic",
+      "requested_mode": "raw",
+      "gold": [
+        "create_invoice"
+      ],
+      "prediction": "create_invoice",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 857,
+      "estimated_prompt_tokens": 857,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 5.689,
+      "source_chars": 5737,
+      "prompt_chars": 5735,
+      "protected_spans": 0,
+      "semantic_confidence": 0.4979,
+      "backend_prompt_tokens": 1584,
+      "backend_output_tokens": 3,
+      "backend_prompt_ms": 2937.072,
+      "backend_generation_ms": 46.922,
+      "model_latency_ms": 6817.707
+    },
+    {
+      "case_id": "agent_tool_route",
+      "dataset": "agent_tool_routing",
+      "source": "Agent tool-routing diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "create_invoice"
+      ],
+      "prediction": "create_invoice",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 857,
+      "estimated_prompt_tokens": 92,
+      "estimated_token_savings": 0.8926,
+      "compile_latency_ms": 3.899,
+      "source_chars": 5737,
+      "prompt_chars": 564,
+      "protected_spans": 0,
+      "semantic_confidence": 0.8889,
+      "backend_prompt_tokens": 144,
+      "backend_output_tokens": 3,
+      "backend_prompt_ms": 232.657,
+      "backend_generation_ms": 30.948,
+      "model_latency_ms": 605.647
+    },
+    {
+      "case_id": "agent_state_next",
+      "dataset": "agent_state",
+      "source": "Agent-state diagnostic",
+      "requested_mode": "raw",
+      "gold": [
+        "notify_finance"
+      ],
+      "prediction": "/notify_finance",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 1039,
+      "estimated_prompt_tokens": 1039,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 6.727,
+      "source_chars": 5677,
+      "prompt_chars": 5675,
+      "protected_spans": 0,
+      "semantic_confidence": 0.4979,
+      "backend_prompt_tokens": 1592,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 2782.313,
+      "backend_generation_ms": 83.785,
+      "model_latency_ms": 3030.401
+    },
+    {
+      "case_id": "agent_state_next",
+      "dataset": "agent_state",
+      "source": "Agent-state diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "notify_finance"
+      ],
+      "prediction": "/notify_finance",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 1039,
+      "estimated_prompt_tokens": 60,
+      "estimated_token_savings": 0.9423,
+      "compile_latency_ms": 2.029,
+      "source_chars": 5677,
+      "prompt_chars": 349,
+      "protected_spans": 0,
+      "semantic_confidence": 0.8889,
+      "backend_prompt_tokens": 88,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 157.3,
+      "backend_generation_ms": 60.638,
+      "model_latency_ms": 455.774
+    }
+  ]
+}

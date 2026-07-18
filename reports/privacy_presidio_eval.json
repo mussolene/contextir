@@ -16,11 +16,7 @@
     "privacy_recall": 1.0,
     "pipeline_cases": 4,
     "pipeline_failures": 0,
-    "pipeline_fallbacks": 1,
-    "compile_latency_ms_p50": 0.0934,
-    "compile_latency_ms_p95": 0.9447,
-    "compile_throughput_docs_s": 5339.9,
-    "performance_iterations": 5000
+    "pipeline_fallbacks": 1
   },
   "results": [
     {
@@ -166,5 +162,22 @@
       "mode": "raw",
       "fallbacks": 0
     }
-  ]
+  ],
+  "external_privacy": {
+    "dataset": "microsoft/presidio-research synth_dataset_v2",
+    "license": "MIT",
+    "rows": 1500,
+    "supported_kinds": [
+      "card",
+      "email",
+      "phone"
+    ],
+    "expected_values": 277,
+    "detected_values": 327,
+    "true_positives": 277,
+    "false_positives": 50,
+    "false_negatives": 0,
+    "precision": 0.8471,
+    "recall": 1.0
+  }
 }

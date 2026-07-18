@@ -7,12 +7,14 @@ Date: 2026-07-18
 The initial experiment did not support using ContextIR v0.3.0 as a
 general-purpose semantic compressor. After correcting task scoring and adding
 query-aware routing in v0.4.0, the same seven-case subset shows no aggregate
-quality loss on any tested backend. Qwen3 1.7B quality increased from `0.5570`
-raw to `0.6595` auto while model input fell by 69.0%.
+quality loss on any tested backend. The v0.5.0 nine-case Qwen3 8B run preserves
+every raw score, reduces model input by 70.0%, and cuts mean latency from
+`53.8 s` to `2.51 s`.
 
 This confirms the new algorithm on the bounded experiment, not in general.
-The sample is small, one QA case still regressed, and 7-8B, labelled privacy,
-and production agent-history evaluations remain missing.
+The sample is still small. External supported-class privacy and synthetic agent
+diagnostics are now present, but broad official and production-owned
+evaluations remain missing.
 
 ## Initial v0.3.0 Result
 
@@ -31,12 +33,14 @@ cases, including contexts whose answer-bearing evidence was then omitted.
 
 - hardware: Apple M1 Pro, 16 GB unified memory;
 - Ollama 0.32.0 with Qwen3 0.6B Q4 and Qwen3 1.7B Q4;
+- Ollama with Qwen3 8B Q4 and a 32K context window;
 - LM Studio with Qwen3 0.6B Q8 and a 32K context window;
 - deterministic temperature 0 and seed 42 where supported;
 - 64 output-token limit;
 - five official [LongBench v1](https://github.com/THUDM/LongBench) examples: two `multifieldqa_en`, two
   `passage_retrieval_en`, and one `passage_count`;
 - one [RULER](https://github.com/NVIDIA/RULER)-style needle diagnostic and one repeated operational/privacy case.
+- two strict synthetic agent tool-routing and state-retrieval diagnostics.
 
 The five LongBench examples are an official-data subset, not a LongBench
 leaderboard run. The synthetic needle follows the RULER task shape but is not
@@ -96,6 +100,23 @@ of the estimated source tokens. The biomedical QA case fell from `0.6154` to
 `0.3333`, so the aggregate improvement does not yet justify a no-regression
 claim across task families.
 
+## Qwen3 8B and Agent Diagnostics
+
+The v0.5.0 run compares raw and auto over the seven earlier cases plus two
+strict agent diagnostics. Auto selected hybrid for eight cases and correctly
+kept exhaustive passage counting raw.
+
+| Mode | Mean quality | Model input tokens | Prompt ratio | Mean latency |
+|---|---:|---:|---:|---:|
+| raw | 0.7272 | 61,081 | 1.0000 | 53.80 s |
+| auto | 0.7272 | 18,193 | 0.2995 | 2.51 s |
+
+Every case has identical raw and auto quality. Both tool routing and agent-state
+retrieval score `1.0` in both modes; on those two cases auto uses 232 instead of
+3,176 input tokens and reduces mean latency from `9.07 s` to `1.03 s`.
+Passage counting scores zero in both modes, so the current failure is not caused
+by compression. The suite is too small for a general no-regression claim.
+
 ## Cursor Control
 
 Cursor Agent CLI was verified with:
@@ -116,7 +137,8 @@ Download the three named LongBench JSONL files into a local directory, then run:
 ```bash
 python3 scripts/evaluate_model_ab.py \
   --backend ollama \
-  --model qwen3:1.7b \
+  --model qwen3:8b \
+  --modes raw,auto \
   --longbench-dir /tmp/contextir-longbench/data
 ```
 
@@ -128,8 +150,8 @@ is not copied into this repository. Machine-readable outputs are in
 
 - run the full official task sets with confidence intervals;
 - add a conventional summary and embedding-retrieval baseline;
-- test a 7-8B local model and production-shaped agent/tool histories;
+- replace synthetic agent diagnostics with application-owned histories;
 - measure per-task regression gates rather than relying only on aggregate mean;
-- evaluate PII precision, recall, and leakage on a labelled corpus;
+- evaluate all required PII classes on deployment-shaped RU/EN corpora;
 - replace English marker heuristics with explicit application-supplied task and
   query fields where integrations can provide them.

@@ -57,13 +57,17 @@ from `0.5570` raw to `0.6595` auto. See the
 [full card](benchmarks/LOCAL_MODEL_AB.md) and machine-readable reports under
 `reports/model_ab/`.
 
+The v0.5.0 Qwen3 8B run extends the suite to nine cases with two strict
+agent/tool diagnostics. Raw and auto quality are identical at `0.7272`; auto
+uses 70.0% fewer model input tokens and reduces mean latency from `53.8 s` to
+`2.51 s` on this machine.
+
 The broader release benchmark must still add:
 
 - a conventional text-summary baseline;
-- a representative 7-8B local model;
 - more official examples and bootstrap confidence intervals;
-- PII precision and recall on a labelled corpus;
-- application-owned tool-call and agent-history tasks.
+- deployment-owned PII and agent-history tasks;
+- a full official tool-calling benchmark rather than synthetic diagnostics.
 
 Required measurements:
 

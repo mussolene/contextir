@@ -12,7 +12,7 @@ claim production-grade semantic preservation or PII detection.
 ## Quick Start
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.4.1'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.5.0'
 ```
 
 ```python
@@ -147,19 +147,21 @@ evaluate recognizers on data representative of the deployment.
 
 The checked-in compiler smoke benchmark reports:
 
-- 4 compiler and 4 product-pipeline cases;
+- 9 compiler and 4 product-pipeline cases;
 - 0 expectation failures;
 - 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;
 - `0.3627` prompt/source ratio on the one compression-eligible repeated-context
   case.
 
-The first model-level A/B exposed a large quality loss in v0.3.0. The v0.4.0
-query-aware follow-up on the same seven cases reduced Qwen3 1.7B input tokens by
-69.0% while increasing measured quality from `0.5570` raw to `0.6595` auto.
-Query-aware auto also improved both tested 0.6B backends. This is promising
-small-sample evidence, not a general compression claim; one QA case still
-regressed and broader model, privacy, and application benchmarks remain open.
+The first model-level A/B exposed a large quality loss in v0.3.0. Query-aware
+routing corrected that failure. On the v0.5.0 nine-case Qwen3 8B run, raw and
+auto both scored `0.7272`, while auto reduced model input by 70.0% and mean
+latency from `53.8 s` to `2.51 s`. An external 1,500-row Presidio Research
+benchmark measured `0.8471` precision and `1.0000` recall for the dependency-free
+email/phone/card profile. These are bounded results, not universal quality or
+privacy claims; broader official tasks and deployment-specific PII evaluation
+remain required.
 
 See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
 [benchmark roadmap](docs/BENCHMARKS.md).

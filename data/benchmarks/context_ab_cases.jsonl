@@ -5,3 +5,5 @@
 {"id":"passage_count_0","source":"longbench","dataset":"passage_count","index":0}
 {"id":"needle_middle","source":"synthetic","dataset":"ruler_style_needle","variant":"middle"}
 {"id":"operational_privacy","source":"synthetic","dataset":"contextir_operational","variant":"privacy_rule"}
+{"id":"agent_tool_route","source":"synthetic","dataset":"agent_tool_routing","variant":"tool_route"}
+{"id":"agent_state_next","source":"synthetic","dataset":"agent_state","variant":"agent_state"}

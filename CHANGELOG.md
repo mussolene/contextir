@@ -2,6 +2,21 @@
 
 All notable changes to ContextIR are documented here.
 
+## 0.5.0 - 2026-07-18
+
+- added strict agent tool-routing and agent-state diagnostics to the existing
+  local-model A/B harness;
+- added optional external privacy-corpus evaluation with precision and recall
+  gates;
+- added exact-value privacy annotations to the checked-in gateway benchmark;
+- classified payment cards before phone numbers and added Luhn validation;
+- rejected ISO dates, IPv4 values, SSN-shaped values, and short bare numbers
+  from the dependency-free phone recognizer;
+- measured `0.8471` precision and `1.0000` recall on 277 supported spans from
+  Microsoft Presidio Research's 1,500-row MIT-licensed synthetic corpus;
+- measured identical `0.7272` raw and auto quality on nine Qwen3 8B cases while
+  reducing model input by 70.0% and mean latency from `53.8 s` to `2.51 s`.
+
 ## 0.4.1 - 2026-07-18
 
 - changed the product pipeline to compile the candidate first and build a raw

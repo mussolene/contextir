@@ -9,7 +9,7 @@ when semantic-only compression would be risky.
 Python 3.10 or newer is required.
 
 ```bash
-python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.4.1'
+python3 -m pip install 'contextir @ git+https://github.com/mussolene/contextir.git@v0.5.0'
 ```
 
 PyPI publication is intentionally deferred until Trusted Publishing is
