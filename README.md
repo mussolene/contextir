@@ -142,7 +142,7 @@ evaluate recognizers on data representative of the deployment.
 
 ## Current Evidence
 
-The checked-in ContextIR smoke benchmark currently reports:
+The checked-in compiler smoke benchmark reports:
 
 - 4 compiler and 4 product-pipeline cases;
 - 0 expectation failures;
@@ -151,10 +151,15 @@ The checked-in ContextIR smoke benchmark currently reports:
 - `0.3067` prompt/source ratio on the one compression-eligible repeated-context
   case.
 
-That result demonstrates the mechanism and bounded fallback, not general
-compression quality. The
-case is intentionally repetitive, and there is not yet a model-level A/B result
-on a representative corpus. See [BENCHMARKS.md](docs/BENCHMARKS.md).
+The first model-level A/B adds Ollama and LM Studio runs on Qwen3 0.6B and 1.7B,
+five official LongBench examples, and two diagnostics. `auto` reduced
+model-reported input tokens by about 46%, but caused 21-28% relative aggregate
+quality loss versus masked raw input. This is a useful negative result: v0.3.0
+is not ready to claim general semantic compression. The local privacy boundary,
+raw routing, and provider-independent adapter remain valid building blocks.
+
+See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
+[benchmark roadmap](docs/BENCHMARKS.md).
 
 ## Research Layer
 

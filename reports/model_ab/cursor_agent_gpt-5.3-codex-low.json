@@ -1,0 +1,205 @@
+{
+  "metadata": {
+    "backend": "agent",
+    "backend_scope": "remote_agent",
+    "model": "gpt-5.3-codex-low",
+    "context_length": 32768,
+    "max_output_tokens": 64,
+    "cases": 2,
+    "modes": [
+      "raw",
+      "auto",
+      "semantic"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "raw",
+      "cases": 2,
+      "mean_quality": 0.775,
+      "exact_matches": 0,
+      "estimated_prompt_ratio": 1.0,
+      "backend_prompt_tokens": null,
+      "mean_model_latency_ms": 8953.4,
+      "selected_modes": {
+        "raw": 2
+      }
+    },
+    {
+      "requested_mode": "auto",
+      "cases": 2,
+      "mean_quality": 0.75,
+      "exact_matches": 0,
+      "estimated_prompt_ratio": 1.0,
+      "backend_prompt_tokens": null,
+      "mean_model_latency_ms": 7423.2,
+      "selected_modes": {
+        "raw": 2
+      }
+    },
+    {
+      "requested_mode": "semantic",
+      "cases": 2,
+      "mean_quality": 0.265,
+      "exact_matches": 0,
+      "estimated_prompt_ratio": 1.8435,
+      "backend_prompt_tokens": null,
+      "mean_model_latency_ms": 9193.3,
+      "selected_modes": {
+        "semantic": 2
+      }
+    }
+  ],
+  "results": [
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "South West Ultras",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 1096,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 7.497,
+      "source_chars": 5225,
+      "prompt_chars": 5158,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": null,
+      "backend_output_tokens": null,
+      "model_latency_ms": 9936.204
+    },
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "auto",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "South West Ultras",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "insufficient_token_savings",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 1096,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 14.045,
+      "source_chars": 5225,
+      "prompt_chars": 5158,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": null,
+      "backend_output_tokens": null,
+      "model_latency_ms": 6811.743
+    },
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "semantic",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "The most active fan group is called **South Side**.",
+      "quality": 0.3077,
+      "error": null,
+      "selected_mode": "semantic",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 1378,
+      "estimated_token_savings": -0.2573,
+      "compile_latency_ms": 7.375,
+      "source_chars": 5225,
+      "prompt_chars": 4389,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": null,
+      "backend_output_tokens": null,
+      "model_latency_ms": 9408.37
+    },
+    {
+      "case_id": "operational_privacy",
+      "dataset": "contextir_operational",
+      "source": "ContextIR diagnostic",
+      "requested_mode": "raw",
+      "gold": [
+        "send payment 42 twice"
+      ],
+      "prediction": "Send payment 42 twice to a contact.",
+      "quality": 0.8,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 814,
+      "estimated_prompt_tokens": 814,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 8.954,
+      "source_chars": 5036,
+      "prompt_chars": 4387,
+      "protected_spans": 80,
+      "semantic_confidence": 0.8159,
+      "backend_prompt_tokens": null,
+      "backend_output_tokens": null,
+      "model_latency_ms": 7970.691
+    },
+    {
+      "case_id": "operational_privacy",
+      "dataset": "contextir_operational",
+      "source": "ContextIR diagnostic",
+      "requested_mode": "auto",
+      "gold": [
+        "send payment 42 twice"
+      ],
+      "prediction": "Sending payment 42 twice.",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "insufficient_token_savings",
+      "estimated_source_tokens": 814,
+      "estimated_prompt_tokens": 814,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 17.167,
+      "source_chars": 5036,
+      "prompt_chars": 4387,
+      "protected_spans": 80,
+      "semantic_confidence": 0.8159,
+      "backend_prompt_tokens": null,
+      "backend_output_tokens": null,
+      "model_latency_ms": 8034.651
+    },
+    {
+      "case_id": "operational_privacy",
+      "dataset": "contextir_operational",
+      "source": "ContextIR diagnostic",
+      "requested_mode": "semantic",
+      "gold": [
+        "send payment 42 twice"
+      ],
+      "prediction": "Запрещённое действие: **`send(payment, twice, contact, PII_EMAIL_1..PII_EMAIL_80)`** — то есть нельзя отправлять платёж дважды любому контакту из этих placeholder-адресов.",
+      "quality": 0.2222,
+      "error": null,
+      "selected_mode": "semantic",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 814,
+      "estimated_prompt_tokens": 2143,
+      "estimated_token_savings": -1.6327,
+      "compile_latency_ms": 8.578,
+      "source_chars": 5036,
+      "prompt_chars": 8692,
+      "protected_spans": 80,
+      "semantic_confidence": 0.8159,
+      "backend_prompt_tokens": null,
+      "backend_output_tokens": null,
+      "model_latency_ms": 8978.283
+    }
+  ]
+}

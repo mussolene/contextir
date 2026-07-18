@@ -38,19 +38,30 @@ Current checked-in result:
 Detailed, versioned cards:
 
 - [Gateway smoke and performance](benchmarks/GATEWAY_SMOKE.md)
+- [Local model A/B](benchmarks/LOCAL_MODEL_AB.md)
 - [Legacy lexical roundtrip](benchmarks/LEGACY_LEXICAL.md)
 
 This is a smoke test. The compression case contains repeated context and is
 designed to prove deduplication, not estimate production quality.
 
-## Required A/B Benchmark
+## First Model A/B
 
-The next benchmark must compare the same downstream tasks using:
+The first local-model experiment now compares the same downstream tasks using
+masked raw, ContextIR auto, forced hybrid, and forced semantic prompts. It uses
+an official LongBench subset, RULER-style diagnostics, Ollama, and LM Studio.
 
-1. masked raw context;
-2. a conventional text summary;
-3. ContextIR auto mode;
-4. ContextIR forced hybrid mode.
+The result is negative for universal semantic compression: approximately 46%
+model-token reduction came with 21-28% relative aggregate quality loss on the
+tested local models. See the [full card](benchmarks/LOCAL_MODEL_AB.md) and
+machine-readable reports under `reports/model_ab/`.
+
+The broader release benchmark must still add:
+
+- a conventional text-summary baseline;
+- a representative 7-8B local model;
+- more official examples and bootstrap confidence intervals;
+- PII precision and recall on a labelled corpus;
+- application-owned tool-call and agent-history tasks.
 
 Required measurements:
 
@@ -61,7 +72,8 @@ Required measurements:
 - compilation latency, model latency, and memory;
 - fallback rate from semantic to hybrid/raw.
 
-Model-level claims must not be made until this evaluation exists.
+Model-level compression claims remain unsupported until the quality-loss gate
+is met.
 
 ## Legacy Results
 
