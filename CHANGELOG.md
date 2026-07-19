@@ -20,6 +20,15 @@ All notable changes to ContextIR are documented here.
 - added `--chunked-retrieval` and bounded chunk controls to the CLI;
 - expanded the release benchmark to ten pipeline cases and verified the same
   constrained retrieval answer on local Qwen3 0.6B and 8B models.
+- expanded the model A/B harness with real bounded-pipeline execution, model
+  call totals, compiler decisions, stage distributions, and deterministic
+  paired bootstrap confidence intervals;
+- measured ten official LongBench retrieval/QA examples at a 2K context:
+  Qwen3 8B improved from `0.1668` raw to `0.6983` while using 39.0% of the
+  backend input tokens; Qwen3 0.6B improved from `0.1889` to `0.3121`, but its
+  paired confidence interval still crosses zero;
+- removed Qwen-style `<think>` wrappers only after raw-response safety checks
+  and excluded provider control tags from lexical grounding.
 
 ## 1.2.0 - 2026-07-19
 

@@ -1,0 +1,896 @@
+{
+  "metadata": {
+    "backend": "ollama",
+    "backend_scope": "local_model",
+    "model": "qwen3:8b",
+    "context_length": 2048,
+    "max_output_tokens": 64,
+    "prompt_overhead_tokens": 32,
+    "max_chunk_calls": 16,
+    "bootstrap_samples": 2000,
+    "cases": 10,
+    "modes": [
+      "raw",
+      "chunked"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "raw",
+      "cases": 10,
+      "mean_quality": 0.1668,
+      "quality_ci_95": [
+        0.0405,
+        0.3213
+      ],
+      "exact_matches": 0,
+      "failures": 0,
+      "estimated_prompt_ratio": 1.0,
+      "backend_prompt_tokens": 10936,
+      "mean_model_latency_ms": 1446.3,
+      "model_calls": 10,
+      "selected_modes": {
+        "raw": 10
+      },
+      "decisions": {
+        "forced_mode": 10
+      },
+      "pipeline_stages": {},
+      "pipeline_accepted": 0
+    },
+    {
+      "requested_mode": "chunked",
+      "cases": 10,
+      "mean_quality": 0.6983,
+      "quality_ci_95": [
+        0.47,
+        0.9026
+      ],
+      "exact_matches": 5,
+      "failures": 0,
+      "estimated_prompt_ratio": 0.0401,
+      "backend_prompt_tokens": 4267,
+      "mean_model_latency_ms": 1001.5,
+      "model_calls": 10,
+      "selected_modes": {
+        "hybrid": 10
+      },
+      "decisions": {
+        "risk_standard": 10
+      },
+      "pipeline_stages": {
+        "direct": 10
+      },
+      "pipeline_accepted": 10
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "raw",
+      "candidate": "chunked",
+      "paired_cases": 10,
+      "mean_quality_delta": 0.5315,
+      "quality_delta_ci_95": [
+        0.2086,
+        0.8225
+      ],
+      "improved": 7,
+      "tied": 2,
+      "regressed": 1,
+      "backend_prompt_token_ratio": 0.3902,
+      "model_latency_ratio": 0.6924
+    }
+  ],
+  "results": [
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "South West Ultras",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 1096,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 6.399,
+      "source_chars": 5225,
+      "prompt_chars": 5158,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": 1702,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 107.283,
+      "backend_generation_ms": 344.794,
+      "model_latency_ms": 1559.261,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "South West Ultras",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 241,
+      "estimated_token_savings": 0.7801,
+      "compile_latency_ms": 12.4,
+      "source_chars": 5225,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.6667,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 1096,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 241,
+            "response_chars": 17,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 302,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 80.042,
+      "backend_generation_ms": 227.984,
+      "model_latency_ms": 826.724,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_1",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "No, it is not necessary."
+      ],
+      "prediction": "No",
+      "quality": 0.3333,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 9248,
+      "estimated_prompt_tokens": 9248,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 53.329,
+      "source_chars": 45867,
+      "prompt_chars": 45856,
+      "protected_spans": 2,
+      "semantic_confidence": 0.5633,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 2,
+      "backend_prompt_ms": 92.437,
+      "backend_generation_ms": 55.221,
+      "model_latency_ms": 898.882,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_1",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "No, it is not necessary."
+      ],
+      "prediction": "No.",
+      "quality": 0.3333,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 9248,
+      "estimated_prompt_tokens": 281,
+      "estimated_token_savings": 0.9696,
+      "compile_latency_ms": 22.524,
+      "source_chars": 45867,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 1.0,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 9248,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 281,
+            "response_chars": 3,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 355,
+      "backend_output_tokens": 3,
+      "backend_prompt_ms": 89.637,
+      "backend_generation_ms": 112.135,
+      "model_latency_ms": 556.972,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_2",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Low temperature scanning tunneling microscopy and spectroscopy (STM/STS)."
+      ],
+      "prediction": "Low-temperature STM/STS measurements",
+      "quality": 0.3077,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 7401,
+      "estimated_prompt_tokens": 7401,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 35.902,
+      "source_chars": 31620,
+      "prompt_chars": 31573,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5082,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 8,
+      "backend_prompt_ms": 90.223,
+      "backend_generation_ms": 396.971,
+      "model_latency_ms": 1143.808,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_2",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Low temperature scanning tunneling microscopy and spectroscopy (STM/STS)."
+      ],
+      "prediction": "Simulation and experimental techniques including deposition on Au(111) surfaces, in-situ annealing, and use of gate electrodes.",
+      "quality": 0.0769,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 7401,
+      "estimated_prompt_tokens": 372,
+      "estimated_token_savings": 0.9497,
+      "compile_latency_ms": 18.53,
+      "source_chars": 31620,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 7401,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 372,
+            "response_chars": 127,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 513,
+      "backend_output_tokens": 28,
+      "backend_prompt_ms": 78.239,
+      "backend_generation_ms": 1526.179,
+      "model_latency_ms": 2034.768,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_3",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Implantable Cardioverter Defibrillator (ICD) is a surgically implanted electronic device to treat life-threatening heartbeat irregularities."
+      ],
+      "prediction": "The purpose of an ICD is to detect and correct abnormal heart rhythms, such as ventricular tachycardia or fibrillation, by delivering an electrical shock to restore a normal heartbeat.",
+      "quality": 0.2051,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10617,
+      "estimated_prompt_tokens": 10617,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 65.729,
+      "source_chars": 54893,
+      "prompt_chars": 54891,
+      "protected_spans": 1,
+      "semantic_confidence": 0.5306,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 40,
+      "backend_prompt_ms": 91.716,
+      "backend_generation_ms": 2265.566,
+      "model_latency_ms": 3101.336,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_3",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Implantable Cardioverter Defibrillator (ICD) is a surgically implanted electronic device to treat life-threatening heartbeat irregularities."
+      ],
+      "prediction": "To treat life-threatening heartbeat irregularities.",
+      "quality": 0.5263,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10617,
+      "estimated_prompt_tokens": 307,
+      "estimated_token_savings": 0.9711,
+      "compile_latency_ms": 33.926,
+      "source_chars": 54893,
+      "prompt_chars": null,
+      "protected_spans": 1,
+      "semantic_confidence": 0.3333,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10617,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 307,
+            "response_chars": 51,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 363,
+      "backend_output_tokens": 9,
+      "backend_prompt_ms": 77.612,
+      "backend_generation_ms": 490.78,
+      "model_latency_ms": 931.221,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_4",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "The sides of the fuselage are sloped to create a conical section when the fuselage is formed."
+      ],
+      "prediction": "To ensure a smooth transition from the turtledeck skin up onto the foam and then back onto the turtledeck.",
+      "quality": 0.0714,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 7146,
+      "estimated_prompt_tokens": 7146,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 41.63,
+      "source_chars": 34692,
+      "prompt_chars": 34685,
+      "protected_spans": 1,
+      "semantic_confidence": 0.5727,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 23,
+      "backend_prompt_ms": 101.461,
+      "backend_generation_ms": 1325.362,
+      "model_latency_ms": 2112.042,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_4",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "The sides of the fuselage are sloped to create a conical section when the fuselage is formed."
+      ],
+      "prediction": "To form a conical section instead of a cylindrical one, allowing the longerons to be positioned correctly.",
+      "quality": 0.2963,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 7146,
+      "estimated_prompt_tokens": 247,
+      "estimated_token_savings": 0.9654,
+      "compile_latency_ms": 16.025,
+      "source_chars": 34692,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5714,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 7146,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 247,
+            "response_chars": 106,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 282,
+      "backend_output_tokens": 22,
+      "backend_prompt_ms": 76.591,
+      "backend_generation_ms": 1390.357,
+      "model_latency_ms": 1838.181,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_0",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 15"
+      ],
+      "prediction": "Paragraph 30",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10153,
+      "estimated_prompt_tokens": 10153,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 52.64,
+      "source_chars": 51296,
+      "prompt_chars": 51243,
+      "protected_spans": 1,
+      "semantic_confidence": 0.5198,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 81.068,
+      "backend_generation_ms": 226.079,
+      "model_latency_ms": 1037.647,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_0",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 15"
+      ],
+      "prediction": "Paragraph 15",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10153,
+      "estimated_prompt_tokens": 270,
+      "estimated_token_savings": 0.9734,
+      "compile_latency_ms": 25.192,
+      "source_chars": 51296,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2778,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10153,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 270,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 314,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 85.042,
+      "backend_generation_ms": 224.404,
+      "model_latency_ms": 667.0,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_1",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 8"
+      ],
+      "prediction": "Paragraph 30",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10278,
+      "estimated_prompt_tokens": 10278,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 56.649,
+      "source_chars": 52650,
+      "prompt_chars": 52605,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5308,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 84.285,
+      "backend_generation_ms": 225.973,
+      "model_latency_ms": 997.67,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_1",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 8"
+      ],
+      "prediction": "Paragraph 8",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10278,
+      "estimated_prompt_tokens": 472,
+      "estimated_token_savings": 0.9541,
+      "compile_latency_ms": 25.755,
+      "source_chars": 52650,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2615,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10278,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 472,
+            "response_chars": 11,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 490,
+      "backend_output_tokens": 4,
+      "backend_prompt_ms": 79.089,
+      "backend_generation_ms": 168.267,
+      "model_latency_ms": 652.023,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_2",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 18"
+      ],
+      "prediction": "Paragraph 29",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 11628,
+      "estimated_prompt_tokens": 11628,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 66.819,
+      "source_chars": 57444,
+      "prompt_chars": 57373,
+      "protected_spans": 3,
+      "semantic_confidence": 0.5181,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 77.782,
+      "backend_generation_ms": 306.206,
+      "model_latency_ms": 1219.403,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_2",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 18"
+      ],
+      "prediction": "Paragraph 18",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 11628,
+      "estimated_prompt_tokens": 448,
+      "estimated_token_savings": 0.9615,
+      "compile_latency_ms": 39.932,
+      "source_chars": 57444,
+      "prompt_chars": null,
+      "protected_spans": 3,
+      "semantic_confidence": 0.2034,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 11628,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 448,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 538,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 101.925,
+      "backend_generation_ms": 227.33,
+      "model_latency_ms": 806.843,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_3",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 17"
+      ],
+      "prediction": "Paragraph 30",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 11008,
+      "estimated_prompt_tokens": 11008,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 63.73,
+      "source_chars": 56073,
+      "prompt_chars": 56022,
+      "protected_spans": 2,
+      "semantic_confidence": 0.5221,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 86.045,
+      "backend_generation_ms": 235.372,
+      "model_latency_ms": 1287.97,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_3",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 17"
+      ],
+      "prediction": "Paragraph 17",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 11008,
+      "estimated_prompt_tokens": 525,
+      "estimated_token_savings": 0.9523,
+      "compile_latency_ms": 34.781,
+      "source_chars": 56073,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2545,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 11008,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 525,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 602,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 85.502,
+      "backend_generation_ms": 227.432,
+      "model_latency_ms": 852.46,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_4",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 14"
+      ],
+      "prediction": "Paragraph 31",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10924,
+      "estimated_prompt_tokens": 10924,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 60.991,
+      "source_chars": 55357,
+      "prompt_chars": 55180,
+      "protected_spans": 0,
+      "semantic_confidence": 0.523,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 84.059,
+      "backend_generation_ms": 226.697,
+      "model_latency_ms": 1105.313,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_4",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 14"
+      ],
+      "prediction": "Paragraph 14",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10924,
+      "estimated_prompt_tokens": 423,
+      "estimated_token_savings": 0.9613,
+      "compile_latency_ms": 23.217,
+      "source_chars": 55357,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2245,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10924,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 423,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 508,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 81.798,
+      "backend_generation_ms": 293.065,
+      "model_latency_ms": 848.449,
+      "model_calls": 1
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Local Model A/B
 
-Date: 2026-07-18
+Date: 2026-07-19
 
 ## Verdict
 
@@ -15,6 +15,10 @@ This confirms the new algorithm on the bounded experiment, not in general.
 The sample is still small. External supported-class privacy and synthetic agent
 diagnostics are now present, but broad official and production-owned
 evaluations remain missing.
+
+The v1.3 constrained-context follow-up adds paired bootstrap intervals over ten
+official QA/retrieval examples. It supports a positive quality-and-input result
+for Qwen3 8B on that subset. The smaller 0.6B result remains inconclusive.
 
 ## Initial v0.3.0 Result
 
@@ -116,6 +120,61 @@ retrieval score `1.0` in both modes; on those two cases auto uses 232 instead of
 3,176 input tokens and reduces mean latency from `9.07 s` to `1.03 s`.
 Passage counting scores zero in both modes, so the current failure is not caused
 by compression. The suite is too small for a general no-regression claim.
+
+## v1.3 Constrained Retrieval
+
+The v1.3 follow-up uses the first five `multifieldqa_en` and first five
+`passage_retrieval_en` LongBench examples with the same 2,048-token Ollama
+context, 64 output tokens, and 32 reserved prompt-overhead tokens in both arms.
+The raw arm is allowed to undergo the backend's normal context truncation. The
+runtime arm calls `ContextPipeline.run(..., chunked_retrieval=True)`, records
+every model call, and enforces a 1,952-token prompt budget before invocation.
+
+| Model | Mode | Mean quality | 95% quality CI | Backend input | Mean latency |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Qwen3 0.6B Q4 | raw | 0.1889 | [0.0548, 0.3296] | 10,936 | 0.502 s |
+| Qwen3 0.6B Q4 | runtime | 0.3121 | [0.1106, 0.5349] | 4,267 | 0.350 s |
+| Qwen3 8B Q4 | raw | 0.1668 | [0.0405, 0.3213] | 10,936 | 1.446 s |
+| Qwen3 8B Q4 | runtime | 0.6983 | [0.4700, 0.9026] | 4,267 | 1.002 s |
+
+The paired comparison is more informative than the independent intervals:
+
+| Model | Mean quality delta | Paired 95% CI | Better / tied / worse | Input ratio |
+| --- | ---: | ---: | ---: | ---: |
+| Qwen3 0.6B Q4 | +0.1232 | [-0.0154, 0.3392] | 4 / 5 / 1 | 0.3902 |
+| Qwen3 8B Q4 | +0.5315 | [0.2086, 0.8225] | 7 / 2 / 1 | 0.3902 |
+
+Latency was measured with locally resident, warmed models and is useful only
+for the within-run comparison on this machine.
+
+The 8B interval excludes zero on this subset. The 0.6B interval does not, so
+its observed improvement is directional rather than established. Both models
+regress on `multifieldqa_en_2`; deployment gates should therefore remain
+per-task and must not rely only on aggregate quality.
+
+All ten official runtime cases used one `direct` model call after query-aware
+evidence packing. None needed map/reduce. A separate synthetic diagnostic puts
+the answer near the start of one 3,000-word evidence segment so raw truncation
+loses it. That case activated exactly one `map` call and changed extraction
+success from 0 to 1 on both models. It is route coverage, not an official
+quality estimate; on the 0.6B run the map prompt also used more backend tokens
+than the truncated raw control.
+
+Reproduce the official subset:
+
+```bash
+python3 scripts/evaluate_model_ab.py \
+  --backend ollama \
+  --model qwen3:8b \
+  --modes raw,chunked \
+  --case-ids multifieldqa_en_0,multifieldqa_en_1,multifieldqa_en_2,multifieldqa_en_3,multifieldqa_en_4,passage_retrieval_en_0,passage_retrieval_en_1,passage_retrieval_en_2,passage_retrieval_en_3,passage_retrieval_en_4 \
+  --context-length 2048 \
+  --max-output-tokens 64 \
+  --longbench-dir /tmp/contextir-longbench/data
+```
+
+Machine-readable reports use the `_constrained_retrieval.json` and
+`_chunk_map.json` suffixes under `reports/model_ab/`.
 
 ## Cursor Control
 

@@ -12,6 +12,8 @@ Risk = Literal["low", "standard", "high"]
 Task = Literal["reasoning", "transform"]
 TokenCounter = Callable[[str], int]
 PLACEHOLDER_RE = re.compile(r"\bPII_[A-Z0-9_]+_\d+\b")
+THINK_BLOCK_RE = re.compile(r"<think\b[^>]*>.*?</think\s*>", re.IGNORECASE | re.DOTALL)
+THINK_TAG_RE = re.compile(r"</?think\b[^>]*>", re.IGNORECASE)
 NO_EVIDENCE = "CTXIR_NONE"
 
 
@@ -310,7 +312,7 @@ class ContextPipeline:
                 )
             )
             final_prepared = prepared
-            final_answer = answer
+            final_answer = clean_model_output(answer)
             if verification.accepted:
                 accepted = True
                 break
@@ -369,8 +371,9 @@ class ContextPipeline:
                 if verifier
                 else self.verify_response(prepared, answer, preserve_input=False)
             )
-            no_evidence = self._is_no_evidence(answer)
-            if not no_evidence and "CTXIR_RETRIEVAL_" in answer.upper():
+            cleaned_answer = clean_model_output(answer)
+            no_evidence = self._is_no_evidence(cleaned_answer)
+            if not no_evidence and "CTXIR_RETRIEVAL_" in cleaned_answer.upper():
                 verification.accepted = False
                 verification.reasons.append("protocol_output")
             attempts.append(
@@ -386,13 +389,13 @@ class ContextPipeline:
             final_prepared = prepared
             if not verification.accepted:
                 return PipelineResult("", False, "hybrid", attempts, final_prepared)
-            if not no_evidence and not self._is_grounded(answer, prepared.bundle):
+            if not no_evidence and not self._is_grounded(cleaned_answer, prepared.bundle):
                 verification.accepted = False
                 verification.reasons.append("unsupported_candidate")
                 continue
-            normalized_answer = " ".join(answer.lower().split())
+            normalized_answer = " ".join(cleaned_answer.lower().split())
             if not no_evidence and normalized_answer not in seen_candidates:
-                candidates.append((answer.strip(), verification))
+                candidates.append((cleaned_answer, verification))
                 seen_candidates.add(normalized_answer)
 
         if not candidates:
@@ -414,12 +417,13 @@ class ContextPipeline:
                     prompt_budget,
                     "chunked_retrieval_reduce",
                 )
-            final_answer = model_invoke(reduce_prompt)
+            raw_final_answer = model_invoke(reduce_prompt)
             final_verification = (
-                verifier(reduce_prepared, final_answer)
+                verifier(reduce_prepared, raw_final_answer)
                 if verifier
-                else self.verify_response(reduce_prepared, final_answer, preserve_input=False)
+                else self.verify_response(reduce_prepared, raw_final_answer, preserve_input=False)
             )
+            final_answer = clean_model_output(raw_final_answer)
             if self._is_no_evidence(final_answer) or "CTXIR_RETRIEVAL_" in final_answer.upper():
                 final_verification.accepted = False
                 final_verification.reasons.append("no_supported_answer")
@@ -430,7 +434,7 @@ class ContextPipeline:
                 PipelineAttempt(
                     mode=reduce_prepared.mode,
                     prompt_tokens=reduce_prepared.prompt_tokens,
-                    response_chars=len(final_answer),
+                    response_chars=len(raw_final_answer),
                     verification=final_verification,
                     stage="reduce",
                 )
@@ -589,7 +593,10 @@ class ContextPipeline:
 
     @staticmethod
     def _grounding_terms(text: str) -> set[str]:
-        return content_terms(text) | set(re.findall(r"(?<!\w)\d+(?:[.,:]\d+)*(?!\w)", text.lower()))
+        visible_text = re.sub(r"</?[A-Za-z][^>]*>", " ", text)
+        return content_terms(visible_text) | set(
+            re.findall(r"(?<!\w)\d+(?:[.,:]\d+)*(?!\w)", visible_text.lower())
+        )
 
     def verify_response(
         self,
@@ -716,6 +723,12 @@ def approximate_token_count(text: str) -> int:
     """Dependency-free estimate. Supply the target model tokenizer in production."""
 
     return len(re.findall(r"\w+|[^\w\s]", text, flags=re.UNICODE))
+
+
+def clean_model_output(text: str) -> str:
+    """Remove provider reasoning wrappers only after the raw response is safety-checked."""
+
+    return THINK_TAG_RE.sub("", THINK_BLOCK_RE.sub("", text)).strip()
 
 
 __all__ = [

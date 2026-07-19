@@ -1,0 +1,896 @@
+{
+  "metadata": {
+    "backend": "ollama",
+    "backend_scope": "local_model",
+    "model": "qwen3:0.6b",
+    "context_length": 2048,
+    "max_output_tokens": 64,
+    "prompt_overhead_tokens": 32,
+    "max_chunk_calls": 16,
+    "bootstrap_samples": 2000,
+    "cases": 10,
+    "modes": [
+      "raw",
+      "chunked"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "raw",
+      "cases": 10,
+      "mean_quality": 0.1889,
+      "quality_ci_95": [
+        0.0548,
+        0.3296
+      ],
+      "exact_matches": 0,
+      "failures": 0,
+      "estimated_prompt_ratio": 1.0,
+      "backend_prompt_tokens": 10936,
+      "mean_model_latency_ms": 502.0,
+      "model_calls": 10,
+      "selected_modes": {
+        "raw": 10
+      },
+      "decisions": {
+        "forced_mode": 10
+      },
+      "pipeline_stages": {},
+      "pipeline_accepted": 0
+    },
+    {
+      "requested_mode": "chunked",
+      "cases": 10,
+      "mean_quality": 0.3121,
+      "quality_ci_95": [
+        0.1106,
+        0.5349
+      ],
+      "exact_matches": 1,
+      "failures": 0,
+      "estimated_prompt_ratio": 0.0401,
+      "backend_prompt_tokens": 4267,
+      "mean_model_latency_ms": 349.5,
+      "model_calls": 10,
+      "selected_modes": {
+        "hybrid": 10
+      },
+      "decisions": {
+        "risk_standard": 10
+      },
+      "pipeline_stages": {
+        "direct": 10
+      },
+      "pipeline_accepted": 10
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "raw",
+      "candidate": "chunked",
+      "paired_cases": 10,
+      "mean_quality_delta": 0.1232,
+      "quality_delta_ci_95": [
+        -0.0154,
+        0.3392
+      ],
+      "improved": 4,
+      "tied": 5,
+      "regressed": 1,
+      "backend_prompt_token_ratio": 0.3902,
+      "model_latency_ratio": 0.6962
+    }
+  ],
+  "results": [
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "The most active fan club is the South West Ultras fan club.",
+      "quality": 0.6667,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 1096,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 6.791,
+      "source_chars": 5225,
+      "prompt_chars": 5158,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5002,
+      "backend_prompt_tokens": 1702,
+      "backend_output_tokens": 15,
+      "backend_prompt_ms": 82.306,
+      "backend_generation_ms": 139.112,
+      "model_latency_ms": 1232.722,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_0",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "South West Ultras fan club."
+      ],
+      "prediction": "South West Ultras",
+      "quality": 0.75,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 1096,
+      "estimated_prompt_tokens": 241,
+      "estimated_token_savings": 0.7801,
+      "compile_latency_ms": 6.091,
+      "source_chars": 5225,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.6667,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 1096,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 241,
+            "response_chars": 17,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 302,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 28.768,
+      "backend_generation_ms": 45.351,
+      "model_latency_ms": 291.465,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_1",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "No, it is not necessary."
+      ],
+      "prediction": "No.",
+      "quality": 0.3333,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 9248,
+      "estimated_prompt_tokens": 9248,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 49.663,
+      "source_chars": 45867,
+      "prompt_chars": 45856,
+      "protected_spans": 2,
+      "semantic_confidence": 0.5633,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 3,
+      "backend_prompt_ms": 27.529,
+      "backend_generation_ms": 21.53,
+      "model_latency_ms": 350.596,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_1",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "No, it is not necessary."
+      ],
+      "prediction": "No.",
+      "quality": 0.3333,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 9248,
+      "estimated_prompt_tokens": 281,
+      "estimated_token_savings": 0.9696,
+      "compile_latency_ms": 24.935,
+      "source_chars": 45867,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 1.0,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 9248,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 281,
+            "response_chars": 3,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 355,
+      "backend_output_tokens": 3,
+      "backend_prompt_ms": 31.973,
+      "backend_generation_ms": 21.483,
+      "model_latency_ms": 307.772,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_2",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Low temperature scanning tunneling microscopy and spectroscopy (STM/STS)."
+      ],
+      "prediction": "The experimental techniques used to study the quantum dot structures in this research include low-temperature STM/STS measurements and ab-initio simulations.",
+      "quality": 0.2143,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 7401,
+      "estimated_prompt_tokens": 7401,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 33.893,
+      "source_chars": 31620,
+      "prompt_chars": 31573,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5082,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 28,
+      "backend_prompt_ms": 25.7,
+      "backend_generation_ms": 234.186,
+      "model_latency_ms": 729.958,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_2",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Low temperature scanning tunneling microscopy and spectroscopy (STM/STS)."
+      ],
+      "prediction": "The experimental techniques used to study the quantum dot structures in this research are the in-situ annealing process and the simulations.",
+      "quality": 0.0769,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 7401,
+      "estimated_prompt_tokens": 372,
+      "estimated_token_savings": 0.9497,
+      "compile_latency_ms": 15.851,
+      "source_chars": 31620,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 7401,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 372,
+            "response_chars": 140,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 513,
+      "backend_output_tokens": 26,
+      "backend_prompt_ms": 17.657,
+      "backend_generation_ms": 211.762,
+      "model_latency_ms": 428.472,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_3",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Implantable Cardioverter Defibrillator (ICD) is a surgically implanted electronic device to treat life-threatening heartbeat irregularities."
+      ],
+      "prediction": "The purpose of an ICD is to identify and treat patients with specific medical conditions.",
+      "quality": 0.2963,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10617,
+      "estimated_prompt_tokens": 10617,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 64.985,
+      "source_chars": 54893,
+      "prompt_chars": 54891,
+      "protected_spans": 1,
+      "semantic_confidence": 0.5306,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 18,
+      "backend_prompt_ms": 32.78,
+      "backend_generation_ms": 150.625,
+      "model_latency_ms": 490.044,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_3",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Implantable Cardioverter Defibrillator (ICD) is a surgically implanted electronic device to treat life-threatening heartbeat irregularities."
+      ],
+      "prediction": "The purpose of an ICD is to treat life-threatening heart irregularities.",
+      "quality": 0.5217,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10617,
+      "estimated_prompt_tokens": 307,
+      "estimated_token_savings": 0.9711,
+      "compile_latency_ms": 26.868,
+      "source_chars": 54893,
+      "prompt_chars": null,
+      "protected_spans": 1,
+      "semantic_confidence": 0.3333,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10617,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 307,
+            "response_chars": 72,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 363,
+      "backend_output_tokens": 16,
+      "backend_prompt_ms": 22.945,
+      "backend_generation_ms": 140.997,
+      "model_latency_ms": 393.504,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_4",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "The sides of the fuselage are sloped to create a conical section when the fuselage is formed."
+      ],
+      "prediction": "The sides of the fuselage are sloped (tumbled home) to ensure proper alignment with the bulkheads and to allow for a smooth transition between the fuselage and the composite parts.",
+      "quality": 0.3784,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 7146,
+      "estimated_prompt_tokens": 7146,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 43.145,
+      "source_chars": 34692,
+      "prompt_chars": 34685,
+      "protected_spans": 1,
+      "semantic_confidence": 0.5727,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 39,
+      "backend_prompt_ms": 37.874,
+      "backend_generation_ms": 327.169,
+      "model_latency_ms": 594.678,
+      "model_calls": 1
+    },
+    {
+      "case_id": "multifieldqa_en_4",
+      "dataset": "multifieldqa_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "The sides of the fuselage are sloped to create a conical section when the fuselage is formed."
+      ],
+      "prediction": "The sides of the fuselage are sloped (tumbled home) to form a conical shape, which is important because it provides the proper shape for building with a flat top longeron, unlike a cylindrical section.",
+      "quality": 0.439,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 7146,
+      "estimated_prompt_tokens": 247,
+      "estimated_token_savings": 0.9654,
+      "compile_latency_ms": 18.427,
+      "source_chars": 34692,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5714,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 7146,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 247,
+            "response_chars": 201,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 282,
+      "backend_output_tokens": 45,
+      "backend_prompt_ms": 10.191,
+      "backend_generation_ms": 378.681,
+      "model_latency_ms": 581.247,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_0",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 15"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10153,
+      "estimated_prompt_tokens": 10153,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 58.816,
+      "source_chars": 51296,
+      "prompt_chars": 51243,
+      "protected_spans": 1,
+      "semantic_confidence": 0.5198,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 34.225,
+      "backend_generation_ms": 38.141,
+      "model_latency_ms": 319.539,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_0",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 15"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10153,
+      "estimated_prompt_tokens": 270,
+      "estimated_token_savings": 0.9734,
+      "compile_latency_ms": 32.343,
+      "source_chars": 51296,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2778,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10153,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 270,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 314,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 21.837,
+      "backend_generation_ms": 48.646,
+      "model_latency_ms": 256.847,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_1",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 8"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10278,
+      "estimated_prompt_tokens": 10278,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 60.166,
+      "source_chars": 52650,
+      "prompt_chars": 52605,
+      "protected_spans": 0,
+      "semantic_confidence": 0.5308,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 37.177,
+      "backend_generation_ms": 36.251,
+      "model_latency_ms": 314.357,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_1",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 8"
+      ],
+      "prediction": "Paragraph 8.",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10278,
+      "estimated_prompt_tokens": 472,
+      "estimated_token_savings": 0.9541,
+      "compile_latency_ms": 21.895,
+      "source_chars": 52650,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2615,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10278,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 472,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 490,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 22.468,
+      "backend_generation_ms": 51.44,
+      "model_latency_ms": 269.212,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_2",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 18"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 11628,
+      "estimated_prompt_tokens": 11628,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 74.913,
+      "source_chars": 57444,
+      "prompt_chars": 57373,
+      "protected_spans": 3,
+      "semantic_confidence": 0.5181,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 31.532,
+      "backend_generation_ms": 37.859,
+      "model_latency_ms": 319.157,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_2",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 18"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 11628,
+      "estimated_prompt_tokens": 448,
+      "estimated_token_savings": 0.9615,
+      "compile_latency_ms": 36.452,
+      "source_chars": 57444,
+      "prompt_chars": null,
+      "protected_spans": 3,
+      "semantic_confidence": 0.2034,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 11628,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 448,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 538,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 28.471,
+      "backend_generation_ms": 49.03,
+      "model_latency_ms": 269.677,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_3",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 17"
+      ],
+      "prediction": "Paragraph 30.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 11008,
+      "estimated_prompt_tokens": 11008,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 70.423,
+      "source_chars": 56073,
+      "prompt_chars": 56022,
+      "protected_spans": 2,
+      "semantic_confidence": 0.5221,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 6,
+      "backend_prompt_ms": 30.129,
+      "backend_generation_ms": 45.139,
+      "model_latency_ms": 347.27,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_3",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 17"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 11008,
+      "estimated_prompt_tokens": 525,
+      "estimated_token_savings": 0.9523,
+      "compile_latency_ms": 42.249,
+      "source_chars": 56073,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2545,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 11008,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 525,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 602,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 28.053,
+      "backend_generation_ms": 34.564,
+      "model_latency_ms": 347.517,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_4",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "raw",
+      "gold": [
+        "Paragraph 14"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 10924,
+      "estimated_prompt_tokens": 10924,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 67.229,
+      "source_chars": 55357,
+      "prompt_chars": 55180,
+      "protected_spans": 0,
+      "semantic_confidence": 0.523,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 27.193,
+      "backend_generation_ms": 39.808,
+      "model_latency_ms": 322.141,
+      "model_calls": 1
+    },
+    {
+      "case_id": "passage_retrieval_en_4",
+      "dataset": "passage_retrieval_en",
+      "source": "LongBench",
+      "requested_mode": "chunked",
+      "gold": [
+        "Paragraph 14"
+      ],
+      "prediction": "Paragraph 1.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "risk_standard",
+      "estimated_source_tokens": 10924,
+      "estimated_prompt_tokens": 423,
+      "estimated_token_savings": 0.9613,
+      "compile_latency_ms": 26.979,
+      "source_chars": 55357,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.2245,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "risk_standard",
+        "risk": "standard",
+        "source_tokens": 10924,
+        "prompt_budget": 1952,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "direct",
+            "chunk_index": null,
+            "prompt_tokens": 423,
+            "response_chars": 12,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 508,
+      "backend_output_tokens": 5,
+      "backend_prompt_ms": 29.493,
+      "backend_generation_ms": 36.012,
+      "model_latency_ms": 349.55,
+      "model_calls": 1
+    }
+  ]
+}

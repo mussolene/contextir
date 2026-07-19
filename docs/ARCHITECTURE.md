@@ -103,6 +103,13 @@ is not used for transform or exhaustive tasks because generic reduction cannot
 guarantee cross-chunk preservation or deduplication. Source and target language
 must match because the grounding gate is lexical in version 1.3.
 
+Provider reasoning wrappers are handled after safety verification. The raw
+response, including any hidden reasoning block, is checked for PII and protocol
+violations first. Only then are `<think>` blocks/tags removed from the returned
+answer; tag names do not count as factual grounding terms. This keeps common
+Qwen/Ollama control artifacts from rejecting or polluting an otherwise grounded
+answer without hiding unsafe model output from verification.
+
 ## Adaptive Modes
 
 ### Raw

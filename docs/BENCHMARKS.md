@@ -65,10 +65,18 @@ agent/tool diagnostics. Raw and auto quality are identical at `0.7272`; auto
 uses 70.0% fewer model input tokens and reduces mean latency from `53.8 s` to
 `2.51 s` on this machine.
 
+The v1.3 constrained-context run uses five `multifieldqa_en` and five
+`passage_retrieval_en` examples at a 2K model context. The runtime-enabled path
+uses 39.0% of raw backend input tokens. Its paired quality delta is `+0.5315`
+with a 95% bootstrap interval of `[0.2086, 0.8225]` on Qwen3 8B, and `+0.1232`
+with `[-0.0154, 0.3392]` on Qwen3 0.6B. This is an official-data subset, not a
+full LongBench score. All official examples used packed direct retrieval; a
+separate synthetic oversized-segment case verifies the map stage.
+
 The broader release benchmark must still add:
 
 - a conventional text-summary baseline;
-- more official examples and bootstrap confidence intervals;
+- full official task sets beyond the ten-case subset;
 - deployment-owned PII and agent-history tasks;
 - a full official tool-calling benchmark rather than synthetic diagnostics.
 

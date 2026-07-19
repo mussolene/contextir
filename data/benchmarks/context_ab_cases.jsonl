@@ -1,9 +1,16 @@
 {"id":"multifieldqa_en_0","source":"longbench","dataset":"multifieldqa_en","index":0}
 {"id":"multifieldqa_en_1","source":"longbench","dataset":"multifieldqa_en","index":1}
+{"id":"multifieldqa_en_2","source":"longbench","dataset":"multifieldqa_en","index":2}
+{"id":"multifieldqa_en_3","source":"longbench","dataset":"multifieldqa_en","index":3}
+{"id":"multifieldqa_en_4","source":"longbench","dataset":"multifieldqa_en","index":4}
 {"id":"passage_retrieval_en_0","source":"longbench","dataset":"passage_retrieval_en","index":0}
 {"id":"passage_retrieval_en_1","source":"longbench","dataset":"passage_retrieval_en","index":1}
+{"id":"passage_retrieval_en_2","source":"longbench","dataset":"passage_retrieval_en","index":2}
+{"id":"passage_retrieval_en_3","source":"longbench","dataset":"passage_retrieval_en","index":3}
+{"id":"passage_retrieval_en_4","source":"longbench","dataset":"passage_retrieval_en","index":4}
 {"id":"passage_count_0","source":"longbench","dataset":"passage_count","index":0}
 {"id":"needle_middle","source":"synthetic","dataset":"ruler_style_needle","variant":"middle"}
+{"id":"oversized_segment","source":"synthetic","dataset":"contextir_oversized_retrieval","variant":"oversized_segment"}
 {"id":"operational_privacy","source":"synthetic","dataset":"contextir_operational","variant":"privacy_rule"}
 {"id":"agent_tool_route","source":"synthetic","dataset":"agent_tool_routing","variant":"tool_route"}
 {"id":"agent_state_next","source":"synthetic","dataset":"agent_state","variant":"agent_state"}

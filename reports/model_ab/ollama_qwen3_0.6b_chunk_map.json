@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "backend": "ollama",
+    "backend_scope": "local_model",
+    "model": "qwen3:0.6b",
+    "context_length": 2048,
+    "max_output_tokens": 64,
+    "prompt_overhead_tokens": 32,
+    "max_chunk_calls": 16,
+    "bootstrap_samples": 2000,
+    "cases": 1,
+    "modes": [
+      "raw",
+      "chunked"
+    ]
+  },
+  "aggregate": [
+    {
+      "requested_mode": "raw",
+      "cases": 1,
+      "mean_quality": 0.0,
+      "quality_ci_95": [
+        0.0,
+        0.0
+      ],
+      "exact_matches": 0,
+      "failures": 0,
+      "estimated_prompt_ratio": 1.0,
+      "backend_prompt_tokens": 1026,
+      "mean_model_latency_ms": 823.1,
+      "model_calls": 1,
+      "selected_modes": {
+        "raw": 1
+      },
+      "decisions": {
+        "forced_mode": 1
+      },
+      "pipeline_stages": {},
+      "pipeline_accepted": 0
+    },
+    {
+      "requested_mode": "chunked",
+      "cases": 1,
+      "mean_quality": 1.0,
+      "quality_ci_95": [
+        1.0,
+        1.0
+      ],
+      "exact_matches": 1,
+      "failures": 0,
+      "estimated_prompt_ratio": 0.4772,
+      "backend_prompt_tokens": 1489,
+      "mean_model_latency_ms": 1186.8,
+      "model_calls": 1,
+      "selected_modes": {
+        "hybrid": 1
+      },
+      "decisions": {
+        "chunked_retrieval_map": 1
+      },
+      "pipeline_stages": {
+        "map": 1
+      },
+      "pipeline_accepted": 1
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "raw",
+      "candidate": "chunked",
+      "paired_cases": 1,
+      "mean_quality_delta": 1.0,
+      "quality_delta_ci_95": [
+        1.0,
+        1.0
+      ],
+      "improved": 1,
+      "tied": 0,
+      "regressed": 0,
+      "backend_prompt_token_ratio": 1.4513,
+      "model_latency_ratio": 1.4419
+    }
+  ],
+  "results": [
+    {
+      "case_id": "oversized_segment",
+      "dataset": "contextir_oversized_retrieval",
+      "source": "ContextIR oversized-segment diagnostic",
+      "requested_mode": "raw",
+      "gold": [
+        "cobalt-seven"
+      ],
+      "prediction": "The current access phrase for Project Juniper is: /no_think.",
+      "quality": 0.0,
+      "error": null,
+      "selected_mode": "raw",
+      "decision": "forced_mode",
+      "estimated_source_tokens": 3068,
+      "estimated_prompt_tokens": 3068,
+      "estimated_token_savings": 0.0,
+      "compile_latency_ms": 18.273,
+      "source_chars": 27351,
+      "prompt_chars": 27351,
+      "protected_spans": 0,
+      "semantic_confidence": 0.565,
+      "backend_prompt_tokens": 1026,
+      "backend_output_tokens": 16,
+      "backend_prompt_ms": 97.418,
+      "backend_generation_ms": 129.858,
+      "model_latency_ms": 823.101,
+      "model_calls": 1
+    },
+    {
+      "case_id": "oversized_segment",
+      "dataset": "contextir_oversized_retrieval",
+      "source": "ContextIR oversized-segment diagnostic",
+      "requested_mode": "chunked",
+      "gold": [
+        "cobalt-seven"
+      ],
+      "prediction": "The current access phrase for Project Juniper is **cobalt-seven**.",
+      "quality": 1.0,
+      "error": null,
+      "selected_mode": "hybrid",
+      "decision": "chunked_retrieval_map",
+      "estimated_source_tokens": 3068,
+      "estimated_prompt_tokens": 1464,
+      "estimated_token_savings": 0.5228,
+      "compile_latency_ms": 29.894,
+      "source_chars": 27351,
+      "prompt_chars": null,
+      "protected_spans": 0,
+      "semantic_confidence": 0.8333,
+      "pipeline_accepted": true,
+      "pipeline_trace": {
+        "accepted": true,
+        "selected_mode": "hybrid",
+        "decision": "chunked_retrieval_map",
+        "risk": "standard",
+        "source_tokens": 3068,
+        "prompt_budget": 1464,
+        "attempts": [
+          {
+            "mode": "hybrid",
+            "stage": "map",
+            "chunk_index": 1,
+            "prompt_tokens": 1464,
+            "response_chars": 66,
+            "verification": {
+              "accepted": true,
+              "reasons": [],
+              "unknown_placeholders": 0,
+              "missing_placeholders": 0,
+              "new_pii_kinds": []
+            }
+          }
+        ]
+      },
+      "backend_prompt_tokens": 1489,
+      "backend_output_tokens": 16,
+      "backend_prompt_ms": 12.318,
+      "backend_generation_ms": 159.214,
+      "model_latency_ms": 1186.836,
+      "model_calls": 1
+    }
+  ]
+}

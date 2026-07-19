@@ -54,6 +54,14 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertTrue(result.accepted)
         self.assertEqual(result.answer, "READY")
 
+    def test_pipeline_removes_think_wrappers_after_verification(self) -> None:
+        result = ContextPipeline(invoke=lambda _prompt: "<think>private reasoning</think>READY").run(
+            "Reply with READY.", source_lang="en", target_lang="en"
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.answer, "READY")
+
     def test_run_invoker_overrides_pipeline_default(self) -> None:
         pipeline = ContextPipeline(invoke=lambda _prompt: "default")
 
@@ -347,6 +355,27 @@ class ContextPipelineTests(unittest.TestCase):
 
         self.assertTrue(pipeline._is_grounded("42", prepared.bundle))
         self.assertFalse(pipeline._is_grounded("43", prepared.bundle))
+
+    def test_chunk_grounding_ignores_model_control_tags(self) -> None:
+        prepared = ContextPipeline().prepare(
+            budget_retrieval_text(),
+            source_lang="en",
+            target_lang="en",
+        )
+        pipeline = ContextPipeline()
+
+        self.assertTrue(
+            pipeline._is_grounded(
+                "</think> The current access phrase for Project Juniper is cobalt-seven.",
+                prepared.bundle,
+            )
+        )
+        self.assertFalse(
+            pipeline._is_grounded(
+                "</think> The current access phrase for Project Juniper is ruby-nine.",
+                prepared.bundle,
+            )
+        )
 
     def test_custom_tokenizer_can_force_raw_fallback(self) -> None:
         def expensive_protocol(text: str) -> int:

@@ -199,6 +199,15 @@ An oversized single-segment follow-up uses bounded chunked retrieval with a
 256-token context. Qwen3 0.6B and 8B both recovered `cobalt-seven` from the
 same selected chunk using one map call at 75% of the available prompt budget.
 
+A constrained 2K-context A/B over ten official LongBench QA/retrieval examples
+reduced measured backend input to 39.0% of raw for both tested models. Qwen3 8B
+quality increased from `0.1668` to `0.6983` with a paired 95% bootstrap delta
+of `[0.2086, 0.8225]`. Qwen3 0.6B increased from `0.1889` to `0.3121`, but its
+delta interval `[-0.0154, 0.3392]` does not establish a reliable quality gain.
+All ten official cases used one packed direct call; a separate synthetic
+oversized-segment diagnostic activated the map path and recovered the answer
+with both models.
+
 See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
 [benchmark roadmap](docs/BENCHMARKS.md).
 

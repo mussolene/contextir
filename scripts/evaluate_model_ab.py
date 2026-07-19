@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import re
 import statistics
 import subprocess
@@ -15,7 +16,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from contextir import ContextIR, ContextPipeline, OllamaClient, OpenAICompatibleClient
+from contextir import ContextIR, ContextPipeline, OllamaClient, OpenAICompatibleClient, PipelinePolicy
 from contextir.pipeline import approximate_token_count
 from contextir.sir_sources import PROJECT_ROOT
 
@@ -58,6 +59,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--case-ids", default="", help="Comma-separated subset of manifest case IDs.")
     parser.add_argument("--context-length", type=int, default=32768)
     parser.add_argument("--max-output-tokens", type=int, default=64)
+    parser.add_argument("--prompt-overhead-tokens", type=int, default=32)
+    parser.add_argument("--max-chunk-calls", type=int, default=16)
+    parser.add_argument("--bootstrap-samples", type=int, default=2000)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--out", default="")
     return parser.parse_args()
@@ -127,6 +131,30 @@ def make_synthetic_case(spec: dict[str, Any]) -> Case:
             "Answer with only the action name.\nAnswer:"
         )
         return Case(spec["id"], spec["dataset"], prompt, ["notify_finance"], "Agent-state diagnostic")
+    if spec["variant"] == "oversized_segment":
+        records = " ".join(
+            f"Record {index}: Cedar historical status is closed."
+            for index in range(4)
+        )
+        evidence = " ".join(
+            ["archived"] * 200
+            + ["Project Juniper current access phrase is cobalt-seven"]
+            + ["archived"] * 2800
+        )
+        prompt = (
+            "Read the following text and answer briefly. "
+            + records
+            + " "
+            + evidence
+            + ". Question: What is the current access phrase for Project Juniper? Answer:"
+        )
+        return Case(
+            spec["id"],
+            spec["dataset"],
+            prompt,
+            ["cobalt-seven"],
+            "ContextIR oversized-segment diagnostic",
+        )
     prompt = " ".join(
         ["Do not send payment 42 twice to contact finance@example.test."] * 80
         + ["Question: What action is prohibited? Answer with only the prohibited action."]
@@ -182,6 +210,7 @@ def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, 
             timeout=args.timeout,
             context_length=args.context_length,
             max_output_tokens=args.max_output_tokens,
+            prompt_overhead_tokens=args.prompt_overhead_tokens,
         ).complete(prompt)
         answer = result.text
         usage = {
@@ -194,7 +223,9 @@ def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, 
         result = OpenAICompatibleClient(
             args.model,
             timeout=args.timeout,
+            context_length=args.context_length,
             max_output_tokens=args.max_output_tokens,
+            prompt_overhead_tokens=args.prompt_overhead_tokens,
         ).complete(prompt)
         answer = result.text
         usage = {
@@ -210,6 +241,122 @@ def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, 
         usage = {"backend_prompt_tokens": None, "backend_output_tokens": None}
     usage["model_latency_ms"] = round((time.perf_counter() - started) * 1000, 3)
     return answer, usage
+
+
+def run_chunked_case(
+    args: argparse.Namespace,
+    gateway: ContextIR,
+    case: Case,
+) -> tuple[str, dict[str, Any], dict[str, Any], str | None]:
+    usages: list[dict[str, Any]] = []
+
+    def invoke(prompt: str) -> str:
+        answer, usage = invoke_model(args, prompt)
+        usages.append(usage)
+        return answer
+
+    prompt_budget = args.context_length - args.max_output_tokens - args.prompt_overhead_tokens
+    pipeline = ContextPipeline(
+        gateway=gateway,
+        invoke=invoke,
+        policy=PipelinePolicy(
+            max_prompt_tokens=prompt_budget,
+            max_chunk_calls=args.max_chunk_calls,
+        ),
+    )
+    started = time.perf_counter()
+    try:
+        result = pipeline.run(
+            case.prompt,
+            source_lang="en",
+            target_lang="en",
+            risk="standard",
+            packet_id=case.id,
+            chunked_retrieval=True,
+        )
+        error = None
+        if not result.accepted:
+            reasons = sorted(
+                {
+                    reason
+                    for attempt in result.attempts
+                    for reason in attempt.verification.reasons
+                }
+            )
+            error = "pipeline_rejected" + (f":{','.join(reasons)}" if reasons else "")
+        metadata = {
+            "selected_mode": result.selected_mode,
+            "decision": result.prepared.decision,
+            "estimated_source_tokens": result.prepared.source_tokens,
+            "estimated_prompt_tokens": sum(attempt.prompt_tokens for attempt in result.attempts),
+            "estimated_token_savings": round(
+                1
+                - sum(attempt.prompt_tokens for attempt in result.attempts)
+                / max(result.prepared.source_tokens, 1),
+                4,
+            ),
+            "compile_latency_ms": round(
+                max(
+                    (time.perf_counter() - started) * 1000
+                    - sum(float(item.get("model_latency_ms") or 0) for item in usages),
+                    0,
+                ),
+                3,
+            ),
+            "source_chars": len(case.prompt),
+            "prompt_chars": None,
+            "protected_spans": len(result.prepared.bundle.contract["privacy"]["protected"]),
+            "semantic_confidence": result.prepared.bundle.contract["uncertainty"]["semantic_confidence"],
+            "pipeline_accepted": result.accepted,
+            "pipeline_trace": result.public_trace(),
+        }
+        return result.answer, metadata, aggregate_usage(usages), error
+    except Exception as exc:
+        bundle = gateway.compile_private(
+            case.prompt,
+            source_lang="en",
+            target_lang="en",
+            packet_id=case.id,
+            mode="auto",
+        )
+        source_tokens = max(approximate_token_count(" ".join(bundle.sources.values())), 1)
+        metadata = {
+            "selected_mode": bundle.contract["mode"],
+            "decision": "pipeline_exception",
+            "estimated_source_tokens": source_tokens,
+            "estimated_prompt_tokens": 0,
+            "estimated_token_savings": 0.0,
+            "compile_latency_ms": round(
+                max(
+                    (time.perf_counter() - started) * 1000
+                    - sum(float(item.get("model_latency_ms") or 0) for item in usages),
+                    0,
+                ),
+                3,
+            ),
+            "source_chars": len(case.prompt),
+            "prompt_chars": None,
+            "protected_spans": len(bundle.contract["privacy"]["protected"]),
+            "semantic_confidence": bundle.contract["uncertainty"]["semantic_confidence"],
+            "pipeline_accepted": False,
+            "pipeline_trace": [],
+        }
+        return "", metadata, aggregate_usage(usages), f"{type(exc).__name__}: {exc}"
+
+
+def aggregate_usage(usages: list[dict[str, Any]]) -> dict[str, Any]:
+    def total(key: str) -> int | float | None:
+        values = [item[key] for item in usages if item.get(key) is not None]
+        return sum(values) if values else None
+
+    return {
+        "backend_prompt_tokens": total("backend_prompt_tokens"),
+        "backend_output_tokens": total("backend_output_tokens"),
+        "backend_prompt_ms": total("backend_prompt_ms"),
+        "backend_generation_ms": total("backend_generation_ms"),
+        "model_latency_ms": round(float(total("model_latency_ms") or 0), 3),
+        "model_calls": len(usages),
+    }
 
 
 def normalize_answer(value: str) -> list[str]:
@@ -232,6 +379,12 @@ def token_f1(prediction: str, gold: str) -> float:
 
 
 def score(case: Case, prediction: str) -> float:
+    if case.dataset == "contextir_oversized_retrieval":
+        normalized_prediction = " ".join(normalize_answer(prediction))
+        return max(
+            float(" ".join(normalize_answer(answer)) in normalized_prediction)
+            for answer in case.answers
+        )
     if case.dataset in {"multifieldqa_en", "contextir_operational"}:
         return max(token_f1(prediction, answer) for answer in case.answers)
     if case.dataset == "passage_retrieval_en":
@@ -252,7 +405,23 @@ def score(case: Case, prediction: str) -> float:
     return max(float(" ".join(normalize_answer(answer)) == normalized_prediction) for answer in case.answers)
 
 
-def aggregate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def bootstrap_mean_ci(values: list[float], samples: int = 2000, seed: int = 42) -> list[float]:
+    if not values:
+        return [0.0, 0.0]
+    if len(values) == 1 or samples < 2:
+        value = round(statistics.fmean(values), 4)
+        return [value, value]
+    rng = random.Random(seed)
+    means = sorted(
+        statistics.fmean(rng.choice(values) for _item in values)
+        for _sample in range(samples)
+    )
+    low = means[int(0.025 * (samples - 1))]
+    high = means[int(0.975 * (samples - 1))]
+    return [round(low, 4), round(high, 4)]
+
+
+def aggregate(rows: list[dict[str, Any]], bootstrap_samples: int = 2000) -> list[dict[str, Any]]:
     groups: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         groups.setdefault(row["requested_mode"], []).append(row)
@@ -261,40 +430,120 @@ def aggregate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         source_tokens = sum(item["estimated_source_tokens"] for item in items)
         prompt_tokens = sum(item["estimated_prompt_tokens"] for item in items)
         backend_prompt_tokens = [item["backend_prompt_tokens"] for item in items if item["backend_prompt_tokens"]]
+        qualities = [item["quality"] for item in items]
         output.append(
             {
                 "requested_mode": mode,
                 "cases": len(items),
-                "mean_quality": round(statistics.fmean(item["quality"] for item in items), 4),
+                "mean_quality": round(statistics.fmean(qualities), 4),
+                "quality_ci_95": bootstrap_mean_ci(qualities, bootstrap_samples),
                 "exact_matches": sum(item["quality"] == 1.0 for item in items),
+                "failures": sum(bool(item["error"]) for item in items),
                 "estimated_prompt_ratio": round(prompt_tokens / max(source_tokens, 1), 4),
                 "backend_prompt_tokens": sum(backend_prompt_tokens) if backend_prompt_tokens else None,
                 "mean_model_latency_ms": round(statistics.fmean(item["model_latency_ms"] for item in items), 1),
+                "model_calls": sum(item.get("model_calls", 1) for item in items),
                 "selected_modes": dict(Counter(item["selected_mode"] for item in items)),
+                "decisions": dict(Counter(item["decision"] for item in items)),
+                "pipeline_stages": dict(
+                    Counter(
+                        attempt["stage"]
+                        for item in items
+                        for attempt in item.get("pipeline_trace", {}).get("attempts", [])
+                    )
+                ),
+                "pipeline_accepted": sum(item.get("pipeline_accepted") is True for item in items),
             }
         )
     return output
+
+
+def compare_modes(
+    rows: list[dict[str, Any]],
+    baseline: str,
+    candidate: str,
+    bootstrap_samples: int = 2000,
+) -> dict[str, Any] | None:
+    baseline_rows = {item["case_id"]: item for item in rows if item["requested_mode"] == baseline}
+    candidate_rows = {item["case_id"]: item for item in rows if item["requested_mode"] == candidate}
+    case_ids = sorted(baseline_rows.keys() & candidate_rows.keys())
+    if not case_ids:
+        return None
+    deltas = [candidate_rows[case_id]["quality"] - baseline_rows[case_id]["quality"] for case_id in case_ids]
+    baseline_tokens = sum(float(baseline_rows[case_id].get("backend_prompt_tokens") or 0) for case_id in case_ids)
+    candidate_tokens = sum(float(candidate_rows[case_id].get("backend_prompt_tokens") or 0) for case_id in case_ids)
+    baseline_latency = sum(float(baseline_rows[case_id].get("model_latency_ms") or 0) for case_id in case_ids)
+    candidate_latency = sum(float(candidate_rows[case_id].get("model_latency_ms") or 0) for case_id in case_ids)
+    return {
+        "baseline": baseline,
+        "candidate": candidate,
+        "paired_cases": len(case_ids),
+        "mean_quality_delta": round(statistics.fmean(deltas), 4),
+        "quality_delta_ci_95": bootstrap_mean_ci(deltas, bootstrap_samples),
+        "improved": sum(delta > 0 for delta in deltas),
+        "tied": sum(delta == 0 for delta in deltas),
+        "regressed": sum(delta < 0 for delta in deltas),
+        "backend_prompt_token_ratio": round(candidate_tokens / baseline_tokens, 4) if baseline_tokens else None,
+        "model_latency_ratio": round(candidate_latency / baseline_latency, 4) if baseline_latency else None,
+    }
 
 
 def main() -> None:
     args = parse_args()
     selected = {item for item in args.case_ids.split(",") if item}
     modes = [item for item in args.modes.split(",") if item]
-    unsupported = set(modes) - {"raw", "auto", "hybrid", "semantic"}
+    unsupported = set(modes) - {"raw", "auto", "hybrid", "semantic", "chunked"}
     if unsupported:
         raise SystemExit(f"unsupported modes: {sorted(unsupported)}")
     cases = load_cases(Path(args.manifest), Path(args.longbench_dir), selected)
     gateway = ContextIR()
-    pipeline = ContextPipeline(gateway=gateway)
+    prompt_budget = args.context_length - args.max_output_tokens - args.prompt_overhead_tokens
+    if prompt_budget < 1:
+        raise SystemExit("context length must leave a positive prompt budget")
+    pipeline = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=prompt_budget, max_chunk_calls=args.max_chunk_calls),
+    )
     rows = []
     for case in cases:
         for mode in modes:
+            if mode == "chunked":
+                prediction, metadata, usage, error = run_chunked_case(args, gateway, case)
+                row = {
+                    "case_id": case.id,
+                    "dataset": case.dataset,
+                    "source": case.source,
+                    "requested_mode": mode,
+                    "gold": case.answers,
+                    "prediction": prediction,
+                    "quality": round(score(case, prediction), 4) if not error else 0.0,
+                    "error": error,
+                    **metadata,
+                    **usage,
+                }
+                rows.append(row)
+                print(
+                    f"{case.id:28} {mode:8} -> {metadata['selected_mode']:8} "
+                    f"score={row['quality']:.3f} calls={usage['model_calls']} "
+                    f"ratio={metadata['estimated_prompt_tokens'] / max(metadata['estimated_source_tokens'], 1):.3f}"
+                )
+                continue
             prompt, metadata = prepare_prompt(gateway, pipeline, case, mode)
             try:
                 prediction, usage = invoke_model(args, prompt)
+                usage["model_calls"] = 1
                 error = None
             except Exception as exc:
-                prediction, usage, error = "", {}, f"{type(exc).__name__}: {exc}"
+                prediction = ""
+                usage = {
+                    "backend_prompt_tokens": None,
+                    "backend_output_tokens": None,
+                    "backend_prompt_ms": None,
+                    "backend_generation_ms": None,
+                    "model_latency_ms": 0.0,
+                    "model_calls": 0,
+                }
+                error = f"{type(exc).__name__}: {exc}"
             row = {
                 "case_id": case.id,
                 "dataset": case.dataset,
@@ -312,6 +561,11 @@ def main() -> None:
                 f"{case.id:28} {mode:8} -> {metadata['selected_mode']:8} "
                 f"score={row['quality']:.3f} ratio={metadata['estimated_prompt_tokens'] / max(metadata['estimated_source_tokens'], 1):.3f}"
             )
+    comparisons = []
+    for baseline, candidate in (("raw", "auto"), ("raw", "chunked")):
+        comparison = compare_modes(rows, baseline, candidate, args.bootstrap_samples)
+        if comparison:
+            comparisons.append(comparison)
     report = {
         "metadata": {
             "backend": args.backend,
@@ -319,10 +573,14 @@ def main() -> None:
             "model": args.model,
             "context_length": args.context_length,
             "max_output_tokens": args.max_output_tokens,
+            "prompt_overhead_tokens": args.prompt_overhead_tokens,
+            "max_chunk_calls": args.max_chunk_calls,
+            "bootstrap_samples": args.bootstrap_samples,
             "cases": len(cases),
             "modes": modes,
         },
-        "aggregate": aggregate(rows),
+        "aggregate": aggregate(rows, args.bootstrap_samples),
+        "comparisons": comparisons,
         "results": rows,
     }
     out = Path(args.out) if args.out else PROJECT_ROOT / "reports" / "model_ab" / f"{args.backend}_{safe_name(args.model)}.json"
