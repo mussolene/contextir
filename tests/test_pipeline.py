@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import unittest
 
-from contextir import ContextIR, ContextPipeline, ContextWindowExceeded, PipelinePolicy, ResponseVerification
+from contextir import (
+    ChunkLimitExceeded,
+    ContextIR,
+    ContextPipeline,
+    ContextWindowExceeded,
+    PipelinePolicy,
+    ResponseVerification,
+)
+from contextir.pipeline import NO_EVIDENCE
 
 
 LONG_TRANSFORM = " ".join(["Do not send payment 42 twice."] * 30)
@@ -15,6 +23,21 @@ def budget_retrieval_text() -> str:
         for index in range(12)
     ]
     records.insert(6, "The current access phrase for Project Juniper is cobalt-seven.")
+    return (
+        "Read the following text and answer briefly. "
+        + " ".join(records)
+        + " Question: What is the current access phrase for Project Juniper? Answer:"
+    )
+
+
+def oversized_retrieval_text(repeat_query: bool = False) -> str:
+    filler = (
+        " ".join(["Project Juniper access phrase archive"] * 60)
+        if repeat_query
+        else " ".join(["archive"] * 220)
+    )
+    records = [f"Record {index}: Cedar historical note {index}." for index in range(8)]
+    records.insert(4, f"Project Juniper current access phrase is cobalt-seven and {filler}.")
     return (
         "Read the following text and answer briefly. "
         + " ".join(records)
@@ -149,6 +172,182 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(raised.exception.prompt_tokens, 90)
         self.assertEqual(raised.exception.prompt_budget, 80)
 
+    def test_chunked_retrieval_covers_oversized_evidence(self) -> None:
+        prompts = []
+
+        def invoke(prompt: str) -> str:
+            prompts.append(prompt)
+            if "cobalt-seven" in prompt:
+                return "cobalt-seven"
+            return NO_EVIDENCE
+
+        result = ContextPipeline(
+            policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8, chunk_prompt_ratio=1),
+        ).run(
+            oversized_retrieval_text(),
+            invoke,
+            source_lang="en",
+            target_lang="en",
+            chunked_retrieval=True,
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.answer, "cobalt-seven")
+        self.assertGreaterEqual(len(prompts), 1)
+        self.assertTrue(all(item.stage == "map" for item in result.attempts))
+        self.assertTrue(all(item.prompt_tokens <= 100 for item in result.attempts))
+        self.assertNotIn("cobalt-seven", str(result.public_trace()))
+
+    def test_chunked_retrieval_requires_explicit_opt_in(self) -> None:
+        calls = []
+
+        with self.assertRaises(ContextWindowExceeded):
+            ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=100)).run(
+                oversized_retrieval_text(),
+                lambda prompt: calls.append(prompt) or "unexpected",
+                source_lang="en",
+                target_lang="en",
+            )
+
+        self.assertFalse(calls)
+
+    def test_chunked_retrieval_reduces_multiple_candidates(self) -> None:
+        map_calls = 0
+
+        def invoke(prompt: str) -> str:
+            nonlocal map_calls
+            if prompt.startswith("Choose the concise final answer"):
+                return "cobalt-seven"
+            map_calls += 1
+            if map_calls == 1:
+                return "cobalt-seven"
+            if map_calls == 2:
+                return "archive"
+            return NO_EVIDENCE
+
+        result = ContextPipeline(
+            policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8, chunk_prompt_ratio=1),
+        ).run(
+            oversized_retrieval_text(repeat_query=True),
+            invoke,
+            source_lang="en",
+            target_lang="en",
+            chunked_retrieval=True,
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.attempts[-1].stage, "reduce")
+        self.assertEqual(result.answer, "cobalt-seven")
+
+    def test_chunked_retrieval_rejects_ungrounded_reduce_output(self) -> None:
+        map_calls = 0
+
+        def invoke(prompt: str) -> str:
+            nonlocal map_calls
+            if prompt.startswith("Choose the concise final answer"):
+                return "ruby-nine"
+            map_calls += 1
+            return "cobalt-seven" if map_calls == 1 else "archive"
+
+        result = ContextPipeline(
+            policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8, chunk_prompt_ratio=1),
+        ).run(
+            oversized_retrieval_text(repeat_query=True),
+            invoke,
+            source_lang="en",
+            target_lang="en",
+            chunked_retrieval=True,
+        )
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(result.answer, "")
+        self.assertIn("unsupported_candidate", result.attempts[-1].verification.reasons)
+
+    def test_chunked_retrieval_rejects_cross_language_grounding(self) -> None:
+        calls = []
+
+        with self.assertRaisesRegex(ValueError, "source_lang and target_lang"):
+            ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=100)).run(
+                oversized_retrieval_text(),
+                lambda prompt: calls.append(prompt) or "unexpected",
+                source_lang="en",
+                target_lang="ru",
+                chunked_retrieval=True,
+            )
+
+        self.assertFalse(calls)
+
+    def test_chunked_retrieval_aborts_on_unsafe_map_output(self) -> None:
+        calls = 0
+
+        def invoke(_prompt: str) -> str:
+            nonlocal calls
+            calls += 1
+            return "Contact leaked@example.test."
+
+        result = ContextPipeline(
+            policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8),
+        ).run(
+            oversized_retrieval_text(),
+            invoke,
+            source_lang="en",
+            target_lang="en",
+            chunked_retrieval=True,
+        )
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(result.answer, "")
+        self.assertEqual(calls, 1)
+        self.assertIn("new_pii", result.attempts[0].verification.reasons)
+
+    def test_chunk_limit_is_checked_before_invocation(self) -> None:
+        calls = []
+        pipeline = ContextPipeline(
+            policy=PipelinePolicy(
+                max_prompt_tokens=100,
+                max_chunk_calls=3,
+                chunk_overlap_words=8,
+                chunk_prompt_ratio=1,
+            ),
+        )
+
+        with self.assertRaises(ChunkLimitExceeded):
+            pipeline.run(
+                oversized_retrieval_text(repeat_query=True),
+                lambda prompt: calls.append(prompt) or NO_EVIDENCE,
+                source_lang="en",
+                target_lang="en",
+                chunked_retrieval=True,
+            )
+
+        self.assertFalse(calls)
+
+    def test_chunking_does_not_override_exhaustive_refusal(self) -> None:
+        paragraphs = " ".join(f"Paragraph {index}: value {index}." for index in range(40))
+        text = f"How many unique paragraphs remain after removing duplicates? {paragraphs}"
+
+        with self.assertRaises(ContextWindowExceeded):
+            ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=40)).run(
+                text,
+                lambda _prompt: "unexpected",
+                source_lang="en",
+                target_lang="en",
+                chunked_retrieval=True,
+            )
+
+    def test_chunk_grounding_supports_numbers_and_rejects_new_values(self) -> None:
+        context = " ".join(f"Record {index}: Cedar archive code {1000 + index}." for index in range(20))
+        text = (
+            f"Read the following text and answer briefly. {context} "
+            "The current launch code for Project Juniper is 42. "
+            "Question: What is the current launch code for Project Juniper? Answer:"
+        )
+        prepared = ContextPipeline().prepare(text, source_lang="en", target_lang="en")
+        pipeline = ContextPipeline()
+
+        self.assertTrue(pipeline._is_grounded("42", prepared.bundle))
+        self.assertFalse(pipeline._is_grounded("43", prepared.bundle))
+
     def test_custom_tokenizer_can_force_raw_fallback(self) -> None:
         def expensive_protocol(text: str) -> int:
             return 1000 if text.startswith("CTXIR/") else max(len(text.split()), 1)
@@ -216,6 +415,8 @@ class ContextPipelineTests(unittest.TestCase):
             PipelinePolicy(max_prompt_tokens=0)
         with self.assertRaisesRegex(ValueError, "max_prompt_tokens"):
             PipelinePolicy(max_prompt_tokens=1.5)  # type: ignore[arg-type]
+        with self.assertRaisesRegex(ValueError, "chunk_prompt_ratio"):
+            PipelinePolicy(chunk_prompt_ratio=0)
 
     def test_transform_retries_with_source_after_semantic_loss(self) -> None:
         responses = iter(["Payment completed.", "Do not send payment 42 twice."])

@@ -28,6 +28,8 @@ compilation remains available for infrastructure that owns routing itself.
 - provider-independent model prompts;
 - query-aware verbatim evidence selection for long document QA;
 - model-budget packing of ranked complete retrieval evidence groups;
+- explicitly enabled bounded chunking of one oversized top-ranked retrieval
+  segment for reasoning tasks;
 - raw routing for exhaustive counting and low-coverage retrieval;
 - measurable prompt reduction and semantic-preservation checks;
 - RU and EN heuristics in the stable 1.x package.
@@ -37,6 +39,7 @@ compilation remains available for infrastructure that owns routing itself.
 - a universal language of thought;
 - replacing model reasoning;
 - guaranteed fluent machine translation;
+- generic map-reduce for transform or exhaustive tasks;
 - covert steganographic transport;
 - guaranteed detection of every sensitive value;
 - production claims based only on WordNet overlap;
@@ -63,7 +66,8 @@ ContextIR uses semantic versioning from `1.0.0`. The following public imports
 are stable within the 1.x line:
 
 - `ContextPipeline`, `PipelinePolicy`, `PipelineResult`, `PreparedContext`, and
-  `ResponseVerification`, plus `ContextWindowExceeded`;
+  `ResponseVerification`, plus `ContextWindowExceeded` and
+  `ChunkLimitExceeded`;
 - `OllamaClient`, `OpenAICompatibleClient`, and `ModelResponse`;
 - `ContextIR`, `ContextBundle`, `ContractCheck`, and `load_contextir`;
 - `contextir.schemas.load_contract_schema` and the `contextir.v2` JSON shape.

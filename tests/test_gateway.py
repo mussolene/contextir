@@ -41,6 +41,9 @@ class ContextIRGatewayTests(unittest.TestCase):
             "local-model",
             "--text",
             "Reply with READY.",
+            "--chunked-retrieval",
+            "--chunk-prompt-ratio",
+            "0.8",
             "--json",
         ]
 

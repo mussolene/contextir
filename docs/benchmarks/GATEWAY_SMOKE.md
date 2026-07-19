@@ -3,7 +3,7 @@
 ## Identity
 
 - Component: deterministic `contextir.v2` gateway
-- Version: 1.2.0
+- Version: 1.3.0
 - Cases: 9 checked-in RU/EN fixtures
 - Command: `python3 scripts/evaluate_contextir.py --check`
 - Hardware: developer machine; latency is not normalized across hardware
@@ -16,14 +16,14 @@
 | Synthetic privacy precision / recall | 1.0000 / 1.0000 |
 | Annotated synthetic PII values | 6 |
 | Semantic expectation failures | 0 |
-| Product pipeline cases | 8 |
+| Product pipeline cases | 10 |
 | Product pipeline failures | 0 |
 | Exercised bounded fallbacks | 1 |
 | Compression-eligible cases | 1 |
 | Eligible prompt/source character ratio | 0.3627 |
-| Compile latency p50 | 0.0976 ms |
-| Compile latency p95 | 0.9700 ms |
-| Compile throughput | 5074.0 docs/s |
+| Compile latency p50 | 0.0985 ms |
+| Compile latency p95 | 0.9773 ms |
+| Compile throughput | 4988.2 docs/s |
 
 Performance uses a 100-operation warm-up followed by 5,000 repeated compilations
 over the nine fixtures with Python garbage collection paused. The ratio uses
@@ -89,6 +89,12 @@ chat-template reserve. Budget-aware packing selected seven complete source
 segments. Both Qwen3 0.6B and Qwen3 8B returned `cobalt-seven`; Ollama reported
 229 prompt tokens for each request. This is a functional smoke test, not a
 quality estimate across retrieval datasets.
+
+An additional oversized-segment run enables bounded chunked retrieval with the
+same 256-token context. The map stage uses 75% of the available prompt budget.
+Qwen3 0.6B and Qwen3 8B both returned `cobalt-seven` from one locally selected,
+grounded map chunk. Generic exhaustive and transform map-reduce remain outside
+the supported path.
 
 ## What It Does Not Establish
 

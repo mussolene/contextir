@@ -92,8 +92,34 @@ exhaustive task into a lossy semantic summary. For retrieval tasks it first
 packs the query, output instructions, and as many ranked complete evidence
 groups as fit. A labelled paragraph owner stays attached to sentence-level
 evidence. If even the best complete group cannot fit, `ContextWindowExceeded`
-is raised. Applications handling a single oversized evidence group or an
-exhaustive input should use a deployment-owned chunked or map-reduce workflow.
+is raised unless the explicit chunked-retrieval path is enabled. Exhaustive
+inputs still require a deployment-owned domain aggregator.
+
+For reasoning over a single oversized top-ranked retrieval segment, ContextIR
+provides an explicit bounded path:
+
+```python
+result = pipeline.run(
+    long_document_question,
+    source_lang="en",
+    target_lang="en",
+    chunked_retrieval=True,
+)
+```
+
+The pipeline splits that evidence with overlap, locally keeps chunks sharing
+content terms with the question, invokes bounded map calls, checks that every
+answer-specific term occurs in its evidence, and reduces distinct candidates
+only when needed. `PipelinePolicy` controls `max_chunk_calls`,
+`chunk_overlap_words`, and `chunk_prompt_ratio`. The default ratio uses only
+75% of the otherwise available prompt budget because very small models can
+degrade near the edge of their nominal context window.
+
+Chunked retrieval is accepted only for `task="reasoning"`. It remains disabled
+unless `chunked_retrieval=True`; exhaustive counting, translation, rewriting,
+and summarization continue to fail safely when their complete required input
+does not fit. Version 1.3 also requires matching source and target languages so
+its lexical grounding check does not reject a valid translated answer.
 
 Use `task="transform"` for translation, rewriting, extraction, or summarization.
 That enables retention checks and bounded fallback through semantic, hybrid,

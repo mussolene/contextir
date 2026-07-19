@@ -5,12 +5,14 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Literal
 
-from contextir.gateway import ContractCheck, ContextBundle, ContextIR
+from contextir.gateway import ContractCheck, ContextBundle, ContextIR, content_terms
 
 
 Risk = Literal["low", "standard", "high"]
 Task = Literal["reasoning", "transform"]
 TokenCounter = Callable[[str], int]
+PLACEHOLDER_RE = re.compile(r"\bPII_[A-Z0-9_]+_\d+\b")
+NO_EVIDENCE = "CTXIR_NONE"
 
 
 @dataclass(frozen=True)
@@ -21,6 +23,9 @@ class PipelinePolicy:
     max_attempts: int = 3
     reject_new_pii: bool = True
     max_prompt_tokens: int | None = None
+    max_chunk_calls: int = 16
+    chunk_overlap_words: int = 24
+    chunk_prompt_ratio: float = 0.75
 
     def __post_init__(self) -> None:
         for name in ("min_token_savings", "min_semantic_confidence", "verification_threshold"):
@@ -35,6 +40,20 @@ class PipelinePolicy:
             or self.max_prompt_tokens < 1
         ):
             raise ValueError("max_prompt_tokens must be a positive integer")
+        if isinstance(self.max_chunk_calls, bool) or not isinstance(self.max_chunk_calls, int):
+            raise ValueError("max_chunk_calls must be an integer")
+        if self.max_chunk_calls < 2:
+            raise ValueError("max_chunk_calls must be at least 2")
+        if isinstance(self.chunk_overlap_words, bool) or not isinstance(self.chunk_overlap_words, int):
+            raise ValueError("chunk_overlap_words must be an integer")
+        if self.chunk_overlap_words < 0:
+            raise ValueError("chunk_overlap_words must be non-negative")
+        if (
+            isinstance(self.chunk_prompt_ratio, bool)
+            or not isinstance(self.chunk_prompt_ratio, (int, float))
+            or not 0 < self.chunk_prompt_ratio <= 1
+        ):
+            raise ValueError("chunk_prompt_ratio must be greater than 0 and at most 1")
 
 
 class ContextWindowExceeded(RuntimeError):
@@ -47,6 +66,15 @@ class ContextWindowExceeded(RuntimeError):
         super().__init__(
             f"{mode} prompt requires {prompt_tokens} tokens but the model budget is {prompt_budget}"
         )
+
+
+class ChunkLimitExceeded(RuntimeError):
+    """Raised before chunk invocation when bounded retrieval needs too many calls."""
+
+    def __init__(self, required_calls: int, max_calls: int) -> None:
+        self.required_calls = required_calls
+        self.max_calls = max_calls
+        super().__init__(f"chunked retrieval requires {required_calls} calls but the limit is {max_calls}")
 
 
 @dataclass
@@ -85,6 +113,8 @@ class PipelineAttempt:
     prompt_tokens: int
     response_chars: int
     verification: ResponseVerification
+    stage: str = "direct"
+    chunk_index: int | None = None
 
 
 @dataclass
@@ -108,6 +138,8 @@ class PipelineResult:
             "attempts": [
                 {
                     "mode": item.mode,
+                    "stage": item.stage,
+                    "chunk_index": item.chunk_index,
                     "prompt_tokens": item.prompt_tokens,
                     "response_chars": item.response_chars,
                     "verification": {
@@ -204,6 +236,7 @@ class ContextPipeline:
         allowed_restore: set[str] | None = None,
         verifier: Verifier | None = None,
         packet_id: str = "context",
+        chunked_retrieval: bool = False,
     ) -> PipelineResult:
         if task not in {"reasoning", "transform"}:
             raise ValueError(f"unsupported task: {task}")
@@ -212,14 +245,32 @@ class ContextPipeline:
             raise ValueError("invoke is required; pass it to ContextPipeline() or run()")
 
         prompt_budget = self._resolve_prompt_budget(model_invoke, None)
-        initial = self.prepare(
-            text,
-            source_lang,
-            target_lang,
-            risk,
-            packet_id,
-            max_prompt_tokens=prompt_budget,
-        )
+        try:
+            initial = self.prepare(
+                text,
+                source_lang,
+                target_lang,
+                risk,
+                packet_id,
+                max_prompt_tokens=prompt_budget,
+            )
+        except ContextWindowExceeded as exc:
+            if not chunked_retrieval or task != "reasoning":
+                raise
+            if source_lang != target_lang:
+                raise ValueError("chunked retrieval requires source_lang and target_lang to match") from exc
+            return self._run_chunked_retrieval(
+                text,
+                model_invoke,
+                source_lang,
+                target_lang,
+                risk,
+                allowed_restore or set(),
+                verifier,
+                packet_id,
+                prompt_budget,
+                exc,
+            )
         modes = fallback_modes(initial.mode)[: self.policy.max_attempts]
         attempts: list[PipelineAttempt] = []
         final_prepared = initial
@@ -274,6 +325,272 @@ class ContextPipeline:
             prepared=final_prepared,
         )
 
+    def _run_chunked_retrieval(
+        self,
+        text: str,
+        model_invoke: Invoker,
+        source_lang: str,
+        target_lang: str,
+        risk: Risk,
+        allowed_restore: set[str],
+        verifier: Verifier | None,
+        packet_id: str,
+        prompt_budget: int | None,
+        original_error: ContextWindowExceeded,
+    ) -> PipelineResult:
+        if prompt_budget is None:
+            raise ValueError("chunked retrieval requires a prompt token budget")
+        base = self._compile_mode(
+            text,
+            source_lang,
+            target_lang,
+            risk,
+            packet_id,
+            "auto",
+            "chunked_retrieval",
+        )
+        if base.mode != "hybrid" or not base.bundle.evidence_source_groups:
+            raise original_error
+
+        chunk_budget = max(1, int(prompt_budget * self.policy.chunk_prompt_ratio))
+        maps = self._build_retrieval_maps(base, chunk_budget)
+        worst_case_calls = len(maps) + 1
+        if worst_case_calls > self.policy.max_chunk_calls:
+            raise ChunkLimitExceeded(worst_case_calls, self.policy.max_chunk_calls)
+
+        attempts: list[PipelineAttempt] = []
+        candidates: list[tuple[str, ResponseVerification]] = []
+        seen_candidates: set[str] = set()
+        final_prepared = maps[0]
+        for index, prepared in enumerate(maps, 1):
+            answer = model_invoke(prepared.prompt)
+            verification = (
+                verifier(prepared, answer)
+                if verifier
+                else self.verify_response(prepared, answer, preserve_input=False)
+            )
+            no_evidence = self._is_no_evidence(answer)
+            if not no_evidence and "CTXIR_RETRIEVAL_" in answer.upper():
+                verification.accepted = False
+                verification.reasons.append("protocol_output")
+            attempts.append(
+                PipelineAttempt(
+                    mode=prepared.mode,
+                    prompt_tokens=prepared.prompt_tokens,
+                    response_chars=len(answer),
+                    verification=verification,
+                    stage="map",
+                    chunk_index=index,
+                )
+            )
+            final_prepared = prepared
+            if not verification.accepted:
+                return PipelineResult("", False, "hybrid", attempts, final_prepared)
+            if not no_evidence and not self._is_grounded(answer, prepared.bundle):
+                verification.accepted = False
+                verification.reasons.append("unsupported_candidate")
+                continue
+            normalized_answer = " ".join(answer.lower().split())
+            if not no_evidence and normalized_answer not in seen_candidates:
+                candidates.append((answer.strip(), verification))
+                seen_candidates.add(normalized_answer)
+
+        if not candidates:
+            return PipelineResult("", False, "hybrid", attempts, final_prepared)
+
+        final_answer, final_verification = candidates[0]
+        if len(candidates) > 1:
+            reduce_prompt = self._render_reduce_prompt(base.bundle, [value for value, _check in candidates])
+            reduce_prepared = self._prepared_for_prompt(
+                base,
+                base.bundle,
+                reduce_prompt,
+                "chunked_retrieval_reduce",
+                prompt_budget,
+            )
+            if not reduce_prepared.fits_prompt_budget:
+                raise ContextWindowExceeded(
+                    reduce_prepared.prompt_tokens,
+                    prompt_budget,
+                    "chunked_retrieval_reduce",
+                )
+            final_answer = model_invoke(reduce_prompt)
+            final_verification = (
+                verifier(reduce_prepared, final_answer)
+                if verifier
+                else self.verify_response(reduce_prepared, final_answer, preserve_input=False)
+            )
+            if self._is_no_evidence(final_answer) or "CTXIR_RETRIEVAL_" in final_answer.upper():
+                final_verification.accepted = False
+                final_verification.reasons.append("no_supported_answer")
+            elif not self._is_grounded(final_answer, base.bundle):
+                final_verification.accepted = False
+                final_verification.reasons.append("unsupported_candidate")
+            attempts.append(
+                PipelineAttempt(
+                    mode=reduce_prepared.mode,
+                    prompt_tokens=reduce_prepared.prompt_tokens,
+                    response_chars=len(final_answer),
+                    verification=final_verification,
+                    stage="reduce",
+                )
+            )
+            final_prepared = reduce_prepared
+
+        accepted = final_verification.accepted
+        if accepted:
+            final_answer = self.gateway.restore(final_answer, base.bundle, allowed=allowed_restore)
+        else:
+            final_answer = ""
+        return PipelineResult(final_answer, accepted, "hybrid", attempts, final_prepared)
+
+    def _build_retrieval_maps(
+        self,
+        base: PreparedContext,
+        prompt_budget: int,
+    ) -> list[PreparedContext]:
+        maps: list[PreparedContext] = []
+        bundle = base.bundle
+        query_terms = content_terms(bundle.retrieval_query)
+        for group in bundle.evidence_source_groups[:1]:
+            evidence_ref = group[-1]
+            fixed_refs = set(bundle.task_source_refs) | set(group[:-1])
+
+            def prepare_piece(piece: str) -> PreparedContext:
+                chunk_bundle = self.gateway._bundle_with_source_refs(
+                    bundle,
+                    fixed_refs | {evidence_ref},
+                    overrides={evidence_ref: piece},
+                )
+                prompt = self._render_map_prompt(chunk_bundle)
+                return self._prepared_for_prompt(
+                    base,
+                    chunk_bundle,
+                    prompt,
+                    "chunked_retrieval_map",
+                    prompt_budget,
+                )
+
+            group_maps = self._split_evidence(bundle.sources[evidence_ref], prepare_piece, prompt_budget)
+            relevant = [
+                prepared
+                for prepared in group_maps
+                if query_terms & content_terms(self._included_text(prepared.bundle, evidence_ref))
+            ]
+            maps.extend(relevant or group_maps)
+        return maps
+
+    def _split_evidence(
+        self,
+        text: str,
+        prepare_piece: Callable[[str], PreparedContext],
+        prompt_budget: int,
+    ) -> list[PreparedContext]:
+        whole = prepare_piece(text)
+        if whole.fits_prompt_budget:
+            return [whole]
+        words = text.split()
+        chunks: list[PreparedContext] = []
+        start = 0
+        while start < len(words):
+            low = start + 1
+            high = len(words)
+            best_end = start
+            best: PreparedContext | None = None
+            while low <= high:
+                middle = (low + high) // 2
+                candidate = prepare_piece(" ".join(words[start:middle]))
+                if candidate.fits_prompt_budget:
+                    best_end = middle
+                    best = candidate
+                    low = middle + 1
+                else:
+                    high = middle - 1
+            if best is None:
+                smallest = prepare_piece(words[start])
+                raise ContextWindowExceeded(smallest.prompt_tokens, prompt_budget, "chunked_retrieval_map")
+            chunks.append(best)
+            worst_case_calls = len(chunks) + 1
+            if worst_case_calls > self.policy.max_chunk_calls:
+                raise ChunkLimitExceeded(worst_case_calls, self.policy.max_chunk_calls)
+            if best_end == len(words):
+                break
+            start = max(best_end - self.policy.chunk_overlap_words, start + 1)
+        return chunks
+
+    def _prepared_for_prompt(
+        self,
+        base: PreparedContext,
+        bundle: ContextBundle,
+        prompt: str,
+        decision: str,
+        prompt_budget: int,
+    ) -> PreparedContext:
+        prompt_tokens = max(self.token_counter(prompt), 1)
+        return PreparedContext(
+            bundle=bundle,
+            prompt=prompt,
+            risk=base.risk,
+            source_tokens=base.source_tokens,
+            prompt_tokens=prompt_tokens,
+            token_savings=round(1 - (prompt_tokens / base.source_tokens), 4),
+            decision=decision,
+            prompt_budget=prompt_budget,
+        )
+
+    def _render_map_prompt(self, bundle: ContextBundle) -> str:
+        task_refs = set(bundle.task_source_refs)
+        evidence = "\n".join(
+            str(item["text"])
+            for item in bundle.contract["source"]["included"]
+            if item["ref"] not in task_refs
+        )
+        return (
+            "Extract the answer stated in the EVIDENCE.\n"
+            f"QUESTION:\n{bundle.retrieval_query}\n\nEVIDENCE:\n{evidence}\n\nANSWER:"
+        )
+
+    def _render_reduce_prompt(self, bundle: ContextBundle, candidates: list[str]) -> str:
+        candidate_text = "\n".join(f"CANDIDATE {index}: {value}" for index, value in enumerate(candidates, 1))
+        return (
+            "Choose the concise final answer to the QUESTION from the CANDIDATES. Do not add new facts.\n"
+            f"QUESTION:\n{bundle.retrieval_query}\n\nCANDIDATES:\n{candidate_text}\n\nANSWER:"
+        )
+
+    @staticmethod
+    def _is_no_evidence(answer: str) -> bool:
+        normalized = " ".join(answer.lower().split())
+        return NO_EVIDENCE.lower() in normalized or any(
+            phrase in normalized
+            for phrase in (
+                "not provided in the evidence",
+                "not contain the answer",
+                "insufficient evidence",
+                "not enough information",
+                "cannot determine",
+            )
+        )
+
+    @staticmethod
+    def _included_text(bundle: ContextBundle, source_ref: str) -> str:
+        return " ".join(
+            str(item["text"])
+            for item in bundle.contract["source"]["included"]
+            if item["ref"] == source_ref
+        )
+
+    def _is_grounded(self, answer: str, bundle: ContextBundle) -> bool:
+        answer_terms = self._grounding_terms(answer) - self._grounding_terms(bundle.retrieval_query)
+        answer_terms -= {"according", "answer", "evidence", "provided", "stated"}
+        evidence_terms = self._grounding_terms(
+            " ".join(str(item["text"]) for item in bundle.contract["source"]["included"])
+        )
+        return bool(answer_terms) and answer_terms <= evidence_terms
+
+    @staticmethod
+    def _grounding_terms(text: str) -> set[str]:
+        return content_terms(text) | set(re.findall(r"(?<!\w)\d+(?:[.,:]\d+)*(?!\w)", text.lower()))
+
     def verify_response(
         self,
         prepared: PreparedContext,
@@ -288,11 +605,12 @@ class ContextPipeline:
                 missing_placeholders=[],
                 new_pii_kinds=[],
             )
-        issued = {
+        declared = {
             item["placeholder"]
             for item in prepared.bundle.contract["privacy"]["protected"]
         }
-        mentioned = set(re.findall(r"\bPII_[A-Z0-9_]+_\d+\b", response))
+        issued = declared & set(PLACEHOLDER_RE.findall(prepared.prompt))
+        mentioned = set(PLACEHOLDER_RE.findall(response))
         unknown = sorted(mentioned - issued)
         missing = sorted(issued - mentioned) if preserve_input else []
         response_bundle = self.gateway.compile_private(
@@ -402,6 +720,7 @@ def approximate_token_count(text: str) -> int:
 
 __all__ = [
     "ContextPipeline",
+    "ChunkLimitExceeded",
     "ContextWindowExceeded",
     "PipelineAttempt",
     "PipelinePolicy",

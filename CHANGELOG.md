@@ -2,6 +2,25 @@
 
 All notable changes to ContextIR are documented here.
 
+## 1.3.0 - 2026-07-19
+
+- added explicit bounded chunked retrieval for a top-ranked evidence segment
+  that cannot fit as one complete group;
+- split oversized evidence with configurable overlap, selected query-relevant
+  chunks locally, and retained the extracted question outside the public
+  contract;
+- added map/reduce stages to payload-free pipeline traces without logging
+  prompts, candidates, answers, source text, or vault values;
+- added lexical grounding checks for text and numeric answers before accepting
+  map candidates;
+- rejected new PII, unknown placeholders, unsupported candidates, protocol
+  output, excessive call plans, and reduce prompts exceeding the model budget;
+- reserved 25% map headroom by default to reduce near-window attention
+  degradation on small models;
+- added `--chunked-retrieval` and bounded chunk controls to the CLI;
+- expanded the release benchmark to ten pipeline cases and verified the same
+  constrained retrieval answer on local Qwen3 0.6B and 8B models.
+
 ## 1.2.0 - 2026-07-19
 
 - added budget-aware retrieval packing that keeps the query, response format,

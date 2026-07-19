@@ -59,6 +59,21 @@ and configurable chat-template overhead from their context window; ContextIR
 packs ranked retrieval evidence to the remaining budget or refuses an unsafe
 prompt before contacting the model.
 
+For a query whose highest-ranked evidence segment is itself larger than the
+window, enable bounded chunked retrieval explicitly:
+
+```bash
+contextir run \
+  --model qwen3:0.6b \
+  --context-length 4096 \
+  --chunked-retrieval \
+  --text "Read the document... Question: What is the release code? Answer:"
+```
+
+This path chunks only retrieved evidence for reasoning tasks, selects relevant
+chunks locally, validates grounded map outputs, and performs at most one reduce
+call. It does not approximate exhaustive counting or transform tasks.
+
 ## Install
 
 From a checkout:
@@ -160,7 +175,7 @@ evaluate recognizers on data representative of the deployment.
 
 The checked-in compiler smoke benchmark reports:
 
-- 9 compiler and 8 product-pipeline cases;
+- 9 compiler and 10 product-pipeline cases;
 - 0 expectation failures;
 - 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;
@@ -179,6 +194,10 @@ remain required.
 A constrained-window retrieval smoke run packs the same long input to fit a
 256-token Ollama context. Qwen3 0.6B and 8B both recovered `cobalt-seven`; the
 backend reported 229 prompt tokens with 16 tokens reserved for output.
+
+An oversized single-segment follow-up uses bounded chunked retrieval with a
+256-token context. Qwen3 0.6B and 8B both recovered `cobalt-seven` from the
+same selected chunk using one map call at 75% of the available prompt budget.
 
 See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
 [benchmark roadmap](docs/BENCHMARKS.md).

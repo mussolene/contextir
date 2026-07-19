@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from contextir import ContextIR, ContextPipeline, ContextWindowExceeded, PipelinePolicy
+from contextir.pipeline import NO_EVIDENCE
 from contextir.sir_runtime import PrivacyScrubber
 from contextir.sir_sources import PROJECT_ROOT
 
@@ -315,6 +316,41 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
         ).prepare(retrieval_text, source_lang="en", target_lang="en")
     except ContextWindowExceeded as exc:
         minimum_retrieval_tokens = exc.prompt_tokens
+    oversized_filler = " ".join(["archive"] * 220)
+    oversized_records = [f"Record {index}: Cedar historical note {index}." for index in range(8)]
+    oversized_records.insert(
+        4,
+        f"Project Juniper current access phrase is cobalt-seven and {oversized_filler}.",
+    )
+    oversized_text = (
+        "Read the following text and answer briefly. "
+        + " ".join(oversized_records)
+        + " Question: What is the current access phrase for Project Juniper? Answer:"
+    )
+
+    def chunk_invoke(prompt: str) -> str:
+        return "cobalt-seven" if "cobalt-seven" in prompt else NO_EVIDENCE
+
+    chunked = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8, chunk_prompt_ratio=1),
+    ).run(
+        oversized_text,
+        chunk_invoke,
+        source_lang="en",
+        target_lang="en",
+        chunked_retrieval=True,
+    )
+    unsafe_chunk = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8, chunk_prompt_ratio=1),
+    ).run(
+        oversized_text,
+        lambda _prompt: "Contact leaked@example.test.",
+        source_lang="en",
+        target_lang="en",
+        chunked_retrieval=True,
+    )
     return [
         {
             "case_id": "measured_semantic_selection",
@@ -372,6 +408,26 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
             "passed": minimum_retrieval_tokens == 90,
             "mode": "hybrid",
             "minimum_prompt_tokens": minimum_retrieval_tokens,
+        },
+        {
+            "case_id": "chunked_retrieval_oversized_evidence",
+            "passed": (
+                chunked.accepted
+                and chunked.answer == "cobalt-seven"
+                and all(item.stage == "map" for item in chunked.attempts)
+            ),
+            "mode": chunked.selected_mode,
+            "model_calls": len(chunked.attempts),
+        },
+        {
+            "case_id": "chunked_retrieval_unsafe_map_rejected",
+            "passed": (
+                not unsafe_chunk.accepted
+                and not unsafe_chunk.answer
+                and "new_pii" in unsafe_chunk.attempts[0].verification.reasons
+            ),
+            "mode": unsafe_chunk.selected_mode,
+            "model_calls": len(unsafe_chunk.attempts),
         },
     ]
 

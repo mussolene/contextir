@@ -28,6 +28,8 @@ class ContextBundle:
     sources: dict[str, str]
     required_source_refs: tuple[str, ...] = ()
     evidence_source_groups: tuple[tuple[str, ...], ...] = ()
+    task_source_refs: tuple[str, ...] = ()
+    retrieval_query: str = ""
 
 
 @dataclass
@@ -47,6 +49,7 @@ class TaskProfile:
     query_refs: tuple[str, ...] = ()
     evidence_refs: tuple[str, ...] = ()
     retrieval_confidence: float = 0.0
+    query: str = ""
 
 
 class ContextIR:
@@ -154,8 +157,10 @@ class ContextIR:
             contract=contract,
             vault=scrubbed.vault,
             sources=sources,
+            task_source_refs=source_plan.task_refs,
             required_source_refs=source_plan.required_refs,
             evidence_source_groups=source_plan.evidence_groups,
+            retrieval_query=task_profile.query,
         )
 
     def _pack_retrieval_prompt(
@@ -183,10 +188,16 @@ class ContextIR:
                 return candidate
         return packed
 
-    def _bundle_with_source_refs(self, bundle: ContextBundle, refs: set[str]) -> ContextBundle:
+    def _bundle_with_source_refs(
+        self,
+        bundle: ContextBundle,
+        refs: set[str],
+        overrides: dict[str, str] | None = None,
+    ) -> ContextBundle:
         contract = copy.deepcopy(bundle.contract)
+        source_values = overrides or {}
         included = [
-            {"ref": ref, "text": text}
+            {"ref": ref, "text": source_values.get(ref, text)}
             for ref, text in bundle.sources.items()
             if ref in refs
         ]
@@ -215,8 +226,10 @@ class ContextIR:
             contract=contract,
             vault=bundle.vault,
             sources=bundle.sources,
+            task_source_refs=bundle.task_source_refs,
             required_source_refs=bundle.required_source_refs,
             evidence_source_groups=bundle.evidence_source_groups,
+            retrieval_query=bundle.retrieval_query,
         )
 
     def render_prompt(self, contract: dict[str, Any]) -> str:
@@ -481,6 +494,7 @@ def select_source_refs(
 @dataclass(frozen=True)
 class SourcePlan:
     refs: tuple[str, ...]
+    task_refs: tuple[str, ...] = ()
     required_refs: tuple[str, ...] = ()
     evidence_groups: tuple[tuple[str, ...], ...] = ()
 
@@ -495,15 +509,19 @@ def plan_source_refs(
     if mode == "semantic":
         return SourcePlan(())
     if task_profile and task_profile.kind == "retrieval":
-        required = set(task_profile.query_refs)
+        task_refs = set(task_profile.query_refs)
+        task_refs.update(ref for ref, _text in segments[:1])
+        task_refs.update(ref for ref, _text in segments[-2:])
+        required = set(task_refs)
         required.update(ref for ref, _text in segments[:2])
-        required.update(ref for ref, _text in segments[-2:])
         edge_segments = segments[:4] + segments[-6:]
-        required.update(
+        edge_refs = {
             ref
             for ref, text in edge_segments
             if re.search(r"\b(answer|enter|format|output|respond)\b", text, re.IGNORECASE)
-        )
+        }
+        task_refs.update(edge_refs)
+        required.update(edge_refs)
         owner_by_ref = paragraph_owner_map(segments)
         groups = []
         selected = set(required)
@@ -516,8 +534,9 @@ def plan_source_refs(
             groups.append(ordered_group)
             selected.update(group)
         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
+        ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
         ordered_required = tuple(ref for ref, _text in segments if ref in required)
-        return SourcePlan(ordered_refs, ordered_required, tuple(groups))
+        return SourcePlan(ordered_refs, ordered_task, ordered_required, tuple(groups))
     selected = []
     seen_source = set()
     for ref, text in segments:
@@ -597,6 +616,7 @@ def analyze_task(text: str, segments: list[tuple[str, str]], evidence_limit: int
         query_refs=query_refs,
         evidence_refs=tuple(evidence),
         retrieval_confidence=confidence,
+        query=query,
     )
 
 
@@ -797,6 +817,10 @@ def main() -> None:
     run_p.add_argument("--context-length", type=int, default=32768)
     run_p.add_argument("--max-output-tokens", type=int, default=256)
     run_p.add_argument("--prompt-overhead-tokens", type=int, default=32)
+    run_p.add_argument("--chunked-retrieval", action="store_true")
+    run_p.add_argument("--max-chunk-calls", type=int, default=16)
+    run_p.add_argument("--chunk-overlap-words", type=int, default=24)
+    run_p.add_argument("--chunk-prompt-ratio", type=float, default=0.75)
     run_p.add_argument("--json", action="store_true", help="Emit answer and payload-free trace as JSON.")
     args = parser.parse_args()
 
@@ -804,7 +828,7 @@ def main() -> None:
         import os
 
         from contextir.clients import OllamaClient, OpenAICompatibleClient
-        from contextir.pipeline import ContextPipeline, ContextWindowExceeded
+        from contextir.pipeline import ChunkLimitExceeded, ContextPipeline, ContextWindowExceeded, PipelinePolicy
 
         text = sys.stdin.read() if args.text == "-" else args.text
         if args.backend == "ollama":
@@ -827,14 +851,20 @@ def main() -> None:
                 prompt_overhead_tokens=args.prompt_overhead_tokens,
             )
         try:
-            result = ContextPipeline(invoke=client).run(
+            policy = PipelinePolicy(
+                max_chunk_calls=args.max_chunk_calls,
+                chunk_overlap_words=args.chunk_overlap_words,
+                chunk_prompt_ratio=args.chunk_prompt_ratio,
+            )
+            result = ContextPipeline(invoke=client, policy=policy).run(
                 text,
                 source_lang=args.source_lang,
                 target_lang=args.target_lang,
                 risk=args.risk,
                 task=args.task,
+                chunked_retrieval=args.chunked_retrieval,
             )
-        except ContextWindowExceeded as exc:
+        except (ChunkLimitExceeded, ContextWindowExceeded, ValueError) as exc:
             parser.error(str(exc))
         if args.json:
             print(json.dumps({"answer": result.answer, "trace": result.public_trace()}, ensure_ascii=False))

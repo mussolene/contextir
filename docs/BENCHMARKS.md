@@ -21,6 +21,7 @@ The evaluator checks:
 - rejection of newly generated PII.
 - refusal before initial or fallback prompts exceed the model budget.
 - ranked retrieval packing and refusal below the best complete evidence group.
+- bounded chunked retrieval and rejection of unsafe map output.
 
 Current checked-in result:
 
@@ -29,7 +30,7 @@ Current checked-in result:
   "cases": 9,
   "pii_leaks": 0,
   "expectation_failures": 0,
-  "pipeline_cases": 8,
+  "pipeline_cases": 10,
   "pipeline_failures": 0,
   "pipeline_fallbacks": 1,
   "compression_eligible_cases": 1,

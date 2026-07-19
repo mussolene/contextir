@@ -44,15 +44,20 @@ input -> detector -> placeholders + vault -> source segment store
 5. pack ranked complete evidence groups for retrieval prompts that exceed the
    target model's budget;
 6. enforce the budget after reserving output and chat-template tokens;
-7. build a raw baseline only when the candidate does not clear the configured
+7. when explicitly enabled for retrieval reasoning, split an oversized top
+   evidence segment, select query-relevant chunks, and map them under a smaller
+   attention budget;
+8. ground distinct map candidates in their source chunks and reduce only when
+   more than one remains;
+9. build a raw baseline only when the candidate does not clear the configured
    savings threshold;
-8. invoke the caller-provided model adapter;
-9. reject unknown placeholders and newly generated PII;
-10. for transform tasks, verify numbers, negation, constraints, events, and issued
+10. invoke the caller-provided model adapter;
+11. reject unknown placeholders and newly generated PII;
+12. for transform tasks, verify numbers, negation, constraints, events, and issued
    placeholders;
-11. on verification failure, retry at most once per richer source mode if that
+13. on verification failure, retry at most once per richer source mode if that
     prompt still fits the budget;
-12. restore only explicitly allowlisted placeholders after acceptance.
+14. restore only explicitly allowlisted placeholders after acceptance.
 
 The fallback order is `semantic -> hybrid -> raw`; it never loops indefinitely.
 Reasoning tasks use safety verification but not semantic equivalence, because a
@@ -76,6 +81,27 @@ exceed the budget, the pipeline returns the rejected result with
 `fallback_exceeds_prompt_budget` in its safe trace. ContextIR deliberately does
 not truncate selected evidence or pretend an exhaustive task is safe to
 summarize.
+
+## Chunked Retrieval
+
+`ContextPipeline.run(..., chunked_retrieval=True)` handles the narrower case in
+which query-aware routing found evidence but its best complete segment still
+cannot fit. The local source plan retains the extracted query and evidence
+priority without adding fields to `contextir.v2`.
+
+The pipeline splits only the top evidence segment with overlap, keeps chunks
+that share content terms with the query, and checks the complete invocation
+plan against `max_chunk_calls` before contacting the model. Map prompts default
+to 75% of the available prompt budget. Candidate-specific words and numbers
+must all occur in the chunk. Unsafe output aborts immediately; duplicate and
+abstaining outputs are ignored. Distinct grounded candidates use one bounded
+reduce call.
+
+Public attempts expose only `stage`, `chunk_index`, token/character counts, and
+verification reasons. Candidate text and source chunks are omitted. Chunking
+is not used for transform or exhaustive tasks because generic reduction cannot
+guarantee cross-chunk preservation or deduplication. Source and target language
+must match because the grounding gate is lexical in version 1.3.
 
 ## Adaptive Modes
 
