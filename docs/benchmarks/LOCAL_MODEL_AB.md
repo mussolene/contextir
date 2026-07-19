@@ -176,6 +176,29 @@ python3 scripts/evaluate_model_ab.py \
 Machine-readable reports use the `_constrained_retrieval.json` and
 `_chunk_map.json` suffixes under `reports/model_ab/`.
 
+## Explicit Application Query Gates
+
+The post-v1.4 rerun uses the same ten official examples but supplies the
+application document and query as separate harness fields. ContextIR masks them
+in one privacy namespace and uses the explicit query for retrieval; raw, auto,
+summary, embedding, and chunked paths receive the same task content.
+
+| Model | Raw quality | Auto quality | Raw / auto backend input | QA delta | Retrieval delta | Gate |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Qwen3 0.6B Q4 | 0.2103 | 0.5002 | 10,925 / 4,892 | -0.0203 | +0.6000 | pass |
+| Qwen3 8B Q4 | 0.1757 | 0.7167 | 10,925 / 4,892 | +0.0822 | +1.0000 | pass |
+
+The measured backend-input ratios are `0.3439` for `multifieldqa_en` and
+`0.5651` for `passage_retrieval_en`, both below the configured `0.60` ceiling.
+The quality floor is `-0.03` per dataset. The 0.6B QA aggregate passes narrowly
+and still contains three regressed cases; the 8B QA set contains one. This is a
+release guard for the bounded subset, not evidence of universal no-regression.
+
+Reports:
+
+- `reports/model_ab/ollama_qwen3_0.6b_explicit_query_gated.json`;
+- `reports/model_ab/ollama_qwen3_8b_explicit_query_gated.json`.
+
 ## Neural Summary and Embedding Baselines
 
 The baseline follow-up keeps the same ten examples and 2K answer context. The
@@ -266,7 +289,7 @@ is not copied into this repository. Machine-readable outputs are in
 - compare with production RAG using tuned chunking, reranking, and cached
   document embeddings;
 - replace synthetic agent diagnostics with application-owned histories;
-- measure per-task regression gates rather than relying only on aggregate mean;
+- expand per-dataset gates into per-task-family and minimum-sample gates;
 - evaluate all required PII classes on deployment-shaped RU/EN corpora;
-- replace English marker heuristics with explicit application-supplied task and
-  query fields where integrations can provide them.
+- expand explicit application-query gates from the bounded subset to complete
+  official and deployment-owned task sets.

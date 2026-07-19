@@ -17,7 +17,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from contextir import ContextIR, ContextPipeline, OllamaClient, OpenAICompatibleClient, PipelinePolicy
+from contextir import ContextIR, ContextKind, ContextPipeline, OllamaClient, OpenAICompatibleClient, PipelinePolicy
 from contextir.clients import post_json
 from contextir.gateway import paragraph_owner_map
 from contextir.pipeline import approximate_token_count, clean_model_output
@@ -50,6 +50,13 @@ class Case:
     prompt: str
     answers: list[str]
     source: str
+    document: str = ""
+    query: str = ""
+    context_kind: ContextKind = "auto"
+
+    @property
+    def input_text(self) -> str:
+        return self.document or self.prompt
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +76,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--embedding-model", default="nomic-embed-text-v2-moe:latest")
     parser.add_argument("--ollama-base-url", default="http://127.0.0.1:11434")
     parser.add_argument("--bootstrap-samples", type=int, default=2000)
+    parser.add_argument("--check", action="store_true", help="Fail when configured A/B gates are not met.")
+    parser.add_argument("--baseline-mode", default="raw")
+    parser.add_argument("--candidate-mode", default="auto")
+    parser.add_argument("--min-quality-delta", type=float, default=-0.03)
+    parser.add_argument("--max-prompt-token-ratio", type=float, default=0.6)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--out", default="")
     return parser.parse_args()
@@ -94,9 +106,46 @@ def load_cases(manifest: Path, longbench_dir: Path, selected: set[str]) -> list[
                 raise SystemExit(f"missing LongBench data: {path}")
             rows_by_dataset[dataset] = read_jsonl(path)
         row = rows_by_dataset[dataset][int(spec["index"])]
-        prompt = LONG_BENCH_PROMPTS[dataset].format(context=row["context"], input=row["input"])
-        cases.append(Case(spec["id"], dataset, prompt, list(row["answers"]), "LongBench"))
+        cases.append(make_longbench_case(spec, row))
     return cases
+
+
+def make_longbench_case(spec: dict[str, Any], row: dict[str, Any]) -> Case:
+    dataset = spec["dataset"]
+    prompt = LONG_BENCH_PROMPTS[dataset].format(context=row["context"], input=row["input"])
+    if dataset == "passage_count":
+        return Case(
+            spec["id"],
+            dataset,
+            prompt,
+            list(row["answers"]),
+            "LongBench",
+            context_kind="exhaustive",
+        )
+    if dataset == "multifieldqa_en":
+        document = f"Read the following text and answer briefly.\n\n{row['context']}"
+        query = (
+            f"{row['input']}\n"
+            "Answer from the document with only the answer and no other words."
+        )
+    elif dataset == "passage_retrieval_en":
+        document = "Here are 30 paragraphs from Wikipedia.\n\n" + str(row["context"])
+        query = (
+            "Determine which document paragraph the following abstract is from: "
+            f"{row['input']}\nOutput only the paragraph identifier, such as Paragraph 1."
+        )
+    else:
+        raise ValueError(f"unsupported LongBench dataset: {dataset}")
+    return Case(
+        spec["id"],
+        dataset,
+        prompt,
+        list(row["answers"]),
+        "LongBench",
+        document=document,
+        query=query,
+        context_kind="retrieval",
+    )
 
 
 def make_synthetic_case(spec: dict[str, Any]) -> Case:
@@ -106,38 +155,63 @@ def make_synthetic_case(spec: dict[str, Any]) -> Case:
             for index in range(180)
         ]
         distractors.insert(90, "The access phrase for project Juniper is cobalt-seven.")
-        prompt = (
-            "Read the records. Answer only with the access phrase for project Juniper.\n\n"
-            + "\n".join(distractors)
-            + "\n\nAnswer:"
+        document = "\n".join(distractors)
+        query = "What is the access phrase for project Juniper? Answer with the phrase only."
+        prompt = f"{document}\n\nQuestion: {query}\nAnswer:"
+        return Case(
+            spec["id"],
+            spec["dataset"],
+            prompt,
+            ["cobalt-seven"],
+            "RULER-style diagnostic",
+            document,
+            query,
+            "retrieval",
         )
-        return Case(spec["id"], spec["dataset"], prompt, ["cobalt-seven"], "RULER-style diagnostic")
     if spec["variant"] == "tool_route":
         tools = [
             f"Tool archive_record_{index}: archive historical record type {1000 + index}."
             for index in range(90)
         ]
         tools.insert(45, "Tool create_invoice: create a customer invoice for completed work.")
-        prompt = (
-            "Read the following tool catalog and answer the question.\n\n"
-            + "\n".join(tools)
-            + "\n\nQuestion: Which tool should the agent call to create a customer invoice for completed work? "
-            "Answer with only the tool name.\nAnswer:"
+        document = "\n".join(tools)
+        query = (
+            "Which tool should the agent call to create a customer invoice for completed work? "
+            "Answer with only the tool name."
         )
-        return Case(spec["id"], spec["dataset"], prompt, ["create_invoice"], "Agent tool-routing diagnostic")
+        prompt = f"{document}\n\nQuestion: {query}\nAnswer:"
+        return Case(
+            spec["id"],
+            spec["dataset"],
+            prompt,
+            ["create_invoice"],
+            "Agent tool-routing diagnostic",
+            document,
+            query,
+            "retrieval",
+        )
     if spec["variant"] == "agent_state":
         history = [
             f"Step {index}: archived Cedar request {2000 + index} with status completed."
             for index in range(90)
         ]
         history.insert(47, "Step 47B: Juniper invoice failed validation and requires finance review via notify_finance.")
-        prompt = (
-            "Read the following agent history and answer the question.\n\n"
-            + "\n".join(history)
-            + "\n\nQuestion: Which exact next action is required for the Juniper invoice that failed validation? "
-            "Answer with only the action name.\nAnswer:"
+        document = "\n".join(history)
+        query = (
+            "Which exact next action is required for the Juniper invoice that failed validation? "
+            "Answer with only the action name."
         )
-        return Case(spec["id"], spec["dataset"], prompt, ["notify_finance"], "Agent-state diagnostic")
+        prompt = f"{document}\n\nQuestion: {query}\nAnswer:"
+        return Case(
+            spec["id"],
+            spec["dataset"],
+            prompt,
+            ["notify_finance"],
+            "Agent-state diagnostic",
+            document,
+            query,
+            "retrieval",
+        )
     if spec["variant"] == "oversized_segment":
         records = " ".join(
             f"Record {index}: Cedar historical status is closed."
@@ -148,31 +222,66 @@ def make_synthetic_case(spec: dict[str, Any]) -> Case:
             + ["Project Juniper current access phrase is cobalt-seven"]
             + ["archived"] * 2800
         )
-        prompt = (
-            "Read the following text and answer briefly. "
-            + records
-            + " "
-            + evidence
-            + ". Question: What is the current access phrase for Project Juniper? Answer:"
-        )
+        document = records + " " + evidence + "."
+        query = "What is the current access phrase for Project Juniper? Answer with the phrase only."
+        prompt = "Read the following text and answer briefly. " + document + f" Question: {query} Answer:"
         return Case(
             spec["id"],
             spec["dataset"],
             prompt,
             ["cobalt-seven"],
             "ContextIR oversized-segment diagnostic",
+            document,
+            query,
+            "retrieval",
         )
-    prompt = " ".join(
-        ["Do not send payment 42 twice to contact finance@example.test."] * 80
-        + ["Question: What action is prohibited? Answer with only the prohibited action."]
+    document = " ".join(["Do not send payment 42 twice to contact finance@example.test."] * 80)
+    query = "What action is prohibited? Answer with only the prohibited action."
+    prompt = f"{document} Question: {query}"
+    return Case(
+        spec["id"],
+        spec["dataset"],
+        prompt,
+        ["send payment 42 twice"],
+        "ContextIR diagnostic",
+        document,
+        query,
+        "retrieval",
     )
-    return Case(spec["id"], spec["dataset"], prompt, ["send payment 42 twice"], "ContextIR diagnostic")
+
+
+def compile_case(gateway: ContextIR, case: Case, mode: str):
+    return gateway.compile_private(
+        case.input_text,
+        source_lang="en",
+        target_lang="en",
+        packet_id=case.id,
+        mode=mode,
+        context_kind=case.context_kind,
+        query=case.query,
+    )
+
+
+def bundle_source_text(bundle: Any) -> str:
+    source_text = " ".join(bundle.sources.values())
+    normalized_query = " ".join(bundle.retrieval_query.lower().split())
+    if normalized_query and normalized_query not in " ".join(source_text.lower().split()):
+        return f"{source_text} {bundle.retrieval_query}"
+    return source_text
 
 
 def prepare_prompt(gateway: ContextIR, pipeline: ContextPipeline, case: Case, requested_mode: str) -> tuple[str, dict[str, Any]]:
     started = time.perf_counter()
     if requested_mode == "auto":
-        prepared = pipeline.prepare(case.prompt, source_lang="en", target_lang="en", risk="standard", packet_id=case.id)
+        prepared = pipeline.prepare(
+            case.input_text,
+            source_lang="en",
+            target_lang="en",
+            risk="standard",
+            packet_id=case.id,
+            context_kind=case.context_kind,
+            query=case.query,
+        )
         bundle = prepared.bundle
         metadata = {
             "selected_mode": prepared.mode,
@@ -183,11 +292,9 @@ def prepare_prompt(gateway: ContextIR, pipeline: ContextPipeline, case: Case, re
         }
         rendered = prepared.prompt
     else:
-        bundle = gateway.compile_private(
-            case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode=requested_mode
-        )
-        rendered = gateway.render_prompt(bundle.contract)
-        source_text = " ".join(bundle.sources.values())
+        bundle = compile_case(gateway, case, requested_mode)
+        rendered = gateway.render_bundle(bundle)
+        source_text = bundle_source_text(bundle)
         source_tokens = max(approximate_token_count(source_text), 1)
         prompt_tokens = max(approximate_token_count(rendered), 1)
         metadata = {
@@ -200,7 +307,7 @@ def prepare_prompt(gateway: ContextIR, pipeline: ContextPipeline, case: Case, re
     metadata.update(
         {
             "compile_latency_ms": round((time.perf_counter() - started) * 1000, 3),
-            "source_chars": len(case.prompt),
+            "source_chars": len(case.input_text) + len(case.query),
             "prompt_chars": len(rendered),
             "protected_spans": len(bundle.contract["privacy"]["protected"]),
             "semantic_confidence": bundle.contract["uncertainty"]["semantic_confidence"],
@@ -284,12 +391,14 @@ def run_chunked_case(
     started = time.perf_counter()
     try:
         result = pipeline.run(
-            case.prompt,
+            case.input_text,
             source_lang="en",
             target_lang="en",
             risk="standard",
             packet_id=case.id,
             chunked_retrieval=True,
+            context_kind=case.context_kind,
+            query=case.query,
         )
         error = None
         if not result.accepted:
@@ -320,7 +429,7 @@ def run_chunked_case(
                 ),
                 3,
             ),
-            "source_chars": len(case.prompt),
+            "source_chars": len(case.input_text) + len(case.query),
             "prompt_chars": None,
             "protected_spans": len(result.prepared.bundle.contract["privacy"]["protected"]),
             "semantic_confidence": result.prepared.bundle.contract["uncertainty"]["semantic_confidence"],
@@ -329,14 +438,8 @@ def run_chunked_case(
         }
         return result.answer, metadata, aggregate_usage(usages), error
     except Exception as exc:
-        bundle = gateway.compile_private(
-            case.prompt,
-            source_lang="en",
-            target_lang="en",
-            packet_id=case.id,
-            mode="auto",
-        )
-        source_tokens = max(approximate_token_count(" ".join(bundle.sources.values())), 1)
+        bundle = compile_case(gateway, case, "auto")
+        source_tokens = max(approximate_token_count(bundle_source_text(bundle)), 1)
         metadata = {
             "selected_mode": bundle.contract["mode"],
             "decision": "pipeline_exception",
@@ -351,7 +454,7 @@ def run_chunked_case(
                 ),
                 3,
             ),
-            "source_chars": len(case.prompt),
+            "source_chars": len(case.input_text) + len(case.query),
             "prompt_chars": None,
             "protected_spans": len(bundle.contract["privacy"]["protected"]),
             "semantic_confidence": bundle.contract["uncertainty"]["semantic_confidence"],
@@ -385,7 +488,7 @@ def baseline_metadata(
     prompt_chars: int,
     compile_latency_ms: float,
 ) -> dict[str, Any]:
-    source_text = " ".join(bundle.sources.values())
+    source_text = bundle_source_text(bundle)
     source_tokens = max(approximate_token_count(source_text), 1)
     return {
         "selected_mode": selected_mode,
@@ -394,7 +497,7 @@ def baseline_metadata(
         "estimated_prompt_tokens": estimated_prompt_tokens,
         "estimated_token_savings": round(1 - estimated_prompt_tokens / source_tokens, 4),
         "compile_latency_ms": round(compile_latency_ms, 3),
-        "source_chars": len(case.prompt),
+        "source_chars": len(case.input_text) + len(case.query),
         "prompt_chars": prompt_chars,
         "protected_spans": len(bundle.contract["privacy"]["protected"]),
         "semantic_confidence": bundle.contract["uncertainty"]["semantic_confidence"],
@@ -407,15 +510,11 @@ def run_summary_case(
     case: Case,
 ) -> tuple[str, dict[str, Any], dict[str, Any]]:
     started = time.perf_counter()
-    raw_bundle = gateway.compile_private(
-        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="raw"
-    )
-    task_bundle = gateway.compile_private(
-        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="auto"
-    )
+    raw_bundle = compile_case(gateway, case, "raw")
+    task_bundle = compile_case(gateway, case, "auto")
     if not task_bundle.retrieval_query:
         raise ValueError("summary baseline requires an extracted retrieval query")
-    masked_source = gateway.render_prompt(raw_bundle.contract)
+    masked_source = " ".join(raw_bundle.sources.values())
     summary_prompt = (
         "Compress the MASKED SOURCE into factual notes sufficient to answer the TASK. "
         "Preserve exact names, numbers, negation, and paragraph identifiers. Do not answer the task.\n\n"
@@ -502,12 +601,8 @@ def run_embedding_case(
     if args.backend != "ollama":
         raise ValueError("embedding baseline currently requires the Ollama backend")
     started = time.perf_counter()
-    raw_bundle = gateway.compile_private(
-        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="raw"
-    )
-    task_bundle = gateway.compile_private(
-        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="auto"
-    )
+    raw_bundle = compile_case(gateway, case, "raw")
+    task_bundle = compile_case(gateway, case, "auto")
     query = task_bundle.retrieval_query
     if not query:
         raise ValueError("embedding baseline requires an extracted retrieval query")
@@ -727,6 +822,89 @@ def build_comparisons(
     return comparisons
 
 
+def evaluate_gates(
+    rows: list[dict[str, Any]],
+    baseline: str = "raw",
+    candidate: str = "auto",
+    min_quality_delta: float = -0.03,
+    max_prompt_token_ratio: float = 0.6,
+) -> dict[str, Any]:
+    baseline_rows = {
+        (item["dataset"], item["case_id"]): item
+        for item in rows
+        if item["requested_mode"] == baseline
+    }
+    candidate_rows = {
+        (item["dataset"], item["case_id"]): item
+        for item in rows
+        if item["requested_mode"] == candidate
+    }
+    paired_keys = sorted(baseline_rows.keys() & candidate_rows.keys())
+    datasets: list[dict[str, Any]] = []
+    for dataset in sorted({key[0] for key in paired_keys}):
+        keys = [key for key in paired_keys if key[0] == dataset]
+        baseline_items = [baseline_rows[key] for key in keys]
+        candidate_items = [candidate_rows[key] for key in keys]
+        deltas = [
+            float(candidate_item["quality"]) - float(baseline_item["quality"])
+            for baseline_item, candidate_item in zip(baseline_items, candidate_items)
+        ]
+        source_tokens = sum(float(item["estimated_source_tokens"]) for item in candidate_items)
+        prompt_tokens = sum(float(item["estimated_prompt_tokens"]) for item in candidate_items)
+        estimated_prompt_ratio = prompt_tokens / max(source_tokens, 1)
+        baseline_backend_tokens = [item.get("backend_prompt_tokens") for item in baseline_items]
+        candidate_backend_tokens = [item.get("backend_prompt_tokens") for item in candidate_items]
+        backend_prompt_ratio = None
+        if all(value is not None for value in baseline_backend_tokens + candidate_backend_tokens):
+            baseline_total = sum(float(value) for value in baseline_backend_tokens)
+            candidate_total = sum(float(value) for value in candidate_backend_tokens)
+            if baseline_total:
+                backend_prompt_ratio = candidate_total / baseline_total
+        evaluated_prompt_ratio = (
+            backend_prompt_ratio if backend_prompt_ratio is not None else estimated_prompt_ratio
+        )
+        compression_eligible = any(item["selected_mode"] != "raw" for item in candidate_items)
+        failures = sum(bool(item.get("error")) for item in baseline_items + candidate_items)
+        quality_delta = statistics.fmean(deltas)
+        checks = {
+            "complete_pairs": len(keys) > 0,
+            "no_execution_failures": failures == 0,
+            "quality_delta": quality_delta >= min_quality_delta,
+            "prompt_token_ratio": (
+                not compression_eligible or evaluated_prompt_ratio <= max_prompt_token_ratio
+            ),
+        }
+        datasets.append(
+            {
+                "dataset": dataset,
+                "paired_cases": len(keys),
+                "mean_quality_delta": round(quality_delta, 4),
+                "regressed_cases": sum(delta < 0 for delta in deltas),
+                "compression_eligible": compression_eligible,
+                "estimated_prompt_token_ratio": round(estimated_prompt_ratio, 4),
+                "backend_prompt_token_ratio": (
+                    round(backend_prompt_ratio, 4) if backend_prompt_ratio is not None else None
+                ),
+                "evaluated_prompt_token_ratio": round(evaluated_prompt_ratio, 4),
+                "execution_failures": failures,
+                "checks": checks,
+                "passed": all(checks.values()),
+            }
+        )
+    expected_pairs = len(baseline_rows) == len(candidate_rows) == len(paired_keys) and bool(paired_keys)
+    return {
+        "baseline": baseline,
+        "candidate": candidate,
+        "thresholds": {
+            "min_quality_delta": min_quality_delta,
+            "max_prompt_token_ratio": max_prompt_token_ratio,
+        },
+        "complete_pairs": expected_pairs,
+        "datasets": datasets,
+        "passed": expected_pairs and all(item["passed"] for item in datasets),
+    }
+
+
 def main() -> None:
     args = parse_args()
     selected = {item for item in args.case_ids.split(",") if item}
@@ -734,6 +912,12 @@ def main() -> None:
     unsupported = set(modes) - {"raw", "auto", "hybrid", "semantic", "chunked", "summary", "embedding"}
     if unsupported:
         raise SystemExit(f"unsupported modes: {sorted(unsupported)}")
+    if args.check and ({args.baseline_mode, args.candidate_mode} - set(modes)):
+        raise SystemExit("--check requires both --baseline-mode and --candidate-mode in --modes")
+    if args.min_quality_delta < -1 or args.min_quality_delta > 1:
+        raise SystemExit("--min-quality-delta must be between -1 and 1")
+    if args.max_prompt_token_ratio <= 0:
+        raise SystemExit("--max-prompt-token-ratio must be positive")
     cases = load_cases(Path(args.manifest), Path(args.longbench_dir), selected)
     gateway = ContextIR()
     prompt_budget = args.context_length - args.max_output_tokens - args.prompt_overhead_tokens
@@ -756,13 +940,7 @@ def main() -> None:
                 except Exception as exc:
                     prediction = ""
                     error = f"{type(exc).__name__}: {exc}"
-                    bundle = gateway.compile_private(
-                        case.prompt,
-                        source_lang="en",
-                        target_lang="en",
-                        packet_id=case.id,
-                        mode="raw",
-                    )
+                    bundle = compile_case(gateway, case, "raw")
                     metadata = baseline_metadata(
                         bundle,
                         case,
@@ -820,13 +998,20 @@ def main() -> None:
                     f"ratio={metadata['estimated_prompt_tokens'] / max(metadata['estimated_source_tokens'], 1):.3f}"
                 )
                 continue
-            prompt, metadata = prepare_prompt(gateway, pipeline, case, mode)
             try:
-                prediction, usage = invoke_model(args, prompt)
-                usage["model_calls"] = 1
-                error = None
+                prompt, metadata = prepare_prompt(gateway, pipeline, case, mode)
             except Exception as exc:
                 prediction = ""
+                bundle = compile_case(gateway, case, "raw")
+                metadata = baseline_metadata(
+                    bundle,
+                    case,
+                    str(bundle.contract["mode"]),
+                    "prepare_exception",
+                    0,
+                    0,
+                    0,
+                )
                 usage = {
                     "backend_prompt_tokens": None,
                     "backend_output_tokens": None,
@@ -836,6 +1021,22 @@ def main() -> None:
                     "model_calls": 0,
                 }
                 error = f"{type(exc).__name__}: {exc}"
+            else:
+                try:
+                    prediction, usage = invoke_model(args, prompt)
+                    usage["model_calls"] = 1
+                    error = None
+                except Exception as exc:
+                    prediction = ""
+                    usage = {
+                        "backend_prompt_tokens": None,
+                        "backend_output_tokens": None,
+                        "backend_prompt_ms": None,
+                        "backend_generation_ms": None,
+                        "model_latency_ms": 0.0,
+                        "model_calls": 0,
+                    }
+                    error = f"{type(exc).__name__}: {exc}"
             row = {
                 "case_id": case.id,
                 "dataset": case.dataset,
@@ -854,6 +1055,13 @@ def main() -> None:
                 f"score={row['quality']:.3f} ratio={metadata['estimated_prompt_tokens'] / max(metadata['estimated_source_tokens'], 1):.3f}"
             )
     comparisons = build_comparisons(rows, modes, args.bootstrap_samples)
+    gates = evaluate_gates(
+        rows,
+        baseline=args.baseline_mode,
+        candidate=args.candidate_mode,
+        min_quality_delta=args.min_quality_delta,
+        max_prompt_token_ratio=args.max_prompt_token_ratio,
+    )
     report = {
         "metadata": {
             "backend": args.backend,
@@ -869,16 +1077,21 @@ def main() -> None:
             "bootstrap_samples": args.bootstrap_samples,
             "cases": len(cases),
             "modes": modes,
+            "explicit_query_cases": sum(bool(case.query) for case in cases),
         },
         "aggregate": aggregate(rows, args.bootstrap_samples),
         "comparisons": comparisons,
+        "gates": gates,
         "results": rows,
     }
     out = Path(args.out) if args.out else PROJECT_ROOT / "reports" / "model_ab" / f"{args.backend}_{safe_name(args.model)}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report["aggregate"], ensure_ascii=False, indent=2))
+    print(json.dumps(gates, ensure_ascii=False, indent=2))
     print(f"wrote {out}")
+    if args.check and not gates["passed"]:
+        raise SystemExit("A/B quality gates failed")
 
 
 def safe_name(value: str) -> str:

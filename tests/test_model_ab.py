@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from argparse import Namespace
+import json
 import unittest
 from unittest.mock import patch
 
-from contextir import ContextIR
+from contextir import ContextIR, ContextPipeline
 from contextir.pipeline import approximate_token_count
 from scripts.evaluate_model_ab import (
     Case,
@@ -13,11 +14,15 @@ from scripts.evaluate_model_ab import (
     bootstrap_mean_ci,
     build_comparisons,
     compare_modes,
+    compile_case,
     cosine_similarity,
+    evaluate_gates,
+    make_longbench_case,
     make_synthetic_case,
     normalize_summary,
     pack_ranked_evidence,
     render_embedding_answer_prompt,
+    prepare_prompt,
     run_embedding_case,
     run_summary_case,
     score,
@@ -120,6 +125,46 @@ class ModelABHarnessTests(unittest.TestCase):
         self.assertEqual(score(case, "Paragraph 17"), 1.0)
         self.assertEqual(score(case, "17"), 0.0)
 
+    def test_longbench_retrieval_case_separates_document_and_query(self) -> None:
+        case = make_longbench_case(
+            {"id": "qa", "dataset": "multifieldqa_en"},
+            {
+                "context": "Project Juniper access phrase is cobalt-seven.",
+                "input": "What is the Project Juniper access phrase?",
+                "answers": ["cobalt-seven"],
+            },
+        )
+
+        self.assertEqual(case.context_kind, "retrieval")
+        self.assertIn("cobalt-seven", case.document)
+        self.assertNotIn(case.query, case.document)
+        self.assertIn("Project Juniper", case.query)
+
+    def test_explicit_benchmark_query_stays_out_of_public_contract(self) -> None:
+        document = " ".join(
+            [f"Record {index}: Cedar deployment is archived." for index in range(8)]
+            + ["Northern deployment credential is cobalt-seven."]
+            + [f"Record {index}: Cedar deployment is closed." for index in range(8, 16)]
+        )
+        case = Case(
+            "private-query",
+            "multifieldqa_en",
+            "legacy prompt",
+            ["cobalt-seven"],
+            "test",
+            document,
+            "What should reviewer@example.test use for the northern deployment?",
+            "retrieval",
+        )
+
+        bundle = compile_case(ContextIR(), case, "auto")
+        prompt, metadata = prepare_prompt(ContextIR(), ContextPipeline(), case, "auto")
+
+        self.assertNotIn("reviewer@example.test", prompt)
+        self.assertIn("PII_EMAIL_1", prompt)
+        self.assertNotIn(bundle.retrieval_query, json.dumps(bundle.contract))
+        self.assertEqual(metadata["selected_mode"], "hybrid")
+
     def test_paired_mode_comparison_reports_regressions_and_resource_ratios(self) -> None:
         rows = []
         for case_id, raw, chunked in [("a", 0.0, 1.0), ("b", 0.5, 0.5), ("c", 1.0, 0.0)]:
@@ -152,6 +197,38 @@ class ModelABHarnessTests(unittest.TestCase):
 
         comparisons = build_comparisons(rows, ["raw", "chunked"])
         self.assertEqual([(item["baseline"], item["candidate"]) for item in comparisons], [("raw", "chunked")])
+
+    def test_quality_gates_are_per_dataset_and_exempt_exhaustive_compression(self) -> None:
+        rows = []
+        for dataset, mode, quality, prompt_tokens, selected_mode in [
+            ("qa", "raw", 1.0, 100, "raw"),
+            ("qa", "auto", 0.98, 50, "hybrid"),
+            ("count", "raw", 1.0, 100, "raw"),
+            ("count", "auto", 1.0, 100, "raw"),
+        ]:
+            rows.append(
+                {
+                    "case_id": f"{dataset}-0",
+                    "dataset": dataset,
+                    "requested_mode": mode,
+                    "quality": quality,
+                    "error": None,
+                    "estimated_source_tokens": 100,
+                    "estimated_prompt_tokens": prompt_tokens,
+                    "backend_prompt_tokens": prompt_tokens,
+                    "selected_mode": selected_mode,
+                }
+            )
+
+        gates = evaluate_gates(rows)
+
+        self.assertTrue(gates["passed"])
+        by_dataset = {item["dataset"]: item for item in gates["datasets"]}
+        self.assertTrue(by_dataset["qa"]["compression_eligible"])
+        self.assertEqual(by_dataset["qa"]["evaluated_prompt_token_ratio"], 0.5)
+        self.assertFalse(by_dataset["count"]["compression_eligible"])
+        rows[1]["quality"] = 0.9
+        self.assertFalse(evaluate_gates(rows)["passed"])
 
     def test_cosine_similarity_ranks_aligned_vectors(self) -> None:
         self.assertEqual(cosine_similarity([1.0, 0.0], [1.0, 0.0]), 1.0)

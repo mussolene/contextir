@@ -2,6 +2,15 @@
 
 All notable changes to ContextIR are documented here.
 
+## Unreleased
+
+- changed the model A/B harness to pass application-owned document context and
+  retrieval queries separately through ContextIR and every comparison baseline;
+- added `--check` with per-dataset quality and measured-token gates, structured
+  execution failures, and explicit exemption of correctly raw exhaustive paths
+  from compression requirements;
+- added gated Qwen3 0.6B and 8B reports over ten official LongBench examples.
+
 ## 1.4.0 - 2026-07-19
 
 - added explicit `context_kind` and `query` inputs to `ContextPipeline` and

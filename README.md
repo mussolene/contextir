@@ -225,6 +225,13 @@ All ten official cases used one packed direct call; a separate synthetic
 oversized-segment diagnostic activated the map path and recovered the answer
 with both models.
 
+The post-v1.4 explicit-query rerun separates application document and question
+before compilation and enforces per-dataset gates. Both Qwen3 0.6B and 8B pass
+the five-case `multifieldqa_en` and five-case `passage_retrieval_en` gates. The
+measured backend-input ratio is `0.3439` for QA and `0.5651` for passage
+retrieval; the 0.6B QA quality delta is `-0.0203`, inside the configured `-0.03`
+floor, while the 8B delta is `+0.0822`.
+
 End-to-end baselines on the same Qwen3 8B run scored `0.6221` for a 32K
 same-model neural summary and `0.1910` for Nomic embedding retrieval. ContextIR
 scored `0.6983`. Summary remained statistically competitive in quality on this

@@ -82,6 +82,25 @@ latency. The tested embedding baseline scores `0.1910`, uses `33.43x` the
 processed tokens, and is significantly worse than ContextIR on the paired
 subset. Preprocessor calls, tokens, and latency are included in these ratios.
 
+The current harness accepts application-owned document and query fields
+separately and can enforce per-dataset gates:
+
+```bash
+python3 scripts/evaluate_model_ab.py \
+  --backend ollama \
+  --model qwen3:8b \
+  --modes raw,auto \
+  --case-ids multifieldqa_en_0,multifieldqa_en_1,multifieldqa_en_2,multifieldqa_en_3,multifieldqa_en_4,passage_retrieval_en_0,passage_retrieval_en_1,passage_retrieval_en_2,passage_retrieval_en_3,passage_retrieval_en_4 \
+  --context-length 2048 \
+  --check
+```
+
+`--check` defaults to a maximum per-dataset quality loss of `0.03` and a
+maximum prompt-token ratio of `0.60`. It uses backend-reported tokens when
+available and the deterministic estimate otherwise. Exhaustive datasets routed
+to raw are not incorrectly required to compress, but execution failures still
+fail the gate.
+
 The broader release benchmark must still add:
 
 - full official task sets beyond the ten-case subset;
