@@ -191,7 +191,7 @@ boundary.
 
 ## Production Checklist
 
-- benchmark `raw`, conventional summary, `auto`, and `hybrid` on real tasks;
+- benchmark `raw`, neural summary, tuned RAG, `auto`, and `hybrid` on real tasks;
 - measure target-model tokens rather than character ratios;
 - add domain-specific PII recognizers and leakage tests;
 - keep vault storage ephemeral and access controlled;

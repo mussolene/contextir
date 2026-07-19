@@ -73,10 +73,18 @@ with `[-0.0154, 0.3392]` on Qwen3 0.6B. This is an official-data subset, not a
 full LongBench score. All official examples used packed direct retrieval; a
 separate synthetic oversized-segment case verifies the map stage.
 
+The end-to-end baseline follow-up compares the same run with a 32K same-model
+neural summary and Nomic embedding retrieval. On Qwen3 8B, summary reaches
+`0.6221` versus ContextIR's `0.6983`; their paired delta interval still includes
+zero. Summary uses `24.95x` ContextIR's processed input tokens and `32.0x` its
+latency. The tested embedding baseline scores `0.1910`, uses `33.43x` the
+processed tokens, and is significantly worse than ContextIR on the paired
+subset. Preprocessor calls, tokens, and latency are included in these ratios.
+
 The broader release benchmark must still add:
 
-- a conventional text-summary baseline;
 - full official task sets beyond the ten-case subset;
+- stronger production-grade RAG baselines with tuned chunking and reranking;
 - deployment-owned PII and agent-history tasks;
 - a full official tool-calling benchmark rather than synthetic diagnostics.
 

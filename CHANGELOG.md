@@ -29,6 +29,15 @@ All notable changes to ContextIR are documented here.
   paired confidence interval still crosses zero;
 - removed Qwen-style `<think>` wrappers only after raw-response safety checks
   and excluded provider control tags from lexical grounding.
+- added end-to-end neural-summary and Nomic embedding-retrieval baselines to
+  the model A/B harness, including preprocessor tokens, latency, model calls,
+  masked-source checks, and direct paired comparisons against ContextIR;
+- measured ContextIR at `0.6983` quality versus `0.6221` for same-model neural
+  summary on the ten-case Qwen3 8B subset, while summary consumed `24.95x`
+  ContextIR's processed input tokens and `32.0x` its end-to-end latency;
+- measured the tested Nomic segment-retrieval baseline at `0.1910` quality on
+  Qwen3 8B, establishing that this baseline configuration is not competitive
+  with query-aware ContextIR packing on the bounded suite.
 
 ## 1.2.0 - 2026-07-19
 

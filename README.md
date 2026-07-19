@@ -208,6 +208,14 @@ All ten official cases used one packed direct call; a separate synthetic
 oversized-segment diagnostic activated the map path and recovered the answer
 with both models.
 
+End-to-end baselines on the same Qwen3 8B run scored `0.6221` for a 32K
+same-model neural summary and `0.1910` for Nomic embedding retrieval. ContextIR
+scored `0.6983`. Summary remained statistically competitive in quality on this
+small subset, but processed `24.95x` as many input tokens as ContextIR and took
+`32.0x` its latency. The tested embedding configuration processed `33.43x` as
+many tokens and was significantly worse in paired quality. These costs include
+preprocessing; they are not answer-prompt-only comparisons.
+
 See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
 [benchmark roadmap](docs/BENCHMARKS.md).
 

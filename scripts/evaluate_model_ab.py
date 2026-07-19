@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 import re
 import statistics
@@ -17,7 +18,9 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from contextir import ContextIR, ContextPipeline, OllamaClient, OpenAICompatibleClient, PipelinePolicy
-from contextir.pipeline import approximate_token_count
+from contextir.clients import post_json
+from contextir.gateway import paragraph_owner_map
+from contextir.pipeline import approximate_token_count, clean_model_output
 from contextir.sir_sources import PROJECT_ROOT
 
 
@@ -61,6 +64,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-output-tokens", type=int, default=64)
     parser.add_argument("--prompt-overhead-tokens", type=int, default=32)
     parser.add_argument("--max-chunk-calls", type=int, default=16)
+    parser.add_argument("--summary-context-length", type=int, default=32768)
+    parser.add_argument("--summary-output-tokens", type=int, default=512)
+    parser.add_argument("--embedding-model", default="nomic-embed-text-v2-moe:latest")
+    parser.add_argument("--ollama-base-url", default="http://127.0.0.1:11434")
     parser.add_argument("--bootstrap-samples", type=int, default=2000)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--out", default="")
@@ -202,14 +209,23 @@ def prepare_prompt(gateway: ContextIR, pipeline: ContextPipeline, case: Case, re
     return rendered, metadata
 
 
-def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, Any]]:
+def invoke_model(
+    args: argparse.Namespace,
+    prompt: str,
+    *,
+    context_length: int | None = None,
+    max_output_tokens: int | None = None,
+) -> tuple[str, dict[str, Any]]:
+    context_length = context_length or args.context_length
+    max_output_tokens = max_output_tokens or args.max_output_tokens
     started = time.perf_counter()
     if args.backend == "ollama":
         result = OllamaClient(
             args.model,
+            base_url=args.ollama_base_url,
             timeout=args.timeout,
-            context_length=args.context_length,
-            max_output_tokens=args.max_output_tokens,
+            context_length=context_length,
+            max_output_tokens=max_output_tokens,
             prompt_overhead_tokens=args.prompt_overhead_tokens,
         ).complete(prompt)
         answer = result.text
@@ -223,8 +239,8 @@ def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, 
         result = OpenAICompatibleClient(
             args.model,
             timeout=args.timeout,
-            context_length=args.context_length,
-            max_output_tokens=args.max_output_tokens,
+            context_length=context_length,
+            max_output_tokens=max_output_tokens,
             prompt_overhead_tokens=args.prompt_overhead_tokens,
         ).complete(prompt)
         answer = result.text
@@ -239,6 +255,7 @@ def invoke_model(args: argparse.Namespace, prompt: str) -> tuple[str, dict[str, 
             raise RuntimeError(f"agent exited {completed.returncode}: {completed.stderr.strip()}")
         answer = completed.stdout.strip()
         usage = {"backend_prompt_tokens": None, "backend_output_tokens": None}
+    answer = clean_model_output(answer)
     usage["model_latency_ms"] = round((time.perf_counter() - started) * 1000, 3)
     return answer, usage
 
@@ -357,6 +374,210 @@ def aggregate_usage(usages: list[dict[str, Any]]) -> dict[str, Any]:
         "model_latency_ms": round(float(total("model_latency_ms") or 0), 3),
         "model_calls": len(usages),
     }
+
+
+def baseline_metadata(
+    bundle: Any,
+    case: Case,
+    selected_mode: str,
+    decision: str,
+    estimated_prompt_tokens: int,
+    prompt_chars: int,
+    compile_latency_ms: float,
+) -> dict[str, Any]:
+    source_text = " ".join(bundle.sources.values())
+    source_tokens = max(approximate_token_count(source_text), 1)
+    return {
+        "selected_mode": selected_mode,
+        "decision": decision,
+        "estimated_source_tokens": source_tokens,
+        "estimated_prompt_tokens": estimated_prompt_tokens,
+        "estimated_token_savings": round(1 - estimated_prompt_tokens / source_tokens, 4),
+        "compile_latency_ms": round(compile_latency_ms, 3),
+        "source_chars": len(case.prompt),
+        "prompt_chars": prompt_chars,
+        "protected_spans": len(bundle.contract["privacy"]["protected"]),
+        "semantic_confidence": bundle.contract["uncertainty"]["semantic_confidence"],
+    }
+
+
+def run_summary_case(
+    args: argparse.Namespace,
+    gateway: ContextIR,
+    case: Case,
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    started = time.perf_counter()
+    raw_bundle = gateway.compile_private(
+        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="raw"
+    )
+    task_bundle = gateway.compile_private(
+        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="auto"
+    )
+    if not task_bundle.retrieval_query:
+        raise ValueError("summary baseline requires an extracted retrieval query")
+    masked_source = gateway.render_prompt(raw_bundle.contract)
+    summary_prompt = (
+        "Compress the MASKED SOURCE into factual notes sufficient to answer the TASK. "
+        "Preserve exact names, numbers, negation, and paragraph identifiers. Do not answer the task.\n\n"
+        f"TASK:\n{task_bundle.retrieval_query}\n\nMASKED SOURCE:\n{masked_source}\n\nNOTES:"
+    )
+    summary, summary_usage = invoke_model(
+        args,
+        summary_prompt,
+        context_length=args.summary_context_length,
+        max_output_tokens=args.summary_output_tokens,
+    )
+    if not summary:
+        raise RuntimeError("summary model returned an empty result")
+    summary = normalize_summary(summary)
+    answer_prompt = render_extraction_prompt(task_bundle.retrieval_query, "EVIDENCE", [summary])
+    prompt_budget = args.context_length - args.max_output_tokens - args.prompt_overhead_tokens
+    if approximate_token_count(answer_prompt) > prompt_budget:
+        raise ValueError("summary answer prompt exceeds the target prompt budget")
+    answer, answer_usage = invoke_model(args, answer_prompt)
+    usages = [summary_usage, answer_usage]
+    usage = aggregate_usage(usages)
+    usage.update(
+        {
+            "preprocessor": "neural_summary",
+            "preprocessor_model": args.model,
+            "preprocessor_prompt_tokens": summary_usage.get("backend_prompt_tokens"),
+            "preprocessor_latency_ms": summary_usage.get("model_latency_ms"),
+            "answer_prompt_tokens": answer_usage.get("backend_prompt_tokens"),
+        }
+    )
+    estimated_tokens = approximate_token_count(summary_prompt) + approximate_token_count(answer_prompt)
+    metadata = baseline_metadata(
+        raw_bundle,
+        case,
+        "summary",
+        "neural_summary_then_answer",
+        estimated_tokens,
+        len(summary_prompt) + len(answer_prompt),
+        (time.perf_counter() - started) * 1000 - float(usage["model_latency_ms"] or 0),
+    )
+    return answer, metadata, usage
+
+
+def cosine_similarity(left: list[float], right: list[float]) -> float:
+    numerator = sum(a * b for a, b in zip(left, right))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    return numerator / (left_norm * right_norm) if left_norm and right_norm else 0.0
+
+
+def normalize_summary(text: str) -> str:
+    return re.sub(r"^\s*(?:answer|notes)\s*:\s*", "", text, flags=re.IGNORECASE).strip()
+
+
+def render_embedding_answer_prompt(query: str, evidence: list[str]) -> str:
+    return render_extraction_prompt(query, "EVIDENCE", evidence)
+
+
+def render_extraction_prompt(query: str, evidence_label: str, evidence: list[str]) -> str:
+    return (
+        f"Extract the answer stated in the {evidence_label}.\n"
+        f"QUESTION:\n{query}\n\n{evidence_label}:\n" + "\n\n".join(evidence) + "\n\nANSWER:"
+    )
+
+
+def pack_ranked_evidence(query: str, ranked_evidence: list[str], prompt_budget: int) -> tuple[str, int]:
+    selected: list[str] = []
+    prompt = render_embedding_answer_prompt(query, selected)
+    for evidence in ranked_evidence:
+        trial = render_embedding_answer_prompt(query, selected + [evidence])
+        if approximate_token_count(trial) <= prompt_budget:
+            selected.append(evidence)
+            prompt = trial
+    if not selected:
+        raise ValueError("embedding retrieval found no evidence group that fits the target prompt budget")
+    return prompt, len(selected)
+
+
+def run_embedding_case(
+    args: argparse.Namespace,
+    gateway: ContextIR,
+    case: Case,
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    if args.backend != "ollama":
+        raise ValueError("embedding baseline currently requires the Ollama backend")
+    started = time.perf_counter()
+    raw_bundle = gateway.compile_private(
+        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="raw"
+    )
+    task_bundle = gateway.compile_private(
+        case.prompt, source_lang="en", target_lang="en", packet_id=case.id, mode="auto"
+    )
+    query = task_bundle.retrieval_query
+    if not query:
+        raise ValueError("embedding baseline requires an extracted retrieval query")
+    candidates = [
+        (ref, text)
+        for ref, text in raw_bundle.sources.items()
+        if ref not in set(task_bundle.task_source_refs)
+    ]
+    if not candidates:
+        raise ValueError("embedding baseline found no candidate source segments")
+    embedding_inputs = [f"search_query: {query}"] + [
+        f"search_document: {text}" for _ref, text in candidates
+    ]
+    embedding_started = time.perf_counter()
+    response = post_json(
+        args.ollama_base_url.rstrip("/") + "/api/embed",
+        {"model": args.embedding_model, "input": embedding_inputs, "truncate": True},
+        timeout=args.timeout,
+    )
+    embedding_latency_ms = round((time.perf_counter() - embedding_started) * 1000, 3)
+    embeddings = response.get("embeddings")
+    if not isinstance(embeddings, list) or len(embeddings) != len(embedding_inputs):
+        raise RuntimeError("invalid Ollama embedding response")
+    query_embedding = embeddings[0]
+    ranked_refs = sorted(
+        (
+            (cosine_similarity(query_embedding, embedding), ref)
+            for (ref, _text), embedding in zip(candidates, embeddings[1:])
+        ),
+        key=lambda item: (-item[0], int(item[1][1:])),
+    )
+    owner_by_ref = paragraph_owner_map(list(raw_bundle.sources.items()))
+    ranked_evidence = []
+    seen_groups: set[tuple[str, ...]] = set()
+    for _score, ref in ranked_refs:
+        owner = owner_by_ref.get(ref, "")
+        refs = tuple(dict.fromkeys(item for item in (owner, ref) if item))
+        if refs in seen_groups:
+            continue
+        seen_groups.add(refs)
+        ranked_evidence.append("\n".join(raw_bundle.sources[item] for item in refs))
+    prompt_budget = args.context_length - args.max_output_tokens - args.prompt_overhead_tokens
+    answer_prompt, selected_groups = pack_ranked_evidence(query, ranked_evidence, prompt_budget)
+    answer, answer_usage = invoke_model(args, answer_prompt)
+    embedding_tokens = int(response.get("prompt_eval_count") or 0)
+    answer_tokens = int(answer_usage.get("backend_prompt_tokens") or 0)
+    usage = {
+        **answer_usage,
+        "backend_prompt_tokens": embedding_tokens + answer_tokens,
+        "model_latency_ms": round(embedding_latency_ms + float(answer_usage["model_latency_ms"]), 3),
+        "model_calls": 2,
+        "preprocessor": "embedding_retrieval",
+        "preprocessor_model": args.embedding_model,
+        "preprocessor_prompt_tokens": embedding_tokens,
+        "preprocessor_latency_ms": embedding_latency_ms,
+        "answer_prompt_tokens": answer_tokens,
+    }
+    estimated_tokens = sum(approximate_token_count(item) for item in embedding_inputs)
+    estimated_tokens += approximate_token_count(answer_prompt)
+    metadata = baseline_metadata(
+        raw_bundle,
+        case,
+        "embedding",
+        "embedding_ranked_budget_packed",
+        estimated_tokens,
+        len(answer_prompt),
+        (time.perf_counter() - started) * 1000 - float(usage["model_latency_ms"]),
+    )
+    metadata["retrieved_groups"] = selected_groups
+    return answer, metadata, usage
 
 
 def normalize_answer(value: str) -> list[str]:
@@ -488,11 +709,29 @@ def compare_modes(
     }
 
 
+def build_comparisons(
+    rows: list[dict[str, Any]], modes: list[str], bootstrap_samples: int = 2000
+) -> list[dict[str, Any]]:
+    pairs = [("raw", candidate) for candidate in modes if candidate != "raw"]
+    if "chunked" in modes:
+        pairs.extend(
+            ("chunked", candidate)
+            for candidate in modes
+            if candidate in {"summary", "embedding"}
+        )
+    comparisons = []
+    for baseline, candidate in pairs:
+        comparison = compare_modes(rows, baseline, candidate, bootstrap_samples)
+        if comparison:
+            comparisons.append(comparison)
+    return comparisons
+
+
 def main() -> None:
     args = parse_args()
     selected = {item for item in args.case_ids.split(",") if item}
     modes = [item for item in args.modes.split(",") if item]
-    unsupported = set(modes) - {"raw", "auto", "hybrid", "semantic", "chunked"}
+    unsupported = set(modes) - {"raw", "auto", "hybrid", "semantic", "chunked", "summary", "embedding"}
     if unsupported:
         raise SystemExit(f"unsupported modes: {sorted(unsupported)}")
     cases = load_cases(Path(args.manifest), Path(args.longbench_dir), selected)
@@ -507,6 +746,59 @@ def main() -> None:
     rows = []
     for case in cases:
         for mode in modes:
+            if mode in {"summary", "embedding"}:
+                try:
+                    if mode == "summary":
+                        prediction, metadata, usage = run_summary_case(args, gateway, case)
+                    else:
+                        prediction, metadata, usage = run_embedding_case(args, gateway, case)
+                    error = None
+                except Exception as exc:
+                    prediction = ""
+                    error = f"{type(exc).__name__}: {exc}"
+                    bundle = gateway.compile_private(
+                        case.prompt,
+                        source_lang="en",
+                        target_lang="en",
+                        packet_id=case.id,
+                        mode="raw",
+                    )
+                    metadata = baseline_metadata(
+                        bundle,
+                        case,
+                        mode,
+                        f"{mode}_baseline_exception",
+                        0,
+                        0,
+                        0,
+                    )
+                    usage = {
+                        "backend_prompt_tokens": None,
+                        "backend_output_tokens": None,
+                        "backend_prompt_ms": None,
+                        "backend_generation_ms": None,
+                        "model_latency_ms": 0.0,
+                        "model_calls": 0,
+                    }
+                row = {
+                    "case_id": case.id,
+                    "dataset": case.dataset,
+                    "source": case.source,
+                    "requested_mode": mode,
+                    "gold": case.answers,
+                    "prediction": prediction,
+                    "quality": round(score(case, prediction), 4) if not error else 0.0,
+                    "error": error,
+                    **metadata,
+                    **usage,
+                }
+                rows.append(row)
+                print(
+                    f"{case.id:28} {mode:8} -> {metadata['selected_mode']:8} "
+                    f"score={row['quality']:.3f} calls={usage['model_calls']} "
+                    f"ratio={metadata['estimated_prompt_tokens'] / max(metadata['estimated_source_tokens'], 1):.3f}"
+                )
+                continue
             if mode == "chunked":
                 prediction, metadata, usage, error = run_chunked_case(args, gateway, case)
                 row = {
@@ -561,11 +853,7 @@ def main() -> None:
                 f"{case.id:28} {mode:8} -> {metadata['selected_mode']:8} "
                 f"score={row['quality']:.3f} ratio={metadata['estimated_prompt_tokens'] / max(metadata['estimated_source_tokens'], 1):.3f}"
             )
-    comparisons = []
-    for baseline, candidate in (("raw", "auto"), ("raw", "chunked")):
-        comparison = compare_modes(rows, baseline, candidate, args.bootstrap_samples)
-        if comparison:
-            comparisons.append(comparison)
+    comparisons = build_comparisons(rows, modes, args.bootstrap_samples)
     report = {
         "metadata": {
             "backend": args.backend,
@@ -575,6 +863,9 @@ def main() -> None:
             "max_output_tokens": args.max_output_tokens,
             "prompt_overhead_tokens": args.prompt_overhead_tokens,
             "max_chunk_calls": args.max_chunk_calls,
+            "summary_context_length": args.summary_context_length,
+            "summary_output_tokens": args.summary_output_tokens,
+            "embedding_model": args.embedding_model,
             "bootstrap_samples": args.bootstrap_samples,
             "cases": len(cases),
             "modes": modes,

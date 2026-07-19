@@ -176,6 +176,61 @@ python3 scripts/evaluate_model_ab.py \
 Machine-readable reports use the `_constrained_retrieval.json` and
 `_chunk_map.json` suffixes under `reports/model_ab/`.
 
+## Neural Summary and Embedding Baselines
+
+The baseline follow-up keeps the same ten examples and 2K answer context. The
+summary baseline gives the same target model the complete masked source in a
+32K context with up to 512 output tokens, then performs a second answer call.
+The embedding baseline batch-encodes the query and every masked source segment
+with `nomic-embed-text-v2-moe`, packs cosine-ranked evidence into the 2K answer
+budget, and performs one target-model answer call. Every preprocessing and
+answer token, call, and latency is counted.
+
+| Target model | Mode | Quality | Processed input tokens | Mean end-to-end latency | Calls |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Qwen3 0.6B | raw | 0.1889 | 10,936 | 0.796 s | 10 |
+| Qwen3 0.6B | ContextIR | 0.3121 | 4,267 | 0.427 s | 10 |
+| Qwen3 0.6B | neural summary | 0.2348 | 105,873 | 15.60 s | 20 |
+| Qwen3 0.6B | embedding retrieval | 0.1892 | 142,664 | 6.89 s | 20 |
+| Qwen3 8B | raw | 0.1668 | 10,936 | 7.09 s | 10 |
+| Qwen3 8B | ContextIR | 0.6983 | 4,267 | 2.95 s | 10 |
+| Qwen3 8B | neural summary | 0.6221 | 106,473 | 94.50 s | 20 |
+| Qwen3 8B | embedding retrieval | 0.1910 | 142,664 | 16.76 s | 20 |
+
+Direct paired comparisons against ContextIR:
+
+| Target model | Candidate | Quality delta vs ContextIR | Paired 95% CI | Token ratio | Latency ratio |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Qwen3 0.6B | neural summary | -0.0772 | [-0.3171, 0.0959] | 24.8120 | 36.5634 |
+| Qwen3 0.6B | embedding retrieval | -0.1228 | [-0.4063, 0.1942] | 33.4343 | 16.1552 |
+| Qwen3 8B | neural summary | -0.0762 | [-0.2962, 0.0804] | 24.9527 | 31.9985 |
+| Qwen3 8B | embedding retrieval | -0.5072 | [-0.7707, -0.2463] | 33.4343 | 5.6743 |
+
+The summary intervals include zero, so this experiment does not establish a
+quality difference between neural summary and ContextIR. It does establish a
+large resource difference in this local setup. The Nomic result applies only
+to this sentence/paragraph ranking configuration; tuned production RAG with
+specialized chunking, reranking, caching, and vector reuse may behave very
+differently. Alternating Qwen and Nomic on 16 GB unified memory also includes
+model-switching overhead, so latency is an end-to-end deployment observation,
+not an isolated kernel benchmark.
+
+Reproduce all four modes:
+
+```bash
+python3 scripts/evaluate_model_ab.py \
+  --backend ollama \
+  --model qwen3:8b \
+  --modes raw,chunked,summary,embedding \
+  --case-ids multifieldqa_en_0,multifieldqa_en_1,multifieldqa_en_2,multifieldqa_en_3,multifieldqa_en_4,passage_retrieval_en_0,passage_retrieval_en_1,passage_retrieval_en_2,passage_retrieval_en_3,passage_retrieval_en_4 \
+  --context-length 2048 \
+  --summary-context-length 32768 \
+  --summary-output-tokens 512 \
+  --embedding-model nomic-embed-text-v2-moe:latest
+```
+
+Machine-readable reports use the `_retrieval_baselines.json` suffix.
+
 ## Cursor Control
 
 Cursor Agent CLI was verified with:
@@ -208,7 +263,8 @@ is not copied into this repository. Machine-readable outputs are in
 ## Remaining Work
 
 - run the full official task sets with confidence intervals;
-- add a conventional summary and embedding-retrieval baseline;
+- compare with production RAG using tuned chunking, reranking, and cached
+  document embeddings;
 - replace synthetic agent diagnostics with application-owned histories;
 - measure per-task regression gates rather than relying only on aggregate mean;
 - evaluate all required PII classes on deployment-shaped RU/EN corpora;
