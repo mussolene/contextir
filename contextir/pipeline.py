@@ -101,6 +101,7 @@ class PipelineResult:
         return {
             "accepted": self.accepted,
             "selected_mode": self.selected_mode,
+            "decision": self.prepared.decision,
             "risk": self.prepared.risk,
             "source_tokens": self.prepared.source_tokens,
             "prompt_budget": self.prepared.prompt_budget,
@@ -185,11 +186,12 @@ class ContextPipeline:
         if candidate.mode == "raw":
             candidate.decision = "compiler_selected_raw"
             return self._enforce_prompt_budget(candidate, prompt_budget)
+        candidate = self._enforce_prompt_budget(candidate, prompt_budget)
         if candidate.token_savings < self.policy.min_token_savings:
             raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "raw_baseline")
             raw.decision = "insufficient_token_savings"
             return self._enforce_prompt_budget(raw, prompt_budget)
-        return self._enforce_prompt_budget(candidate, prompt_budget)
+        return candidate
 
     def run(
         self,
@@ -286,7 +288,10 @@ class ContextPipeline:
                 missing_placeholders=[],
                 new_pii_kinds=[],
             )
-        issued = set(prepared.bundle.vault)
+        issued = {
+            item["placeholder"]
+            for item in prepared.bundle.contract["privacy"]["protected"]
+        }
         mentioned = set(re.findall(r"\bPII_[A-Z0-9_]+_\d+\b", response))
         unknown = sorted(mentioned - issued)
         missing = sorted(issued - mentioned) if preserve_input else []
@@ -362,9 +367,20 @@ class ContextPipeline:
             raise ValueError("prompt token budget must be a positive integer")
         return budget
 
-    @staticmethod
-    def _enforce_prompt_budget(prepared: PreparedContext, prompt_budget: int | None) -> PreparedContext:
+    def _enforce_prompt_budget(
+        self,
+        prepared: PreparedContext,
+        prompt_budget: int | None,
+    ) -> PreparedContext:
         prepared.prompt_budget = prompt_budget
+        if prompt_budget is not None and not prepared.fits_prompt_budget:
+            packed = self.gateway._pack_retrieval_prompt(prepared.bundle, prompt_budget, self.token_counter)
+            if packed is not None:
+                prepared.bundle = packed
+                prepared.prompt = self.gateway.render_prompt(packed.contract)
+                prepared.prompt_tokens = max(self.token_counter(prepared.prompt), 1)
+                prepared.token_savings = round(1 - (prepared.prompt_tokens / prepared.source_tokens), 4)
+                prepared.decision = "retrieval_budget_packed"
         if not prepared.fits_prompt_budget:
             raise ContextWindowExceeded(prepared.prompt_tokens, prompt_budget or 0, prepared.mode)
         return prepared

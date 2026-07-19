@@ -14,12 +14,12 @@
     "privacy_true_positives": 6,
     "privacy_precision": 1.0,
     "privacy_recall": 1.0,
-    "pipeline_cases": 6,
+    "pipeline_cases": 8,
     "pipeline_failures": 0,
     "pipeline_fallbacks": 1,
-    "compile_latency_ms_p50": 0.0956,
-    "compile_latency_ms_p95": 0.9667,
-    "compile_throughput_docs_s": 5077.6,
+    "compile_latency_ms_p50": 0.0976,
+    "compile_latency_ms_p95": 0.97,
+    "compile_throughput_docs_s": 5074.0,
     "performance_iterations": 5000
   },
   "results": [
@@ -178,6 +178,18 @@
       "mode": "hybrid",
       "model_calls": 1,
       "fallbacks": 0
+    },
+    {
+      "case_id": "retrieval_evidence_budget_packed",
+      "passed": true,
+      "mode": "hybrid",
+      "prompt_tokens": 90
+    },
+    {
+      "case_id": "retrieval_minimum_evidence_refused",
+      "passed": true,
+      "mode": "hybrid",
+      "minimum_prompt_tokens": 90
     }
   ]
 }

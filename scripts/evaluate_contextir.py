@@ -292,6 +292,29 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
         risk="high",
         task="transform",
     )
+    filler = " ".join(["archived"] * 45)
+    retrieval_records = [
+        f"Record {index}: Project Juniper historical access audit {filler} marker {index}."
+        for index in range(12)
+    ]
+    retrieval_records.insert(6, "The current access phrase for Project Juniper is cobalt-seven.")
+    retrieval_text = (
+        "Read the following text and answer briefly. "
+        + " ".join(retrieval_records)
+        + " Question: What is the current access phrase for Project Juniper? Answer:"
+    )
+    packed_retrieval = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=120),
+    ).prepare(retrieval_text, source_lang="en", target_lang="en")
+    minimum_retrieval_tokens = 0
+    try:
+        ContextPipeline(
+            gateway=gateway,
+            policy=PipelinePolicy(max_prompt_tokens=80),
+        ).prepare(retrieval_text, source_lang="en", target_lang="en")
+    except ContextWindowExceeded as exc:
+        minimum_retrieval_tokens = exc.prompt_tokens
     return [
         {
             "case_id": "measured_semantic_selection",
@@ -333,6 +356,22 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
             "mode": fallback_budget.selected_mode,
             "model_calls": fallback_budget_calls,
             "fallbacks": len(fallback_budget.attempts) - 1,
+        },
+        {
+            "case_id": "retrieval_evidence_budget_packed",
+            "passed": (
+                packed_retrieval.decision == "retrieval_budget_packed"
+                and packed_retrieval.prompt_tokens <= 120
+                and "cobalt-seven" in packed_retrieval.prompt
+            ),
+            "mode": packed_retrieval.mode,
+            "prompt_tokens": packed_retrieval.prompt_tokens,
+        },
+        {
+            "case_id": "retrieval_minimum_evidence_refused",
+            "passed": minimum_retrieval_tokens == 90,
+            "mode": "hybrid",
+            "minimum_prompt_tokens": minimum_retrieval_tokens,
         },
     ]
 

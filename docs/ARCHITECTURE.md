@@ -41,16 +41,18 @@ input -> detector -> placeholders + vault -> source segment store
 3. keep exhaustive tasks raw, retrieve query-relevant evidence for document
    QA, or compile operational events and constraints;
 4. count candidate tokens with the caller's target-model tokenizer;
-5. enforce the target model's prompt budget after reserving output tokens;
-6. build a raw baseline only when the candidate does not clear the configured
+5. pack ranked complete evidence groups for retrieval prompts that exceed the
+   target model's budget;
+6. enforce the budget after reserving output and chat-template tokens;
+7. build a raw baseline only when the candidate does not clear the configured
    savings threshold;
-7. invoke the caller-provided model adapter;
-8. reject unknown placeholders and newly generated PII;
-9. for transform tasks, verify numbers, negation, constraints, events, and issued
+8. invoke the caller-provided model adapter;
+9. reject unknown placeholders and newly generated PII;
+10. for transform tasks, verify numbers, negation, constraints, events, and issued
    placeholders;
-10. on verification failure, retry at most once per richer source mode if that
+11. on verification failure, retry at most once per richer source mode if that
     prompt still fits the budget;
-11. restore only explicitly allowlisted placeholders after acceptance.
+12. restore only explicitly allowlisted placeholders after acceptance.
 
 The fallback order is `semantic -> hybrid -> raw`; it never loops indefinitely.
 Reasoning tasks use safety verification but not semantic equivalence, because a
@@ -67,11 +69,13 @@ chat-template overhead. The pipeline reads it automatically. A custom adapter ca
 `PipelinePolicy.max_prompt_tokens`, while production deployments should also
 provide the exact target-model tokenizer through `token_counter`.
 
-An initial prompt that exceeds the budget raises `ContextWindowExceeded`
-before invocation. If a verification fallback would exceed it, the pipeline
-returns the rejected result with `fallback_exceeds_prompt_budget` in its safe
-trace. ContextIR deliberately does not truncate selected evidence or pretend an
-exhaustive task is safe to summarize.
+A retrieval prompt that exceeds the budget is repacked from complete ranked
+evidence groups. An initial prompt still too large raises
+`ContextWindowExceeded` before invocation. If a verification fallback would
+exceed the budget, the pipeline returns the rejected result with
+`fallback_exceeds_prompt_budget` in its safe trace. ContextIR deliberately does
+not truncate selected evidence or pretend an exhaustive task is safe to
+summarize.
 
 ## Adaptive Modes
 
@@ -118,6 +122,13 @@ frequency. It preserves the original query and edge instructions, selects up
 to six evidence segments, and restores the owning `Paragraph N` segment when
 sentence-level retrieval lands inside a labelled paragraph. If no evidence
 clears the confidence threshold, auto mode returns masked raw input.
+
+When the selected set exceeds the model budget, the pipeline starts with the
+highest-ranked evidence group and adds lower-ranked groups only while they fit.
+Each group is atomic and includes its paragraph owner. Query and output-format
+segments are mandatory. PII descriptors for excluded groups are removed from
+the public contract; their values remain only in the local vault and their
+placeholders are not considered issued to the model.
 
 Tasks that require exhaustive access, such as unique-passage counting, always
 remain raw because top-k retrieval cannot preserve their answer space.

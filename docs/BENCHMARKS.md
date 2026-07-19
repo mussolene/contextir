@@ -20,6 +20,7 @@ The evaluator checks:
 - bounded transform fallback after semantic loss;
 - rejection of newly generated PII.
 - refusal before initial or fallback prompts exceed the model budget.
+- ranked retrieval packing and refusal below the best complete evidence group.
 
 Current checked-in result:
 
@@ -28,7 +29,7 @@ Current checked-in result:
   "cases": 9,
   "pii_leaks": 0,
   "expectation_failures": 0,
-  "pipeline_cases": 6,
+  "pipeline_cases": 8,
   "pipeline_failures": 0,
   "pipeline_fallbacks": 1,
   "compression_eligible_cases": 1,

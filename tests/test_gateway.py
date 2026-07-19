@@ -10,8 +10,9 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
-from contextir import ContextIR
+from contextir import ContextIR, ContextPipeline, PipelinePolicy
 from contextir.gateway import main
+from contextir.pipeline import approximate_token_count
 from contextir.schemas import load_contract_schema
 from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
 
@@ -190,6 +191,58 @@ class ContextIRGatewayTests(unittest.TestCase):
         contract = self.gateway.compile(text, source_lang="en", mode="auto")
 
         self.assertEqual(contract["mode"], "raw")
+
+    def test_budget_packing_keeps_paragraph_owner_with_evidence(self) -> None:
+        filler = " ".join(["archive"] * 35)
+        paragraphs = " ".join(
+            f"Paragraph {index}: Project Cedar archive. {filler}."
+            for index in range(1, 8)
+        )
+        text = (
+            "Here are paragraphs from a report. "
+            f"{paragraphs} Paragraph 8: Project Juniper record. "
+            "The current access phrase is cobalt-seven. "
+            "Question: What is the current access phrase for Project Juniper? Answer:"
+        )
+        bundle = self.gateway.compile_private(text, source_lang="en", target_lang="en", mode="auto")
+
+        packed = self.gateway._pack_retrieval_prompt(bundle, 100, approximate_token_count)
+
+        self.assertIsNotNone(packed)
+        prompt = self.gateway.render_prompt(packed.contract)  # type: ignore[union-attr]
+        self.assertIn("Paragraph 8", prompt)
+        self.assertIn("cobalt-seven", prompt)
+        self.assertLessEqual(approximate_token_count(prompt), 100)
+
+    def test_budget_packing_removes_privacy_metadata_for_pruned_evidence(self) -> None:
+        filler = " ".join(["archive"] * 35)
+        records = [
+            f"Record {index}: Project Juniper access audit {filler}."
+            for index in range(8)
+        ]
+        records.insert(1, "Project Juniper access audit owner is private@example.test.")
+        records.insert(4, "The current access phrase for Project Juniper is cobalt-seven.")
+        text = (
+            "Read the following text and answer briefly. "
+            + " ".join(records)
+            + " Question: What is the current access phrase for Project Juniper? Answer:"
+        )
+        bundle = self.gateway.compile_private(text, source_lang="en", target_lang="en", mode="auto")
+
+        packed = self.gateway._pack_retrieval_prompt(bundle, 80, approximate_token_count)
+
+        self.assertIsNotNone(packed)
+        prompt = self.gateway.render_prompt(packed.contract)  # type: ignore[union-attr]
+        protected = packed.contract["privacy"]["protected"]  # type: ignore[union-attr]
+        self.assertNotIn("private@example.test", prompt)
+        self.assertFalse(protected)
+
+        prepared = ContextPipeline(
+            gateway=self.gateway,
+            policy=PipelinePolicy(max_prompt_tokens=80),
+        ).prepare(text, source_lang="en", target_lang="en")
+        verification = ContextPipeline(gateway=self.gateway).verify_response(prepared, "PII_EMAIL_1")
+        self.assertIn("PII_EMAIL_1", verification.unknown_placeholders)
 
     def test_compare_detects_lost_negation_and_number(self) -> None:
         expected = self.gateway.compile("Если платеж 42 выполнен, не отправляй его.", mode="semantic")

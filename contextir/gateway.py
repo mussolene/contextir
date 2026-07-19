@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import math
 import re
@@ -9,7 +10,7 @@ import time
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber, SIRRuntime, SIRV1Packet, detect_constraints, guess_intent, load_runtime
 from contextir.sir_sources import normalize
@@ -25,6 +26,8 @@ class ContextBundle:
     contract: dict[str, Any]
     vault: dict[str, str]
     sources: dict[str, str]
+    required_source_refs: tuple[str, ...] = ()
+    evidence_source_groups: tuple[tuple[str, ...], ...] = ()
 
 
 @dataclass
@@ -106,7 +109,8 @@ class ContextIR:
             entities = extract_entities(segments, scrubbed.protected_spans)
             confidence = semantic_confidence(events, segments)
             selected_mode = choose_mode(mode, len(text), confidence, segments, self.raw_threshold, task_profile)
-        included_refs = select_source_refs(selected_mode, segments, task_profile)
+        source_plan = plan_source_refs(selected_mode, segments, task_profile)
+        included_refs = list(source_plan.refs)
         if task_profile.kind == "retrieval" and selected_mode != "raw":
             included_text = " ".join(sources[ref] for ref in included_refs)
             entities = [item for item in entities if item["value"] in included_text]
@@ -146,7 +150,74 @@ class ContextIR:
             "included_segments": len(included_refs),
             "latency_ms": round((time.perf_counter() - started) * 1000, 3),
         }
-        return ContextBundle(contract=contract, vault=scrubbed.vault, sources=sources)
+        return ContextBundle(
+            contract=contract,
+            vault=scrubbed.vault,
+            sources=sources,
+            required_source_refs=source_plan.required_refs,
+            evidence_source_groups=source_plan.evidence_groups,
+        )
+
+    def _pack_retrieval_prompt(
+        self,
+        bundle: ContextBundle,
+        max_prompt_tokens: int,
+        token_counter: Callable[[str], int],
+    ) -> ContextBundle | None:
+        """Pack ranked groups, returning the smallest safe candidate if none fits."""
+
+        if bundle.contract.get("mode") != "hybrid" or not bundle.evidence_source_groups:
+            return None
+        selected = set(bundle.required_source_refs)
+        accepted_groups = 0
+        packed: ContextBundle | None = None
+        for group in bundle.evidence_source_groups:
+            trial = selected | set(group)
+            candidate = self._bundle_with_source_refs(bundle, trial)
+            candidate_tokens = token_counter(self.render_prompt(candidate.contract))
+            if candidate_tokens <= max_prompt_tokens:
+                selected = trial
+                packed = candidate
+                accepted_groups += 1
+            elif accepted_groups == 0:
+                return candidate
+        return packed
+
+    def _bundle_with_source_refs(self, bundle: ContextBundle, refs: set[str]) -> ContextBundle:
+        contract = copy.deepcopy(bundle.contract)
+        included = [
+            {"ref": ref, "text": text}
+            for ref, text in bundle.sources.items()
+            if ref in refs
+        ]
+        included_text = " ".join(str(item["text"]) for item in included)
+        contract["source"]["included"] = included
+        contract["privacy"]["protected"] = [
+            item for item in contract["privacy"]["protected"] if item["placeholder"] in included_text
+        ]
+        if not contract["privacy"]["protected"]:
+            contract["constraints"] = [
+                item for item in contract["constraints"] if item.get("type") != "privacy"
+            ]
+        protected_values = {item["placeholder"] for item in contract["privacy"]["protected"]}
+        contract["entities"] = [
+            item
+            for item in contract["entities"]
+            if item.get("type") == "number" or item.get("value") in protected_values
+        ]
+        stats = contract.pop("stats")
+        stats["included_segments"] = len(included)
+        stats["prompt_chars"] = len(self.render_prompt(contract))
+        stats["prompt_ratio"] = round(stats["prompt_chars"] / max(stats["source_chars"], 1), 4)
+        stats["contract_chars"] = len(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
+        contract["stats"] = stats
+        return ContextBundle(
+            contract=contract,
+            vault=bundle.vault,
+            sources=bundle.sources,
+            required_source_refs=bundle.required_source_refs,
+            evidence_source_groups=bundle.evidence_source_groups,
+        )
 
     def render_prompt(self, contract: dict[str, Any]) -> str:
         if contract.get("version") != "contextir.v2":
@@ -404,22 +475,49 @@ def select_source_refs(
     segments: list[tuple[str, str]],
     task_profile: TaskProfile | None = None,
 ) -> list[str]:
+    return list(plan_source_refs(mode, segments, task_profile).refs)
+
+
+@dataclass(frozen=True)
+class SourcePlan:
+    refs: tuple[str, ...]
+    required_refs: tuple[str, ...] = ()
+    evidence_groups: tuple[tuple[str, ...], ...] = ()
+
+
+def plan_source_refs(
+    mode: str,
+    segments: list[tuple[str, str]],
+    task_profile: TaskProfile | None = None,
+) -> SourcePlan:
     if mode == "raw":
-        return [ref for ref, _text in segments]
+        return SourcePlan(tuple(ref for ref, _text in segments))
     if mode == "semantic":
-        return []
+        return SourcePlan(())
     if task_profile and task_profile.kind == "retrieval":
-        selected = set(task_profile.query_refs) | set(task_profile.evidence_refs)
-        selected.update(paragraph_owner_refs(segments, task_profile.evidence_refs))
-        selected.update(ref for ref, _text in segments[:2])
-        selected.update(ref for ref, _text in segments[-2:])
+        required = set(task_profile.query_refs)
+        required.update(ref for ref, _text in segments[:2])
+        required.update(ref for ref, _text in segments[-2:])
         edge_segments = segments[:4] + segments[-6:]
-        selected.update(
+        required.update(
             ref
             for ref, text in edge_segments
             if re.search(r"\b(answer|enter|format|output|respond)\b", text, re.IGNORECASE)
         )
-        return [ref for ref, _text in segments if ref in selected]
+        owner_by_ref = paragraph_owner_map(segments)
+        groups = []
+        selected = set(required)
+        for evidence_ref in task_profile.evidence_refs:
+            group = {evidence_ref}
+            owner = owner_by_ref.get(evidence_ref, "")
+            if owner:
+                group.add(owner)
+            ordered_group = tuple(ref for ref, _text in segments if ref in group)
+            groups.append(ordered_group)
+            selected.update(group)
+        ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
+        ordered_required = tuple(ref for ref, _text in segments if ref in required)
+        return SourcePlan(ordered_refs, ordered_required, tuple(groups))
     selected = []
     seen_source = set()
     for ref, text in segments:
@@ -436,17 +534,17 @@ def select_source_refs(
         selected.append(segments[0][0])
     selected_set = set(selected)
     selected_set.update(ref for ref, _text in segments[-2:])
-    return [ref for ref, _text in segments if ref in selected_set][:8]
+    return SourcePlan(tuple(ref for ref, _text in segments if ref in selected_set)[:8])
 
 
-def paragraph_owner_refs(segments: list[tuple[str, str]], evidence_refs: tuple[str, ...]) -> set[str]:
+def paragraph_owner_map(segments: list[tuple[str, str]]) -> dict[str, str]:
     owner_by_ref: dict[str, str] = {}
     current_owner = ""
     for ref, text in segments:
         if re.match(r"Paragraph\s+\d+\s*:", text, re.IGNORECASE):
             current_owner = ref
         owner_by_ref[ref] = current_owner
-    return {owner_by_ref[ref] for ref in evidence_refs if owner_by_ref.get(ref)}
+    return owner_by_ref
 
 
 EXHAUSTIVE_PATTERNS = [

@@ -56,7 +56,8 @@ with a configurable target-model tokenizer, rejects compression without useful
 savings, verifies output safety, and performs bounded fallback from semantic to
 hybrid to raw context. The bundled model clients also reserve output tokens
 and configurable chat-template overhead from their context window; ContextIR
-refuses an oversized prompt before contacting the model.
+packs ranked retrieval evidence to the remaining budget or refuses an unsafe
+prompt before contacting the model.
 
 ## Install
 
@@ -159,7 +160,7 @@ evaluate recognizers on data representative of the deployment.
 
 The checked-in compiler smoke benchmark reports:
 
-- 9 compiler and 6 product-pipeline cases;
+- 9 compiler and 8 product-pipeline cases;
 - 0 expectation failures;
 - 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;
@@ -174,6 +175,10 @@ benchmark measured `0.8471` precision and `1.0000` recall for the dependency-fre
 email/phone/card profile. These are bounded results, not universal quality or
 privacy claims; broader official tasks and deployment-specific PII evaluation
 remain required.
+
+A constrained-window retrieval smoke run packs the same long input to fit a
+256-token Ollama context. Qwen3 0.6B and 8B both recovered `cobalt-seven`; the
+backend reported 229 prompt tokens with 16 tokens reserved for output.
 
 See the [local model A/B card](docs/benchmarks/LOCAL_MODEL_AB.md) and
 [benchmark roadmap](docs/BENCHMARKS.md).

@@ -8,6 +8,20 @@ from contextir import ContextIR, ContextPipeline, ContextWindowExceeded, Pipelin
 LONG_TRANSFORM = " ".join(["Do not send payment 42 twice."] * 30)
 
 
+def budget_retrieval_text() -> str:
+    filler = " ".join(["archived"] * 45)
+    records = [
+        f"Record {index}: Project Juniper historical access audit {filler} marker {index}."
+        for index in range(12)
+    ]
+    records.insert(6, "The current access phrase for Project Juniper is cobalt-seven.")
+    return (
+        "Read the following text and answer briefly. "
+        + " ".join(records)
+        + " Question: What is the current access phrase for Project Juniper? Answer:"
+    )
+
+
 class ContextPipelineTests(unittest.TestCase):
     def test_pipeline_can_store_default_invoker(self) -> None:
         pipeline = ContextPipeline(invoke=lambda _prompt: "READY")
@@ -98,6 +112,42 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(prepared.mode, "hybrid")
         self.assertIn("cobalt-seven", prepared.prompt)
         self.assertGreater(prepared.token_savings, 0.5)
+
+    def test_document_qa_packs_ranked_evidence_to_model_budget(self) -> None:
+        prepared = ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=120)).prepare(
+            budget_retrieval_text(),
+            source_lang="en",
+            target_lang="en",
+        )
+
+        self.assertEqual(prepared.mode, "hybrid")
+        self.assertEqual(prepared.decision, "retrieval_budget_packed")
+        self.assertLessEqual(prepared.prompt_tokens, 120)
+        self.assertIn("cobalt-seven", prepared.prompt)
+        self.assertLess(prepared.bundle.contract["stats"]["included_segments"], 10)
+
+    def test_packed_retrieval_is_evaluated_after_budget_savings(self) -> None:
+        prepared = ContextPipeline(
+            policy=PipelinePolicy(max_prompt_tokens=120, min_token_savings=0.8),
+        ).prepare(
+            budget_retrieval_text(),
+            source_lang="en",
+            target_lang="en",
+        )
+
+        self.assertEqual(prepared.decision, "retrieval_budget_packed")
+        self.assertGreaterEqual(prepared.token_savings, 0.8)
+
+    def test_document_qa_rejects_budget_below_best_complete_evidence(self) -> None:
+        with self.assertRaises(ContextWindowExceeded) as raised:
+            ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=80)).prepare(
+                budget_retrieval_text(),
+                source_lang="en",
+                target_lang="en",
+            )
+
+        self.assertEqual(raised.exception.prompt_tokens, 90)
+        self.assertEqual(raised.exception.prompt_budget, 80)
 
     def test_custom_tokenizer_can_force_raw_fallback(self) -> None:
         def expensive_protocol(text: str) -> int:
@@ -247,6 +297,7 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(restored.answer, "Use person@example.test.")
         self.assertNotIn("person@example.test", str(trace))
         self.assertNotIn("Use PII_EMAIL_1", str(trace))
+        self.assertEqual(trace["decision"], "short_input")
 
     def test_custom_verifier_controls_domain_acceptance(self) -> None:
         def verifier(_prepared: object, response: str) -> ResponseVerification:

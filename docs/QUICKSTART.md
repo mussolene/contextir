@@ -88,9 +88,12 @@ except ContextWindowExceeded as exc:
 ```
 
 ContextIR fails instead of silently truncating evidence or converting an
-exhaustive task into a lossy semantic summary. Applications handling inputs
-larger than the safe model budget should use a deployment-owned chunked or
-map-reduce workflow.
+exhaustive task into a lossy semantic summary. For retrieval tasks it first
+packs the query, output instructions, and as many ranked complete evidence
+groups as fit. A labelled paragraph owner stays attached to sentence-level
+evidence. If even the best complete group cannot fit, `ContextWindowExceeded`
+is raised. Applications handling a single oversized evidence group or an
+exhaustive input should use a deployment-owned chunked or map-reduce workflow.
 
 Use `task="transform"` for translation, rewriting, extraction, or summarization.
 That enables retention checks and bounded fallback through semantic, hybrid,

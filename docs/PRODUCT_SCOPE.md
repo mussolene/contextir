@@ -27,6 +27,7 @@ compilation remains available for infrastructure that owns routing itself.
 - optional Presidio detection;
 - provider-independent model prompts;
 - query-aware verbatim evidence selection for long document QA;
+- model-budget packing of ranked complete retrieval evidence groups;
 - raw routing for exhaustive counting and low-coverage retrieval;
 - measurable prompt reduction and semantic-preservation checks;
 - RU and EN heuristics in the stable 1.x package.

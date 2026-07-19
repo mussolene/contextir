@@ -2,6 +2,22 @@
 
 All notable changes to ContextIR are documented here.
 
+## 1.2.0 - 2026-07-19
+
+- added budget-aware retrieval packing that keeps the query, response format,
+  and ranked evidence as complete source groups;
+- retained labelled paragraph owners whenever sentence-level evidence is
+  selected;
+- refused retrieval when the best complete evidence group cannot fit instead
+  of truncating text or silently switching to a lossy semantic summary;
+- kept source priorities local to `ContextBundle` without changing the public
+  `contextir.v2` JSON contract;
+- removed privacy metadata for evidence excluded from the packed prompt and
+  treated placeholders from pruned evidence as unknown model output;
+- exposed the payload-free routing decision in `PipelineResult.public_trace()`;
+- expanded the release benchmark to eight product-pipeline cases and verified
+  constrained-window retrieval on local Qwen3 0.6B and 8B models.
+
 ## 1.1.0 - 2026-07-19
 
 - connected Ollama and OpenAI-compatible context limits to the product
