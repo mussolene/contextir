@@ -2,7 +2,7 @@ from contextir.clients import ModelResponse, OllamaClient, OpenAICompatibleClien
 from contextir.gateway import ContractCheck, ContextBundle, ContextIR, SIRKernel, load_contextir, load_kernel
 from contextir.pipeline import ContextPipeline, PipelinePolicy, PipelineResult, PreparedContext, ResponseVerification
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 __all__ = [
     "ContextIR",

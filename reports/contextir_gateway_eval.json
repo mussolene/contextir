@@ -17,9 +17,9 @@
     "pipeline_cases": 4,
     "pipeline_failures": 0,
     "pipeline_fallbacks": 1,
-    "compile_latency_ms_p50": 0.0927,
-    "compile_latency_ms_p95": 0.9455,
-    "compile_throughput_docs_s": 5347.9,
+    "compile_latency_ms_p50": 0.0957,
+    "compile_latency_ms_p95": 0.9598,
+    "compile_throughput_docs_s": 5148.0,
     "performance_iterations": 5000
   },
   "results": [

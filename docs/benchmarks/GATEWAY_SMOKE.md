@@ -21,9 +21,9 @@
 | Exercised bounded fallbacks | 1 |
 | Compression-eligible cases | 1 |
 | Eligible prompt/source character ratio | 0.3627 |
-| Compile latency p50 | 0.0927 ms |
-| Compile latency p95 | 0.9455 ms |
-| Compile throughput | 5347.9 docs/s |
+| Compile latency p50 | 0.0957 ms |
+| Compile latency p95 | 0.9598 ms |
+| Compile throughput | 5148.0 docs/s |
 
 Performance uses a 100-operation warm-up followed by 5,000 repeated compilations
 over the nine fixtures with Python garbage collection paused. The ratio uses

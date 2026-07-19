@@ -12,8 +12,7 @@ detection still require evaluation on each deployment's data.
 ## Quick Start
 
 ```bash
-python3 -m pip install \
-  https://github.com/mussolene/contextir/releases/download/v1.0.0/contextir-1.0.0-py3-none-any.whl
+python3 -m pip install contextir
 ollama pull qwen3:0.6b
 contextir run --model qwen3:0.6b --text "Reply with only READY."
 ```

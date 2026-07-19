@@ -2,6 +2,15 @@
 
 All notable changes to ContextIR are documented here.
 
+## 1.0.1 - 2026-07-19
+
+- added PyPI Trusted Publishing through GitHub Actions OIDC;
+- split release validation, GitHub publication, and PyPI publication into
+  separate least-privilege jobs;
+- restricted `id-token: write` to the two-step PyPI job using the protected
+  `pypi` GitHub environment;
+- reused one validated artifact for both GitHub and PyPI publication.
+
 ## 1.0.0 - 2026-07-18
 
 - stabilized `ContextPipeline` as the primary model-boundary API while keeping

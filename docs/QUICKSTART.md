@@ -9,12 +9,11 @@ when semantic-only compression would be risky.
 Python 3.10 or newer is required.
 
 ```bash
-python3 -m pip install \
-  https://github.com/mussolene/contextir/releases/download/v1.0.0/contextir-1.0.0-py3-none-any.whl
+python3 -m pip install contextir
 ```
 
-The wheel install needs neither a source checkout nor Git. For a local first
-run with Ollama:
+The PyPI wheel needs neither a source checkout nor Git. For a local first run
+with Ollama:
 
 ```bash
 ollama pull qwen3:0.6b
