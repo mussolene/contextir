@@ -54,7 +54,9 @@ source fragments.
 `ContextPipeline` is the product entry point. It measures candidate prompts
 with a configurable target-model tokenizer, rejects compression without useful
 savings, verifies output safety, and performs bounded fallback from semantic to
-hybrid to raw context.
+hybrid to raw context. The bundled model clients also reserve output tokens
+and configurable chat-template overhead from their context window; ContextIR
+refuses an oversized prompt before contacting the model.
 
 ## Install
 
@@ -106,6 +108,9 @@ request.
 contextir run \
   --backend ollama \
   --model qwen3:0.6b \
+  --context-length 8192 \
+  --max-output-tokens 256 \
+  --prompt-overhead-tokens 32 \
   --text "Summarize the current agent state."
 
 contextir compile \
@@ -154,7 +159,7 @@ evaluate recognizers on data representative of the deployment.
 
 The checked-in compiler smoke benchmark reports:
 
-- 9 compiler and 4 product-pipeline cases;
+- 9 compiler and 6 product-pipeline cases;
 - 0 expectation failures;
 - 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;

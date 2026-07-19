@@ -5,7 +5,7 @@ import io
 import json
 import sys
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
@@ -31,6 +31,7 @@ class ContextIRGatewayTests(unittest.TestCase):
     @patch("contextir.clients.OllamaClient")
     def test_run_cli_emits_answer_and_safe_trace(self, client_class) -> None:
         client_class.return_value.return_value = "READY"
+        client_class.return_value.prompt_token_budget = 32512
         stdout = io.StringIO()
         argv = [
             "contextir",
@@ -49,6 +50,26 @@ class ContextIRGatewayTests(unittest.TestCase):
         self.assertEqual(payload["answer"], "READY")
         self.assertTrue(payload["trace"]["accepted"])
         self.assertNotIn("prompt", payload["trace"])
+
+    @patch("contextir.clients.OllamaClient")
+    def test_run_cli_reports_context_window_error_without_invoking_model(self, client_class) -> None:
+        client_class.return_value.prompt_token_budget = 2
+        stderr = io.StringIO()
+        argv = [
+            "contextir",
+            "run",
+            "--model",
+            "tiny-model",
+            "--text",
+            "Reply with READY.",
+        ]
+
+        with patch.object(sys, "argv", argv), redirect_stderr(stderr), self.assertRaises(SystemExit) as raised:
+            main()
+
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("model budget is 2", stderr.getvalue())
+        client_class.return_value.assert_not_called()
 
     def test_hybrid_preserves_condition_negation_number_and_privacy(self) -> None:
         secret = "person@example.test"

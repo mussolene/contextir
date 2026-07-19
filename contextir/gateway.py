@@ -698,6 +698,7 @@ def main() -> None:
     run_p.add_argument("--timeout", type=float, default=180)
     run_p.add_argument("--context-length", type=int, default=32768)
     run_p.add_argument("--max-output-tokens", type=int, default=256)
+    run_p.add_argument("--prompt-overhead-tokens", type=int, default=32)
     run_p.add_argument("--json", action="store_true", help="Emit answer and payload-free trace as JSON.")
     args = parser.parse_args()
 
@@ -705,7 +706,7 @@ def main() -> None:
         import os
 
         from contextir.clients import OllamaClient, OpenAICompatibleClient
-        from contextir.pipeline import ContextPipeline
+        from contextir.pipeline import ContextPipeline, ContextWindowExceeded
 
         text = sys.stdin.read() if args.text == "-" else args.text
         if args.backend == "ollama":
@@ -715,6 +716,7 @@ def main() -> None:
                 timeout=args.timeout,
                 context_length=args.context_length,
                 max_output_tokens=args.max_output_tokens,
+                prompt_overhead_tokens=args.prompt_overhead_tokens,
             )
         else:
             client = OpenAICompatibleClient(
@@ -722,15 +724,20 @@ def main() -> None:
                 base_url=args.base_url or "http://127.0.0.1:1234/v1",
                 api_key=os.environ.get(args.api_key_env, ""),
                 timeout=args.timeout,
+                context_length=args.context_length,
                 max_output_tokens=args.max_output_tokens,
+                prompt_overhead_tokens=args.prompt_overhead_tokens,
             )
-        result = ContextPipeline(invoke=client).run(
-            text,
-            source_lang=args.source_lang,
-            target_lang=args.target_lang,
-            risk=args.risk,
-            task=args.task,
-        )
+        try:
+            result = ContextPipeline(invoke=client).run(
+                text,
+                source_lang=args.source_lang,
+                target_lang=args.target_lang,
+                risk=args.risk,
+                task=args.task,
+            )
+        except ContextWindowExceeded as exc:
+            parser.error(str(exc))
         if args.json:
             print(json.dumps({"answer": result.answer, "trace": result.public_trace()}, ensure_ascii=False))
         else:

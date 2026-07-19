@@ -30,19 +30,26 @@ class OllamaClient:
         max_output_tokens: int = 256,
         temperature: float = 0,
         seed: int = 42,
+        prompt_overhead_tokens: int = 32,
     ) -> None:
         if not model.strip():
             raise ValueError("model must not be empty")
         validate_endpoint(base_url, timeout, max_output_tokens)
-        if context_length < 1:
-            raise ValueError("context_length must be positive")
+        validate_context_budget(context_length, max_output_tokens, prompt_overhead_tokens)
         self.model = model
         self.url = base_url.rstrip("/") + "/api/chat"
         self.timeout = timeout
         self.context_length = context_length
         self.max_output_tokens = max_output_tokens
+        self.prompt_overhead_tokens = prompt_overhead_tokens
         self.temperature = temperature
         self.seed = seed
+
+    @property
+    def prompt_token_budget(self) -> int:
+        """Maximum prompt tokens after reserving the requested model output."""
+
+        return self.context_length - self.max_output_tokens - self.prompt_overhead_tokens
 
     def __call__(self, prompt: str) -> str:
         return self.complete(prompt).text
@@ -91,17 +98,28 @@ class OpenAICompatibleClient:
         max_output_tokens: int = 256,
         temperature: float = 0,
         seed: int | None = 42,
+        context_length: int = 32768,
+        prompt_overhead_tokens: int = 32,
     ) -> None:
         if not model.strip():
             raise ValueError("model must not be empty")
         validate_endpoint(base_url, timeout, max_output_tokens)
+        validate_context_budget(context_length, max_output_tokens, prompt_overhead_tokens)
         self.model = model
         self.url = base_url.rstrip("/") + "/chat/completions"
         self.api_key = api_key
         self.timeout = timeout
+        self.context_length = context_length
         self.max_output_tokens = max_output_tokens
+        self.prompt_overhead_tokens = prompt_overhead_tokens
         self.temperature = temperature
         self.seed = seed
+
+    @property
+    def prompt_token_budget(self) -> int:
+        """Maximum prompt tokens after reserving the requested model output."""
+
+        return self.context_length - self.max_output_tokens - self.prompt_overhead_tokens
 
     def __call__(self, prompt: str) -> str:
         return self.complete(prompt).text
@@ -175,6 +193,17 @@ def validate_endpoint(base_url: str, timeout: float, max_output_tokens: int) -> 
         raise ValueError("timeout must be positive")
     if max_output_tokens < 1:
         raise ValueError("max_output_tokens must be positive")
+
+
+def validate_context_budget(context_length: int, max_output_tokens: int, prompt_overhead_tokens: int) -> None:
+    if context_length < 1:
+        raise ValueError("context_length must be positive")
+    if isinstance(prompt_overhead_tokens, bool) or not isinstance(prompt_overhead_tokens, int):
+        raise ValueError("prompt_overhead_tokens must be a non-negative integer")
+    if prompt_overhead_tokens < 0:
+        raise ValueError("prompt_overhead_tokens must be a non-negative integer")
+    if max_output_tokens + prompt_overhead_tokens >= context_length:
+        raise ValueError("output and prompt overhead must leave room in context_length")
 
 
 __all__ = ["ModelResponse", "OllamaClient", "OpenAICompatibleClient"]

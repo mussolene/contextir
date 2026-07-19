@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from contextir import ContextIR, ContextPipeline, PipelinePolicy, ResponseVerification
+from contextir import ContextIR, ContextPipeline, ContextWindowExceeded, PipelinePolicy, ResponseVerification
 
 
 LONG_TRANSFORM = " ".join(["Do not send payment 42 twice."] * 30)
@@ -112,6 +112,60 @@ class ContextPipelineTests(unittest.TestCase):
 
         self.assertEqual(prepared.mode, "raw")
         self.assertEqual(prepared.decision, "insufficient_token_savings")
+
+    def test_model_budget_rejects_oversized_prompt_before_invocation(self) -> None:
+        class TinyInvoker:
+            prompt_token_budget = 3
+
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def __call__(self, _prompt: str) -> str:
+                self.calls += 1
+                return "should not run"
+
+        invoker = TinyInvoker()
+        pipeline = ContextPipeline(invoke=invoker)
+
+        with self.assertRaises(ContextWindowExceeded) as raised:
+            pipeline.run("Reply with only READY.", source_lang="en", target_lang="en")
+
+        self.assertEqual(invoker.calls, 0)
+        self.assertEqual(raised.exception.prompt_budget, 3)
+        self.assertNotIn("Reply with only READY", str(raised.exception))
+
+    def test_policy_budget_is_exposed_on_prepared_context(self) -> None:
+        pipeline = ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=64))
+
+        prepared = pipeline.prepare(LONG_TRANSFORM, source_lang="en", target_lang="en", risk="high")
+
+        self.assertEqual(prepared.prompt_budget, 64)
+        self.assertTrue(prepared.fits_prompt_budget)
+
+    def test_oversized_fallback_is_not_sent_to_model(self) -> None:
+        responses = iter(["Payment completed."])
+        calls = []
+        pipeline = ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=30))
+
+        result = pipeline.run(
+            LONG_TRANSFORM,
+            lambda prompt: calls.append(prompt) or next(responses),
+            source_lang="en",
+            target_lang="en",
+            risk="high",
+            task="transform",
+        )
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(result.attempts), 1)
+        self.assertIn("fallback_exceeds_prompt_budget", result.attempts[0].verification.reasons)
+
+    def test_policy_rejects_invalid_prompt_budget(self) -> None:
+        with self.assertRaisesRegex(ValueError, "max_prompt_tokens"):
+            PipelinePolicy(max_prompt_tokens=0)
+        with self.assertRaisesRegex(ValueError, "max_prompt_tokens"):
+            PipelinePolicy(max_prompt_tokens=1.5)  # type: ignore[arg-type]
 
     def test_transform_retries_with_source_after_semantic_loss(self) -> None:
         responses = iter(["Payment completed.", "Do not send payment 42 twice."])

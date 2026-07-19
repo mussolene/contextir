@@ -14,12 +14,12 @@
     "privacy_true_positives": 6,
     "privacy_precision": 1.0,
     "privacy_recall": 1.0,
-    "pipeline_cases": 4,
+    "pipeline_cases": 6,
     "pipeline_failures": 0,
     "pipeline_fallbacks": 1,
-    "compile_latency_ms_p50": 0.0957,
-    "compile_latency_ms_p95": 0.9598,
-    "compile_throughput_docs_s": 5148.0,
+    "compile_latency_ms_p50": 0.0956,
+    "compile_latency_ms_p95": 0.9667,
+    "compile_throughput_docs_s": 5077.6,
     "performance_iterations": 5000
   },
   "results": [
@@ -164,6 +164,19 @@
       "case_id": "new_pii_rejected",
       "passed": true,
       "mode": "raw",
+      "fallbacks": 0
+    },
+    {
+      "case_id": "initial_prompt_budget_blocked",
+      "passed": true,
+      "mode": "raw",
+      "model_calls": 0
+    },
+    {
+      "case_id": "fallback_prompt_budget_blocked",
+      "passed": true,
+      "mode": "hybrid",
+      "model_calls": 1,
       "fallbacks": 0
     }
   ]

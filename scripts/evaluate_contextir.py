@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from contextir import ContextIR, ContextPipeline, PipelinePolicy
+from contextir import ContextIR, ContextPipeline, ContextWindowExceeded, PipelinePolicy
 from contextir.sir_runtime import PrivacyScrubber
 from contextir.sir_sources import PROJECT_ROOT
 
@@ -257,6 +257,41 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
         source_lang="en",
         target_lang="en",
     )
+    initial_budget_calls = 0
+
+    def oversized_invoke(_prompt: str) -> str:
+        nonlocal initial_budget_calls
+        initial_budget_calls += 1
+        return "unexpected"
+
+    initial_budget_blocked = False
+    try:
+        ContextPipeline(
+            gateway=gateway,
+            policy=PipelinePolicy(max_prompt_tokens=3),
+            invoke=oversized_invoke,
+        ).run("Reply with only READY.", source_lang="en", target_lang="en")
+    except ContextWindowExceeded:
+        initial_budget_blocked = True
+
+    fallback_budget_calls = 0
+
+    def fallback_invoke(_prompt: str) -> str:
+        nonlocal fallback_budget_calls
+        fallback_budget_calls += 1
+        return "Payment completed."
+
+    fallback_budget = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=30),
+    ).run(
+        repeated,
+        fallback_invoke,
+        source_lang="en",
+        target_lang="en",
+        risk="high",
+        task="transform",
+    )
     return [
         {
             "case_id": "measured_semantic_selection",
@@ -281,6 +316,23 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
             "passed": not privacy.accepted and "new_pii" in privacy.attempts[0].verification.reasons,
             "mode": privacy.selected_mode,
             "fallbacks": len(privacy.attempts) - 1,
+        },
+        {
+            "case_id": "initial_prompt_budget_blocked",
+            "passed": initial_budget_blocked and initial_budget_calls == 0,
+            "mode": "raw",
+            "model_calls": initial_budget_calls,
+        },
+        {
+            "case_id": "fallback_prompt_budget_blocked",
+            "passed": (
+                not fallback_budget.accepted
+                and fallback_budget_calls == 1
+                and "fallback_exceeds_prompt_budget" in fallback_budget.attempts[0].verification.reasons
+            ),
+            "mode": fallback_budget.selected_mode,
+            "model_calls": fallback_budget_calls,
+            "fallbacks": len(fallback_budget.attempts) - 1,
         },
     ]
 

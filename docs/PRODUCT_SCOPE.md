@@ -53,6 +53,8 @@ following:
 - measured PII precision and recall on deployment-relevant data;
 - results on at least one 1-3B local model and one 7-8B model;
 - bounded fallback to raw source whenever confidence is insufficient.
+- explicit refusal before a prompt or fallback exceeds the configured model
+  context budget.
 
 ## 1.0 Stability Contract
 
@@ -60,7 +62,7 @@ ContextIR uses semantic versioning from `1.0.0`. The following public imports
 are stable within the 1.x line:
 
 - `ContextPipeline`, `PipelinePolicy`, `PipelineResult`, `PreparedContext`, and
-  `ResponseVerification`;
+  `ResponseVerification`, plus `ContextWindowExceeded`;
 - `OllamaClient`, `OpenAICompatibleClient`, and `ModelResponse`;
 - `ContextIR`, `ContextBundle`, `ContractCheck`, and `load_contextir`;
 - `contextir.schemas.load_contract_schema` and the `contextir.v2` JSON shape.

@@ -19,15 +19,16 @@ The evaluator checks:
 - no false semantic roundtrip requirement for reasoning;
 - bounded transform fallback after semantic loss;
 - rejection of newly generated PII.
+- refusal before initial or fallback prompts exceed the model budget.
 
 Current checked-in result:
 
 ```json
 {
-  "cases": 4,
+  "cases": 9,
   "pii_leaks": 0,
   "expectation_failures": 0,
-  "pipeline_cases": 4,
+  "pipeline_cases": 6,
   "pipeline_failures": 0,
   "pipeline_fallbacks": 1,
   "compression_eligible_cases": 1,

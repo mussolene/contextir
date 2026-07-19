@@ -20,6 +20,7 @@ class PipelinePolicy:
     verification_threshold: float = 0.9
     max_attempts: int = 3
     reject_new_pii: bool = True
+    max_prompt_tokens: int | None = None
 
     def __post_init__(self) -> None:
         for name in ("min_token_savings", "min_semantic_confidence", "verification_threshold"):
@@ -28,6 +29,24 @@ class PipelinePolicy:
                 raise ValueError(f"{name} must be between 0 and 1")
         if not 1 <= self.max_attempts <= 3:
             raise ValueError("max_attempts must be between 1 and 3")
+        if self.max_prompt_tokens is not None and (
+            isinstance(self.max_prompt_tokens, bool)
+            or not isinstance(self.max_prompt_tokens, int)
+            or self.max_prompt_tokens < 1
+        ):
+            raise ValueError("max_prompt_tokens must be a positive integer")
+
+
+class ContextWindowExceeded(RuntimeError):
+    """Raised before invocation when a safe prompt cannot fit the model budget."""
+
+    def __init__(self, prompt_tokens: int, prompt_budget: int, mode: str) -> None:
+        self.prompt_tokens = prompt_tokens
+        self.prompt_budget = prompt_budget
+        self.mode = mode
+        super().__init__(
+            f"{mode} prompt requires {prompt_tokens} tokens but the model budget is {prompt_budget}"
+        )
 
 
 @dataclass
@@ -39,10 +58,15 @@ class PreparedContext:
     prompt_tokens: int
     token_savings: float
     decision: str
+    prompt_budget: int | None = None
 
     @property
     def mode(self) -> str:
         return str(self.bundle.contract["mode"])
+
+    @property
+    def fits_prompt_budget(self) -> bool:
+        return self.prompt_budget is None or self.prompt_tokens <= self.prompt_budget
 
 
 @dataclass
@@ -79,6 +103,7 @@ class PipelineResult:
             "selected_mode": self.selected_mode,
             "risk": self.prepared.risk,
             "source_tokens": self.prepared.source_tokens,
+            "prompt_budget": self.prepared.prompt_budget,
             "attempts": [
                 {
                     "mode": item.mode,
@@ -123,14 +148,17 @@ class ContextPipeline:
         target_lang: str = "ru",
         risk: Risk = "standard",
         packet_id: str = "context",
+        max_prompt_tokens: int | None = None,
     ) -> PreparedContext:
         if risk not in {"low", "standard", "high"}:
             raise ValueError(f"unsupported risk: {risk}")
 
+        prompt_budget = self._resolve_prompt_budget(self.invoke, max_prompt_tokens)
+
         if len(text) <= self.gateway.raw_threshold:
             raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "short_input")
             raw.decision = "short_input"
-            return raw
+            return self._enforce_prompt_budget(raw, prompt_budget)
 
         requested_mode = {"low": "semantic", "standard": "auto", "high": "hybrid"}[risk]
         candidate = self._compile_mode(
@@ -156,12 +184,12 @@ class ContextPipeline:
 
         if candidate.mode == "raw":
             candidate.decision = "compiler_selected_raw"
-            return candidate
+            return self._enforce_prompt_budget(candidate, prompt_budget)
         if candidate.token_savings < self.policy.min_token_savings:
             raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "raw_baseline")
             raw.decision = "insufficient_token_savings"
-            return raw
-        return candidate
+            return self._enforce_prompt_budget(raw, prompt_budget)
+        return self._enforce_prompt_budget(candidate, prompt_budget)
 
     def run(
         self,
@@ -181,7 +209,15 @@ class ContextPipeline:
         if model_invoke is None:
             raise ValueError("invoke is required; pass it to ContextPipeline() or run()")
 
-        initial = self.prepare(text, source_lang, target_lang, risk, packet_id)
+        prompt_budget = self._resolve_prompt_budget(model_invoke, None)
+        initial = self.prepare(
+            text,
+            source_lang,
+            target_lang,
+            risk,
+            packet_id,
+            max_prompt_tokens=prompt_budget,
+        )
         modes = fallback_modes(initial.mode)[: self.policy.max_attempts]
         attempts: list[PipelineAttempt] = []
         final_prepared = initial
@@ -189,15 +225,23 @@ class ContextPipeline:
         accepted = False
 
         for index, mode in enumerate(modes):
-            prepared = initial if index == 0 else self._compile_mode(
-                text,
-                source_lang,
-                target_lang,
-                risk,
-                packet_id,
-                mode,
-                "verification_fallback",
-            )
+            if index == 0:
+                prepared = initial
+            else:
+                prepared = self._compile_mode(
+                    text,
+                    source_lang,
+                    target_lang,
+                    risk,
+                    packet_id,
+                    mode,
+                    "verification_fallback",
+                )
+                try:
+                    prepared = self._enforce_prompt_budget(prepared, prompt_budget)
+                except ContextWindowExceeded:
+                    attempts[-1].verification.reasons.append("fallback_exceeds_prompt_budget")
+                    break
             answer = model_invoke(prepared.prompt)
             verification = (
                 verifier(prepared, answer)
@@ -310,6 +354,21 @@ class ContextPipeline:
             decision=decision,
         )
 
+    def _resolve_prompt_budget(self, invoke: Invoker | None, explicit: int | None) -> int | None:
+        budget = explicit if explicit is not None else self.policy.max_prompt_tokens
+        if budget is None and invoke is not None:
+            budget = getattr(invoke, "prompt_token_budget", None)
+        if budget is not None and (isinstance(budget, bool) or not isinstance(budget, int) or budget < 1):
+            raise ValueError("prompt token budget must be a positive integer")
+        return budget
+
+    @staticmethod
+    def _enforce_prompt_budget(prepared: PreparedContext, prompt_budget: int | None) -> PreparedContext:
+        prepared.prompt_budget = prompt_budget
+        if not prepared.fits_prompt_budget:
+            raise ContextWindowExceeded(prepared.prompt_tokens, prompt_budget or 0, prepared.mode)
+        return prepared
+
 
 def fallback_modes(mode: str) -> list[str]:
     if mode == "semantic":
@@ -327,6 +386,7 @@ def approximate_token_count(text: str) -> int:
 
 __all__ = [
     "ContextPipeline",
+    "ContextWindowExceeded",
     "PipelineAttempt",
     "PipelinePolicy",
     "PipelineResult",

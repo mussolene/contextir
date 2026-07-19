@@ -45,6 +45,7 @@ class ModelClientTests(unittest.TestCase):
         self.assertEqual(payload["model"], "qwen3:0.6b")
         self.assertEqual(payload["options"]["num_predict"], 12)
         self.assertFalse(payload["think"])
+        self.assertEqual(client.prompt_token_budget, 32724)
 
     @patch("contextir.clients.urllib.request.urlopen")
     def test_openai_compatible_client_sends_bearer_token(self, urlopen) -> None:
@@ -54,19 +55,41 @@ class ModelClientTests(unittest.TestCase):
                 "usage": {"prompt_tokens": 11, "completion_tokens": 1},
             }
         )
-        client = OpenAICompatibleClient("local-model", api_key="secret-token")
+        client = OpenAICompatibleClient(
+            "local-model",
+            api_key="secret-token",
+            context_length=4096,
+            max_output_tokens=96,
+        )
 
         self.assertEqual(client("Complete the task"), "done")
 
         request = urlopen.call_args.args[0]
         self.assertEqual(request.get_header("Authorization"), "Bearer secret-token")
         self.assertTrue(request.full_url.endswith("/v1/chat/completions"))
+        self.assertEqual(client.prompt_token_budget, 3968)
 
     def test_clients_require_model_name(self) -> None:
         with self.assertRaises(ValueError):
             OllamaClient(" ")
         with self.assertRaises(ValueError):
             OpenAICompatibleClient("")
+
+    def test_openai_client_preserves_1x_positional_argument_order(self) -> None:
+        client = OpenAICompatibleClient(
+            "model",
+            "http://localhost:1234/v1",
+            "key",
+            10,
+            64,
+            0.2,
+            None,
+        )
+
+        self.assertEqual(client.max_output_tokens, 64)
+        self.assertEqual(client.temperature, 0.2)
+        self.assertIsNone(client.seed)
+        self.assertEqual(client.context_length, 32768)
 
     def test_clients_reject_unsafe_or_invalid_endpoint_settings(self) -> None:
         with self.assertRaisesRegex(ValueError, "http or https"):
@@ -75,6 +98,10 @@ class ModelClientTests(unittest.TestCase):
             OpenAICompatibleClient("model", timeout=0)
         with self.assertRaisesRegex(ValueError, "max_output_tokens"):
             OllamaClient("model", max_output_tokens=0)
+        with self.assertRaisesRegex(ValueError, "leave room"):
+            OpenAICompatibleClient("model", context_length=128, max_output_tokens=128)
+        with self.assertRaisesRegex(ValueError, "prompt_overhead_tokens"):
+            OllamaClient("model", prompt_overhead_tokens=-1)
 
     @patch("contextir.clients.urllib.request.urlopen")
     def test_client_reports_malformed_provider_response(self, urlopen) -> None:

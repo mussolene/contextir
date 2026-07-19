@@ -2,6 +2,21 @@
 
 All notable changes to ContextIR are documented here.
 
+## 1.1.0 - 2026-07-19
+
+- connected Ollama and OpenAI-compatible context limits to the product
+  pipeline, reserving requested output tokens and configurable chat-template
+  overhead before invocation;
+- added `PipelinePolicy.max_prompt_tokens` for custom model adapters and
+  tokenizer-aware deployments;
+- added the public `ContextWindowExceeded` error so oversized safe prompts fail
+  before any model request instead of being silently truncated;
+- stopped bounded fallback before sending a richer prompt that exceeds the
+  target-model budget;
+- exposed the payload-free prompt budget in prepared contexts and public
+  traces, and added a concise CLI error for undersized windows;
+- corrected the post-1.0 supported-version statement in the security policy.
+
 ## 1.0.1 - 2026-07-19
 
 - added PyPI Trusted Publishing through GitHub Actions OIDC;

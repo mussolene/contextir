@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-ContextIR is pre-1.0 alpha software. Security fixes are applied only to the
-latest commit on the default branch.
+ContextIR follows a stable 1.x API. Security fixes are applied to the latest
+minor release and the default branch.
 
 ## Reporting
 

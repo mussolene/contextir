@@ -53,6 +53,9 @@ client = OpenAICompatibleClient(
     "model-name",
     base_url="http://127.0.0.1:1234/v1",
     api_key=os.environ.get("OPENAI_API_KEY", ""),
+    context_length=8192,
+    max_output_tokens=512,
+    prompt_overhead_tokens=32,
 )
 result = ContextPipeline(invoke=client).run("Summarize the agent state.")
 ```
@@ -62,6 +65,32 @@ Existing integrations may continue passing `invoke` directly to `run()`.
 Pass the real tokenizer for the target model. The built-in counter is only a
 dependency-free estimate. ContextIR uses compressed context only when measured
 savings exceed policy; otherwise it sends masked raw text.
+
+The bundled clients expose a prompt budget equal to `context_length -
+max_output_tokens - prompt_overhead_tokens`. The overhead reserve defaults to
+32 tokens and should be calibrated for the backend's chat template.
+`ContextPipeline` enforces that budget before every model request, including
+richer fallback attempts. Custom adapters can set the limit explicitly:
+
+```python
+from contextir import ContextPipeline, ContextWindowExceeded, PipelinePolicy
+
+pipeline = ContextPipeline(
+    policy=PipelinePolicy(max_prompt_tokens=3584),
+    token_counter=target_model_tokenizer,
+    invoke=custom_model,
+)
+
+try:
+    result = pipeline.run(long_context)
+except ContextWindowExceeded as exc:
+    route_to_chunked_workflow(exc.prompt_tokens, exc.prompt_budget)
+```
+
+ContextIR fails instead of silently truncating evidence or converting an
+exhaustive task into a lossy semantic summary. Applications handling inputs
+larger than the safe model budget should use a deployment-owned chunked or
+map-reduce workflow.
 
 Use `task="transform"` for translation, rewriting, extraction, or summarization.
 That enables retention checks and bounded fallback through semantic, hybrid,
@@ -138,4 +167,5 @@ boundary.
 - add domain-specific PII recognizers and leakage tests;
 - keep vault storage ephemeral and access controlled;
 - retain raw-source fallback for low-confidence or high-impact operations;
+- configure each model's real context length, output reserve, and tokenizer;
 - monitor fallback rate, semantic loss, latency, and task success.
