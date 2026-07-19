@@ -14,12 +14,12 @@
     "privacy_true_positives": 6,
     "privacy_precision": 1.0,
     "privacy_recall": 1.0,
-    "pipeline_cases": 10,
+    "pipeline_cases": 12,
     "pipeline_failures": 0,
     "pipeline_fallbacks": 1,
-    "compile_latency_ms_p50": 0.0985,
-    "compile_latency_ms_p95": 0.9773,
-    "compile_throughput_docs_s": 4988.2,
+    "compile_latency_ms_p50": 0.1028,
+    "compile_latency_ms_p95": 0.9823,
+    "compile_throughput_docs_s": 4784.2,
     "performance_iterations": 5000
   },
   "results": [
@@ -199,6 +199,18 @@
     },
     {
       "case_id": "chunked_retrieval_unsafe_map_rejected",
+      "passed": true,
+      "mode": "hybrid",
+      "model_calls": 1
+    },
+    {
+      "case_id": "explicit_query_private_routing",
+      "passed": true,
+      "mode": "hybrid",
+      "prompt_tokens": 56
+    },
+    {
+      "case_id": "explicit_query_chunk_map",
       "passed": true,
       "mode": "hybrid",
       "model_calls": 1

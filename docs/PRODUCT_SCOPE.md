@@ -6,7 +6,7 @@ ContextIR is an adaptive context and privacy gateway between applications and
 language models.
 
 ```text
-text or agent history
+text or agent history + optional application query
   -> local privacy masking
   -> adaptive context compiler
   -> raw | hybrid | semantic prompt
@@ -26,6 +26,7 @@ compilation remains available for infrastructure that owns routing itself.
 - PII placeholders backed by a local vault;
 - optional Presidio detection;
 - provider-independent model prompts;
+- explicit private query routing with shared document/query PII masking;
 - query-aware verbatim evidence selection for long document QA;
 - model-budget packing of ranked complete retrieval evidence groups;
 - explicitly enabled bounded chunking of one oversized top-ranked retrieval
@@ -69,7 +70,8 @@ are stable within the 1.x line:
   `ResponseVerification`, plus `ContextWindowExceeded` and
   `ChunkLimitExceeded`;
 - `OllamaClient`, `OpenAICompatibleClient`, and `ModelResponse`;
-- `ContextIR`, `ContextBundle`, `ContractCheck`, and `load_contextir`;
+- `ContextIR`, `ContextBundle`, `ContextKind`, `ContractCheck`, and
+  `load_contextir`;
 - `contextir.schemas.load_contract_schema` and the `contextir.v2` JSON shape.
 
 New optional fields may be added to `contextir.v2` in a minor release. Removing

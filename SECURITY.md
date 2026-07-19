@@ -16,6 +16,10 @@ reporting form under **Security > Report a vulnerability**.
 - PII detection is probabilistic and incomplete.
 - The local vault must never be sent to a model provider.
 - Public contracts may still contain sensitive context not recognized as PII.
+- External queries share the document's local masking pass and vault, but their
+  masked text is still model-visible and must follow the same provider policy.
+- External queries are intentionally omitted from public contracts and safe
+  traces; applications must not add prompt or query bodies to normal logs.
 - Prompt injection is not neutralized by semantic compilation.
 - `restore()` should be called with an explicit placeholder allowlist.
 - The research checkpoints and lexical data are not security-reviewed.

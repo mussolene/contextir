@@ -12,11 +12,13 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
 
-from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber, SIRRuntime, SIRV1Packet, detect_constraints, guess_intent, load_runtime
+from contextir.sir_runtime import PrivacyScrubResult, PresidioPrivacyScrubber, PrivacyScrubber, SIRRuntime, SIRV1Packet, detect_constraints, guess_intent, load_runtime
 from contextir.sir_sources import normalize
 
 
 Mode = Literal["auto", "raw", "hybrid", "semantic"]
+ContextKind = Literal["auto", "operational", "retrieval", "exhaustive"]
+EXTERNAL_QUERY_BOUNDARY = "\nCTXIR_EXTERNAL_QUERY_BOUNDARY_4E7C9A1D\n"
 
 
 @dataclass
@@ -67,8 +69,12 @@ class ContextIR:
         target_lang: str = "ru",
         packet_id: str = "context",
         mode: Mode = "auto",
+        context_kind: ContextKind = "auto",
+        query: str = "",
     ) -> dict[str, Any]:
-        return self.compile_private(text, source_lang, target_lang, packet_id, mode).contract
+        return self.compile_private(
+            text, source_lang, target_lang, packet_id, mode, context_kind, query
+        ).contract
 
     def compile_private(
         self,
@@ -77,17 +83,31 @@ class ContextIR:
         target_lang: str = "ru",
         packet_id: str = "context",
         mode: Mode = "auto",
+        context_kind: ContextKind = "auto",
+        query: str = "",
     ) -> ContextBundle:
         if not text.strip():
             raise ValueError("text must not be empty")
         if mode not in {"auto", "raw", "hybrid", "semantic"}:
             raise ValueError(f"unsupported mode: {mode}")
+        if context_kind not in {"auto", "operational", "retrieval", "exhaustive"}:
+            raise ValueError(f"unsupported context_kind: {context_kind}")
+        query = query.strip()
+        if query and context_kind in {"operational", "exhaustive"}:
+            raise ValueError("query can be used only with auto or retrieval context_kind")
+        if context_kind == "retrieval" and not query:
+            raise ValueError("retrieval context_kind requires query")
 
         started = time.perf_counter()
-        scrubbed = self.scrubber.scrub(text, language=source_lang)
+        scrubbed, scrubbed_query = self._scrub_text_and_query(text, query, source_lang)
         segments = split_source(scrubbed.scrubbed_text)
         sources = {segment_id: value for segment_id, value in segments}
-        task_profile = analyze_task(scrubbed.scrubbed_text, segments)
+        task_profile = analyze_task(
+            scrubbed.scrubbed_text,
+            segments,
+            context_kind=context_kind,
+            explicit_query=scrubbed_query,
+        )
         normalized_tokens = set(normalize(scrubbed.scrubbed_text).split())
         intent = asdict(guess_intent(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens))
         constraints = detect_constraints(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens)
@@ -115,7 +135,7 @@ class ContextIR:
         source_plan = plan_source_refs(selected_mode, segments, task_profile)
         included_refs = list(source_plan.refs)
         if task_profile.kind == "retrieval" and selected_mode != "raw":
-            included_text = " ".join(sources[ref] for ref in included_refs)
+            included_text = " ".join([*(sources[ref] for ref in included_refs), task_profile.query])
             entities = [item for item in entities if item["value"] in included_text]
         concepts = self._compact_concepts(scrubbed.scrubbed_text, source_lang, packet_id, selected_mode)
         public_spans = [{"placeholder": span.placeholder, "kind": span.kind} for span in scrubbed.protected_spans]
@@ -143,12 +163,13 @@ class ContextIR:
             },
         }
         compact_chars = len(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
-        prompt_chars = len(self.render_prompt(contract))
+        prompt_chars = len(self.render_prompt(contract, task_profile.query))
+        source_chars = len(text) + len(query)
         contract["stats"] = {
-            "source_chars": len(text),
+            "source_chars": source_chars,
             "contract_chars": compact_chars,
             "prompt_chars": prompt_chars,
-            "prompt_ratio": round(prompt_chars / max(len(text), 1), 4),
+            "prompt_ratio": round(prompt_chars / max(source_chars, 1), 4),
             "source_segments": len(segments),
             "included_segments": len(included_refs),
             "latency_ms": round((time.perf_counter() - started) * 1000, 3),
@@ -161,6 +182,29 @@ class ContextIR:
             required_source_refs=source_plan.required_refs,
             evidence_source_groups=source_plan.evidence_groups,
             retrieval_query=task_profile.query,
+        )
+
+    def _scrub_text_and_query(
+        self,
+        text: str,
+        query: str,
+        language: str,
+    ) -> tuple[PrivacyScrubResult, str]:
+        if not query:
+            return self.scrubber.scrub(text, language=language), ""
+        if EXTERNAL_QUERY_BOUNDARY in text or EXTERNAL_QUERY_BOUNDARY in query:
+            raise ValueError("text or query contains a reserved ContextIR boundary")
+        combined = self.scrubber.scrub(text + EXTERNAL_QUERY_BOUNDARY + query, language=language)
+        scrubbed_text, boundary, scrubbed_query = combined.scrubbed_text.partition(EXTERNAL_QUERY_BOUNDARY)
+        if not boundary:
+            raise RuntimeError("privacy scrubber did not preserve the external query boundary")
+        return (
+            PrivacyScrubResult(
+                scrubbed_text=scrubbed_text,
+                protected_spans=combined.protected_spans,
+                vault=combined.vault,
+            ),
+            scrubbed_query.strip(),
         )
 
     def _pack_retrieval_prompt(
@@ -179,7 +223,7 @@ class ContextIR:
         for group in bundle.evidence_source_groups:
             trial = selected | set(group)
             candidate = self._bundle_with_source_refs(bundle, trial)
-            candidate_tokens = token_counter(self.render_prompt(candidate.contract))
+            candidate_tokens = token_counter(self.render_prompt(candidate.contract, candidate.retrieval_query))
             if candidate_tokens <= max_prompt_tokens:
                 selected = trial
                 packed = candidate
@@ -201,7 +245,7 @@ class ContextIR:
             for ref, text in bundle.sources.items()
             if ref in refs
         ]
-        included_text = " ".join(str(item["text"]) for item in included)
+        included_text = " ".join([*(str(item["text"]) for item in included), bundle.retrieval_query])
         contract["source"]["included"] = included
         contract["privacy"]["protected"] = [
             item for item in contract["privacy"]["protected"] if item["placeholder"] in included_text
@@ -218,7 +262,7 @@ class ContextIR:
         ]
         stats = contract.pop("stats")
         stats["included_segments"] = len(included)
-        stats["prompt_chars"] = len(self.render_prompt(contract))
+        stats["prompt_chars"] = len(self.render_prompt(contract, bundle.retrieval_query))
         stats["prompt_ratio"] = round(stats["prompt_chars"] / max(stats["source_chars"], 1), 4)
         stats["contract_chars"] = len(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
         contract["stats"] = stats
@@ -232,16 +276,22 @@ class ContextIR:
             retrieval_query=bundle.retrieval_query,
         )
 
-    def render_prompt(self, contract: dict[str, Any]) -> str:
+    def render_prompt(self, contract: dict[str, Any], query: str = "") -> str:
         if contract.get("version") != "contextir.v2":
-            return json.dumps(contract, ensure_ascii=False, separators=(",", ":"))
+            return append_query_if_missing(
+                json.dumps(contract, ensure_ascii=False, separators=(",", ":")), query
+            )
         if contract.get("mode") == "raw":
-            return " ".join(str(item["text"]) for item in contract["source"]["included"])
+            return append_query_if_missing(
+                " ".join(str(item["text"]) for item in contract["source"]["included"]), query
+            )
         if contract.get("mode") == "hybrid" and contract["source"]["included"]:
             included_refs = {item["ref"] for item in contract["source"]["included"]}
             events_covered = all(event["source_ref"] in included_refs for event in contract.get("events", []))
             if events_covered:
-                return "\n\n".join(str(item["text"]) for item in contract["source"]["included"])
+                return append_query_if_missing(
+                    "\n\n".join(str(item["text"]) for item in contract["source"]["included"]), query
+                )
         language = contract["language"]
         lines = [
             f"CTXIR/2 mode={contract['mode']} src={language['source']} out={language['target']} intent={contract['intent']['label']}",
@@ -270,7 +320,11 @@ class ContextIR:
         for item in contract["source"]["included"]:
             lines.append(f"SRC {item['ref']}={item['text']}")
         lines.append("Answer naturally. Preserve RULE, NOT, numbers, and placeholders.")
-        return "\n".join(lines)
+        return append_query_if_missing("\n".join(lines), query)
+
+    def render_bundle(self, bundle: ContextBundle) -> str:
+        """Render a private bundle without dropping its external retrieval query."""
+        return self.render_prompt(bundle.contract, bundle.retrieval_query)
 
     def decompile(self, contract: dict[str, Any], target_lang: str | None = None, include_anchors: bool = False) -> str:
         if contract.get("version") == "contextir.v2":
@@ -592,14 +646,24 @@ RETRIEVAL_STOPWORDS = STOPWORDS | {
 }
 
 
-def analyze_task(text: str, segments: list[tuple[str, str]], evidence_limit: int = 6) -> TaskProfile:
+def analyze_task(
+    text: str,
+    segments: list[tuple[str, str]],
+    evidence_limit: int = 6,
+    context_kind: ContextKind = "auto",
+    explicit_query: str = "",
+) -> TaskProfile:
     normalized = text.lower()
+    if context_kind == "exhaustive":
+        return TaskProfile(kind="exhaustive")
+    if context_kind == "operational":
+        return TaskProfile(kind="operational")
     if any(re.search(pattern, normalized, re.IGNORECASE) for pattern in EXHAUSTIVE_PATTERNS):
         return TaskProfile(kind="exhaustive")
-    if len(segments) < 6:
+    if len(segments) < 6 and context_kind != "retrieval" and not explicit_query:
         return TaskProfile(kind="operational")
 
-    query = extract_query(text, segments)
+    query = explicit_query or extract_query(text, segments)
     if not query:
         return TaskProfile(kind="operational")
     query_terms = content_terms(query)
@@ -608,7 +672,9 @@ def analyze_task(text: str, segments: list[tuple[str, str]], evidence_limit: int
     normalized_query = " ".join(query.lower().split())
     query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, normalized_query))
     evidence, confidence = retrieve_evidence(segments, query_terms, set(query_refs), evidence_limit)
-    explicit_retrieval = any(marker in normalized for marker in RETRIEVAL_MARKERS)
+    explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
+        marker in normalized for marker in RETRIEVAL_MARKERS
+    )
     if not explicit_retrieval and confidence < 0.12:
         return TaskProfile(kind="operational")
     return TaskProfile(
@@ -636,6 +702,17 @@ def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
         if re.search(r"\b(answer|respond)\b", segment, re.IGNORECASE):
             return segment
     return ""
+
+
+def append_query_if_missing(prompt: str, query: str) -> str:
+    query = query.strip()
+    if not query:
+        return prompt
+    normalized_prompt = " ".join(prompt.lower().split())
+    normalized_query = " ".join(query.lower().split())
+    if normalized_query in normalized_prompt:
+        return prompt
+    return f"{prompt}\n\nQuestion: {query}\nAnswer:"
 
 
 def segment_belongs_to_query(segment: str, normalized_query: str) -> bool:
@@ -813,6 +890,12 @@ def main() -> None:
     run_p.add_argument("--target-lang", default="en")
     run_p.add_argument("--risk", choices=["low", "standard", "high"], default="standard")
     run_p.add_argument("--task", choices=["reasoning", "transform"], default="reasoning")
+    run_p.add_argument(
+        "--context-kind",
+        choices=["auto", "operational", "retrieval", "exhaustive"],
+        default="auto",
+    )
+    run_p.add_argument("--query", default="", help="Explicit retrieval query kept outside the public contract.")
     run_p.add_argument("--timeout", type=float, default=180)
     run_p.add_argument("--context-length", type=int, default=32768)
     run_p.add_argument("--max-output-tokens", type=int, default=256)
@@ -863,6 +946,8 @@ def main() -> None:
                 risk=args.risk,
                 task=args.task,
                 chunked_retrieval=args.chunked_retrieval,
+                context_kind=args.context_kind,
+                query=args.query,
             )
         except (ChunkLimitExceeded, ContextWindowExceeded, ValueError) as exc:
             parser.error(str(exc))

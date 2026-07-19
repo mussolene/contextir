@@ -60,6 +60,22 @@ client = OpenAICompatibleClient(
 result = ContextPipeline(invoke=client).run("Summarize the agent state.")
 ```
 
+For retrieval over an application-owned document, keep the question explicit:
+
+```python
+result = pipeline.run(
+    long_document,
+    source_lang="en",
+    target_lang="en",
+    context_kind="retrieval",
+    query="What is the northern deployment credential?",
+)
+```
+
+ContextIR masks the document and query in one privacy pass, uses the masked
+query for local evidence selection, and counts it against the model prompt
+budget. It is not serialized into `contextir.v2` or `public_trace()`.
+
 Existing integrations may continue passing `invoke` directly to `run()`.
 
 Pass the real tokenizer for the target model. The built-in counter is only a
@@ -100,9 +116,11 @@ provides an explicit bounded path:
 
 ```python
 result = pipeline.run(
-    long_document_question,
+    long_document,
     source_lang="en",
     target_lang="en",
+    context_kind="retrieval",
+    query="What is the release code?",
     chunked_retrieval=True,
 )
 ```
@@ -139,7 +157,7 @@ bundle = gateway.compile_private(
     mode="auto",
 )
 
-prompt = gateway.render_prompt(bundle.contract)
+prompt = gateway.render_bundle(bundle)
 # Send only prompt to the model. Keep bundle.vault inside your trusted process.
 ```
 

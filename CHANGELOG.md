@@ -2,6 +2,19 @@
 
 All notable changes to ContextIR are documented here.
 
+## 1.4.0 - 2026-07-19
+
+- added explicit `context_kind` and `query` inputs to `ContextPipeline` and
+  `ContextIR` so applications can bypass language-specific task markers;
+- kept external queries local to `ContextBundle` and out of the unchanged
+  `contextir.v2` public contract and payload-free trace;
+- scrubbed documents and external queries in one privacy namespace so distinct
+  PII values receive collision-free placeholders and one local vault;
+- included external queries in rendered prompts, retrieval ranking, prompt
+  budgets, fallback recompilation, evidence packing, and chunk map execution;
+- added `--context-kind` and `--query` to `contextir run` while preserving the
+  existing automatic routing default.
+
 ## 1.3.0 - 2026-07-19
 
 - added explicit bounded chunked retrieval for a top-ranked evidence segment

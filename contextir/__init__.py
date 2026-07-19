@@ -1,5 +1,5 @@
 from contextir.clients import ModelResponse, OllamaClient, OpenAICompatibleClient
-from contextir.gateway import ContractCheck, ContextBundle, ContextIR, SIRKernel, load_contextir, load_kernel
+from contextir.gateway import ContextKind, ContractCheck, ContextBundle, ContextIR, SIRKernel, load_contextir, load_kernel
 from contextir.pipeline import (
     ChunkLimitExceeded,
     ContextPipeline,
@@ -10,10 +10,11 @@ from contextir.pipeline import (
     ResponseVerification,
 )
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 __all__ = [
     "ContextIR",
+    "ContextKind",
     "ChunkLimitExceeded",
     "ContextPipeline",
     "ContextWindowExceeded",

@@ -56,6 +56,30 @@ class ContextIRGatewayTests(unittest.TestCase):
         self.assertNotIn("prompt", payload["trace"])
 
     @patch("contextir.clients.OllamaClient")
+    def test_run_cli_masks_explicit_query(self, client_class) -> None:
+        client_class.return_value.return_value = "READY"
+        client_class.return_value.prompt_token_budget = 32512
+        argv = [
+            "contextir",
+            "run",
+            "--model",
+            "local-model",
+            "--text",
+            "Project Juniper credential is cobalt-seven.",
+            "--context-kind",
+            "retrieval",
+            "--query",
+            "What should reviewer@example.test use?",
+        ]
+
+        with patch.object(sys, "argv", argv), redirect_stdout(io.StringIO()):
+            main()
+
+        prompt = client_class.return_value.call_args.args[0]
+        self.assertNotIn("reviewer@example.test", prompt)
+        self.assertIn("PII_EMAIL_1", prompt)
+
+    @patch("contextir.clients.OllamaClient")
     def test_run_cli_reports_context_window_error_without_invoking_model(self, client_class) -> None:
         client_class.return_value.prompt_token_budget = 2
         stderr = io.StringIO()
@@ -194,6 +218,80 @@ class ContextIRGatewayTests(unittest.TestCase):
         contract = self.gateway.compile(text, source_lang="en", mode="auto")
 
         self.assertEqual(contract["mode"], "raw")
+
+    def test_explicit_query_routes_unlabelled_document_retrieval(self) -> None:
+        text = " ".join(
+            [f"Record {index}: Cedar deployment is archived." for index in range(12)]
+            + ["Northern deployment operator credential is cobalt-seven."]
+        )
+        query = "Which credential should the operator use for the northern deployment?"
+
+        bundle = self.gateway.compile_private(
+            text,
+            source_lang="en",
+            target_lang="en",
+            mode="auto",
+            context_kind="retrieval",
+            query=query,
+        )
+        prompt = self.gateway.render_bundle(bundle)
+
+        self.assertEqual(bundle.contract["mode"], "hybrid")
+        self.assertEqual(bundle.retrieval_query, query)
+        self.assertIn("cobalt-seven", prompt)
+        self.assertIn(query, prompt)
+        self.assertNotIn(query, json.dumps(bundle.contract))
+
+    def test_query_alone_implies_retrieval_in_auto_context_kind(self) -> None:
+        text = " ".join(
+            [f"Record {index}: Cedar deployment is archived." for index in range(12)]
+            + ["Northern deployment operator credential is cobalt-seven."]
+        )
+
+        bundle = self.gateway.compile_private(
+            text,
+            source_lang="en",
+            target_lang="en",
+            mode="auto",
+            query="What is the northern deployment credential?",
+        )
+
+        self.assertEqual(bundle.contract["mode"], "hybrid")
+        self.assertTrue(bundle.evidence_source_groups)
+
+    def test_document_and_query_share_one_privacy_namespace(self) -> None:
+        text = "Contact owner@example.test about Project Juniper."
+        query = "What should reviewer@example.test use?"
+        bundle = self.gateway.compile_private(
+            text,
+            source_lang="en",
+            target_lang="en",
+            mode="raw",
+            query=query,
+        )
+        prompt = self.gateway.render_bundle(bundle)
+
+        self.assertEqual(
+            bundle.vault,
+            {
+                "PII_EMAIL_1": "owner@example.test",
+                "PII_EMAIL_2": "reviewer@example.test",
+            },
+        )
+        self.assertNotIn("owner@example.test", prompt)
+        self.assertNotIn("reviewer@example.test", prompt)
+        self.assertIn("PII_EMAIL_1", prompt)
+        self.assertIn("PII_EMAIL_2", prompt)
+        self.assertEqual(bundle.contract["stats"]["source_chars"], len(text) + len(query))
+        Draft202012Validator(load_contract_schema()).validate(bundle.contract)
+
+    def test_explicit_context_kind_validation_is_strict(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires query"):
+            self.gateway.compile_private("Document text.", context_kind="retrieval")
+        with self.assertRaisesRegex(ValueError, "only with auto or retrieval"):
+            self.gateway.compile_private(
+                "Document text.", context_kind="operational", query="What is relevant?"
+            )
 
     def test_budget_packing_keeps_paragraph_owner_with_evidence(self) -> None:
         filler = " ".join(["archive"] * 35)

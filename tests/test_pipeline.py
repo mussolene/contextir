@@ -144,6 +144,57 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertIn("cobalt-seven", prepared.prompt)
         self.assertGreater(prepared.token_savings, 0.5)
 
+    def test_explicit_query_is_budgeted_and_absent_from_safe_trace(self) -> None:
+        text = " ".join(
+            [f"Record {index}: Cedar deployment archive {1000 + index}." for index in range(30)]
+            + ["Northern deployment credential is cobalt-seven."]
+        )
+        query = "What is the northern deployment credential?"
+        prompts = []
+
+        result = ContextPipeline(
+            invoke=lambda prompt: prompts.append(prompt) or "cobalt-seven",
+            policy=PipelinePolicy(max_prompt_tokens=100),
+        ).run(
+            text,
+            source_lang="en",
+            target_lang="en",
+            context_kind="retrieval",
+            query=query,
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertIn(query, prompts[0])
+        self.assertLessEqual(result.attempts[0].prompt_tokens, 100)
+        self.assertNotIn(query, str(result.public_trace()))
+
+    def test_explicit_query_can_drive_oversized_chunk_map(self) -> None:
+        evidence = " ".join(
+            ["archive"] * 40
+            + ["Northern deployment credential is cobalt-seven"]
+            + ["archive"] * 220
+        )
+        text = " ".join(
+            [f"Record {index}: Cedar historical note {index}." for index in range(4)]
+            + [evidence + ".", "Tail record: Cedar closed.", "Final record: Cedar archived."]
+        )
+
+        result = ContextPipeline(
+            invoke=lambda prompt: "cobalt-seven" if "cobalt-seven" in prompt else NO_EVIDENCE,
+            policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8),
+        ).run(
+            text,
+            source_lang="en",
+            target_lang="en",
+            context_kind="retrieval",
+            query="What is the northern deployment credential?",
+            chunked_retrieval=True,
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.answer, "cobalt-seven")
+        self.assertTrue(all(attempt.stage == "map" for attempt in result.attempts))
+
     def test_document_qa_packs_ranked_evidence_to_model_budget(self) -> None:
         prepared = ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=120)).prepare(
             budget_retrieval_text(),

@@ -351,6 +351,47 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
         target_lang="en",
         chunked_retrieval=True,
     )
+    explicit_query = "What access phrase should reviewer@example.test use for Project Juniper?"
+    explicit_text = " ".join(
+        [f"Record {index}: Cedar deployment is archived." for index in range(15)]
+        + ["Project Juniper reviewer access phrase is cobalt-seven."]
+        + [f"Record {index}: Cedar deployment is archived." for index in range(15, 30)]
+    )
+    explicit_prepared = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=120),
+    ).prepare(
+        explicit_text,
+        source_lang="en",
+        target_lang="en",
+        context_kind="retrieval",
+        query=explicit_query,
+    )
+    explicit_chunk_text = " ".join(
+        [f"Record {index}: Cedar historical note {index}." for index in range(4)]
+        + [
+            " ".join(
+                ["archive"] * 40
+                + ["Northern deployment credential is cobalt-seven"]
+                + ["archive"] * 220
+            )
+            + ".",
+            "Tail record: Cedar closed.",
+            "Final record: Cedar archived.",
+        ]
+    )
+    explicit_chunked = ContextPipeline(
+        gateway=gateway,
+        policy=PipelinePolicy(max_prompt_tokens=100, chunk_overlap_words=8),
+    ).run(
+        explicit_chunk_text,
+        chunk_invoke,
+        source_lang="en",
+        target_lang="en",
+        context_kind="retrieval",
+        query="What is the northern deployment credential?",
+        chunked_retrieval=True,
+    )
     return [
         {
             "case_id": "measured_semantic_selection",
@@ -428,6 +469,28 @@ def evaluate_pipeline(gateway: ContextIR) -> list[dict[str, object]]:
             ),
             "mode": unsafe_chunk.selected_mode,
             "model_calls": len(unsafe_chunk.attempts),
+        },
+        {
+            "case_id": "explicit_query_private_routing",
+            "passed": (
+                explicit_prepared.mode == "hybrid"
+                and "cobalt-seven" in explicit_prepared.prompt
+                and "reviewer@example.test" not in explicit_prepared.prompt
+                and "PII_EMAIL_1" in explicit_prepared.prompt
+                and explicit_query not in json.dumps(explicit_prepared.bundle.contract)
+            ),
+            "mode": explicit_prepared.mode,
+            "prompt_tokens": explicit_prepared.prompt_tokens,
+        },
+        {
+            "case_id": "explicit_query_chunk_map",
+            "passed": (
+                explicit_chunked.accepted
+                and explicit_chunked.answer == "cobalt-seven"
+                and all(item.stage == "map" for item in explicit_chunked.attempts)
+            ),
+            "mode": explicit_chunked.selected_mode,
+            "model_calls": len(explicit_chunked.attempts),
         },
     ]
 

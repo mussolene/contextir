@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Literal
 
-from contextir.gateway import ContractCheck, ContextBundle, ContextIR, content_terms
+from contextir.gateway import ContextKind, ContractCheck, ContextBundle, ContextIR, content_terms
 
 
 Risk = Literal["low", "standard", "high"]
@@ -184,6 +184,8 @@ class ContextPipeline:
         risk: Risk = "standard",
         packet_id: str = "context",
         max_prompt_tokens: int | None = None,
+        context_kind: ContextKind = "auto",
+        query: str = "",
     ) -> PreparedContext:
         if risk not in {"low", "standard", "high"}:
             raise ValueError(f"unsupported risk: {risk}")
@@ -191,7 +193,9 @@ class ContextPipeline:
         prompt_budget = self._resolve_prompt_budget(self.invoke, max_prompt_tokens)
 
         if len(text) <= self.gateway.raw_threshold:
-            raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "short_input")
+            raw = self._compile_mode(
+                text, source_lang, target_lang, risk, packet_id, "raw", "short_input", context_kind, query
+            )
             raw.decision = "short_input"
             return self._enforce_prompt_budget(raw, prompt_budget)
 
@@ -204,6 +208,8 @@ class ContextPipeline:
             packet_id,
             requested_mode,
             f"risk_{risk}",
+            context_kind,
+            query,
         )
         confidence = float(candidate.bundle.contract["uncertainty"]["semantic_confidence"])
         if candidate.mode == "semantic" and confidence < self.policy.min_semantic_confidence:
@@ -215,6 +221,8 @@ class ContextPipeline:
                 packet_id,
                 "hybrid",
                 "semantic_confidence_too_low",
+                context_kind,
+                query,
             )
 
         if candidate.mode == "raw":
@@ -222,7 +230,9 @@ class ContextPipeline:
             return self._enforce_prompt_budget(candidate, prompt_budget)
         candidate = self._enforce_prompt_budget(candidate, prompt_budget)
         if candidate.token_savings < self.policy.min_token_savings:
-            raw = self._compile_mode(text, source_lang, target_lang, risk, packet_id, "raw", "raw_baseline")
+            raw = self._compile_mode(
+                text, source_lang, target_lang, risk, packet_id, "raw", "raw_baseline", context_kind, query
+            )
             raw.decision = "insufficient_token_savings"
             return self._enforce_prompt_budget(raw, prompt_budget)
         return candidate
@@ -239,6 +249,8 @@ class ContextPipeline:
         verifier: Verifier | None = None,
         packet_id: str = "context",
         chunked_retrieval: bool = False,
+        context_kind: ContextKind = "auto",
+        query: str = "",
     ) -> PipelineResult:
         if task not in {"reasoning", "transform"}:
             raise ValueError(f"unsupported task: {task}")
@@ -255,6 +267,8 @@ class ContextPipeline:
                 risk,
                 packet_id,
                 max_prompt_tokens=prompt_budget,
+                context_kind=context_kind,
+                query=query,
             )
         except ContextWindowExceeded as exc:
             if not chunked_retrieval or task != "reasoning":
@@ -272,6 +286,8 @@ class ContextPipeline:
                 packet_id,
                 prompt_budget,
                 exc,
+                context_kind,
+                query,
             )
         modes = fallback_modes(initial.mode)[: self.policy.max_attempts]
         attempts: list[PipelineAttempt] = []
@@ -291,6 +307,8 @@ class ContextPipeline:
                     packet_id,
                     mode,
                     "verification_fallback",
+                    context_kind,
+                    query,
                 )
                 try:
                     prepared = self._enforce_prompt_budget(prepared, prompt_budget)
@@ -339,6 +357,8 @@ class ContextPipeline:
         packet_id: str,
         prompt_budget: int | None,
         original_error: ContextWindowExceeded,
+        context_kind: ContextKind,
+        query: str,
     ) -> PipelineResult:
         if prompt_budget is None:
             raise ValueError("chunked retrieval requires a prompt token budget")
@@ -350,6 +370,8 @@ class ContextPipeline:
             packet_id,
             "auto",
             "chunked_retrieval",
+            context_kind,
+            query,
         )
         if base.mode != "hybrid" or not base.bundle.evidence_source_groups:
             raise original_error
@@ -661,6 +683,8 @@ class ContextPipeline:
         packet_id: str,
         mode: str,
         decision: str,
+        context_kind: ContextKind = "auto",
+        query: str = "",
     ) -> PreparedContext:
         bundle = self.gateway.compile_private(
             text,
@@ -668,9 +692,14 @@ class ContextPipeline:
             target_lang=target_lang,
             packet_id=packet_id,
             mode=mode,
+            context_kind=context_kind,
+            query=query,
         )
-        prompt = self.gateway.render_prompt(bundle.contract)
+        prompt = self.gateway.render_bundle(bundle)
         masked_source = " ".join(bundle.sources.values())
+        normalized_query = " ".join(bundle.retrieval_query.lower().split())
+        if normalized_query and normalized_query not in " ".join(masked_source.lower().split()):
+            masked_source = f"{masked_source} {bundle.retrieval_query}"
         source_tokens = max(self.token_counter(masked_source), 1)
         prompt_tokens = max(self.token_counter(prompt), 1)
         savings = round(1 - (prompt_tokens / source_tokens), 4)
@@ -702,7 +731,7 @@ class ContextPipeline:
             packed = self.gateway._pack_retrieval_prompt(prepared.bundle, prompt_budget, self.token_counter)
             if packed is not None:
                 prepared.bundle = packed
-                prepared.prompt = self.gateway.render_prompt(packed.contract)
+                prepared.prompt = self.gateway.render_bundle(packed)
                 prepared.prompt_tokens = max(self.token_counter(prepared.prompt), 1)
                 prepared.token_savings = round(1 - (prepared.prompt_tokens / prepared.source_tokens), 4)
                 prepared.decision = "retrieval_budget_packed"

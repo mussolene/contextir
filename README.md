@@ -29,6 +29,21 @@ result = pipeline.run(
 print(result.answer)
 ```
 
+For document QA, pass the question separately instead of embedding it into the
+document:
+
+```python
+result = pipeline.run(
+    long_document,
+    context_kind="retrieval",
+    query="What is the northern deployment credential?",
+)
+```
+
+The document and query are masked together inside the trusted process. The
+masked query guides retrieval and is included in the model prompt and token
+budget, but is omitted from the public contract and safe trace.
+
 The release wheel avoids a source checkout and Git dependency. A pinned Git
 install remains available for environments that prefer source builds.
 
@@ -66,8 +81,10 @@ window, enable bounded chunked retrieval explicitly:
 contextir run \
   --model qwen3:0.6b \
   --context-length 4096 \
+  --context-kind retrieval \
+  --query "What is the release code?" \
   --chunked-retrieval \
-  --text "Read the document... Question: What is the release code? Answer:"
+  --text "Read the document..."
 ```
 
 This path chunks only retrieved evidence for reasoning tasks, selects relevant
@@ -102,7 +119,7 @@ bundle = gateway.compile_private(
 )
 
 contract = bundle.contract
-model_prompt = gateway.render_prompt(contract)
+model_prompt = gateway.render_bundle(bundle)
 
 # Restore only placeholders explicitly allowed by the application.
 answer = gateway.restore("Contact PII_EMAIL_1", bundle, allowed={"PII_EMAIL_1"})
@@ -175,7 +192,7 @@ evaluate recognizers on data representative of the deployment.
 
 The checked-in compiler smoke benchmark reports:
 
-- 9 compiler and 10 product-pipeline cases;
+- 9 compiler and 12 product-pipeline cases;
 - 0 expectation failures;
 - 0 pipeline failures;
 - 0 PII leaks into public contracts or rendered prompts;

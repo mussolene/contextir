@@ -3,7 +3,7 @@
 ## Identity
 
 - Component: deterministic `contextir.v2` gateway
-- Version: 1.3.0
+- Version: 1.4.0
 - Cases: 9 checked-in RU/EN fixtures
 - Command: `python3 scripts/evaluate_contextir.py --check`
 - Hardware: developer machine; latency is not normalized across hardware
@@ -16,14 +16,14 @@
 | Synthetic privacy precision / recall | 1.0000 / 1.0000 |
 | Annotated synthetic PII values | 6 |
 | Semantic expectation failures | 0 |
-| Product pipeline cases | 10 |
+| Product pipeline cases | 12 |
 | Product pipeline failures | 0 |
 | Exercised bounded fallbacks | 1 |
 | Compression-eligible cases | 1 |
 | Eligible prompt/source character ratio | 0.3627 |
-| Compile latency p50 | 0.0985 ms |
-| Compile latency p95 | 0.9773 ms |
-| Compile throughput | 4988.2 docs/s |
+| Compile latency p50 | 0.1028 ms |
+| Compile latency p95 | 0.9823 ms |
+| Compile throughput | 4784.2 docs/s |
 
 Performance uses a 100-operation warm-up followed by 5,000 repeated compilations
 over the nine fixtures with Python garbage collection paused. The ratio uses
@@ -79,7 +79,8 @@ unsuitable as a standalone compliance boundary.
 
 The test establishes deterministic contract shape, preservation of configured
 numbers/conditions/negation, basic masking, deduplication, prompt-budget
-enforcement, and a fast local path for small inputs.
+enforcement, explicit private-query routing, and a fast local path for small
+inputs.
 
 ## Constrained-Window Retrieval
 
@@ -95,6 +96,11 @@ same 256-token context. The map stage uses 75% of the available prompt budget.
 Qwen3 0.6B and Qwen3 8B both returned `cobalt-seven` from one locally selected,
 grounded map chunk. Generic exhaustive and transform map-reduce remain outside
 the supported path.
+
+The v1.4 explicit-query smoke sends an application-owned document and question
+through the same local privacy pass. On an 81-segment synthetic retrieval case,
+Qwen3 0.6B and Qwen3 8B both recovered `cobalt-seven`; the estimated model input
+fell from 661 source tokens to 97 prompt tokens (85.33%).
 
 ## What It Does Not Establish
 

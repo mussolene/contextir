@@ -12,7 +12,7 @@ any callable with the same `prompt -> text` contract instead.
 
 ```text
                     +---------------- local only ----------------+
-input -> detector -> placeholders + vault -> source segment store
+document + optional query -> detector -> placeholders + vault -> source segment store
                     +--------------------------------------------+
                               |
                               v
@@ -36,28 +36,31 @@ input -> detector -> placeholders + vault -> source segment store
 `ContextPipeline` applies one bounded decision loop:
 
 1. compile the risk-appropriate candidate and keep its vault local;
-2. classify exhaustive, retrieval, and operational context shapes during that
+2. mask an application-supplied query in the same placeholder namespace as the
+   document while keeping it outside the public contract and trace;
+3. classify exhaustive, retrieval, and operational context shapes during that
    single compilation pass;
-3. keep exhaustive tasks raw, retrieve query-relevant evidence for document
+4. keep exhaustive tasks raw, retrieve query-relevant evidence for document
    QA, or compile operational events and constraints;
-4. count candidate tokens with the caller's target-model tokenizer;
-5. pack ranked complete evidence groups for retrieval prompts that exceed the
+5. count the rendered candidate, including an external query, with the caller's
+   target-model tokenizer;
+6. pack ranked complete evidence groups for retrieval prompts that exceed the
    target model's budget;
-6. enforce the budget after reserving output and chat-template tokens;
-7. when explicitly enabled for retrieval reasoning, split an oversized top
+7. enforce the budget after reserving output and chat-template tokens;
+8. when explicitly enabled for retrieval reasoning, split an oversized top
    evidence segment, select query-relevant chunks, and map them under a smaller
    attention budget;
-8. ground distinct map candidates in their source chunks and reduce only when
+9. ground distinct map candidates in their source chunks and reduce only when
    more than one remains;
-9. build a raw baseline only when the candidate does not clear the configured
+10. build a raw baseline only when the candidate does not clear the configured
    savings threshold;
-10. invoke the caller-provided model adapter;
-11. reject unknown placeholders and newly generated PII;
-12. for transform tasks, verify numbers, negation, constraints, events, and issued
+11. invoke the caller-provided model adapter;
+12. reject unknown placeholders and newly generated PII;
+13. for transform tasks, verify numbers, negation, constraints, events, and issued
    placeholders;
-13. on verification failure, retry at most once per richer source mode if that
+14. on verification failure, retry at most once per richer source mode if that
     prompt still fits the budget;
-14. restore only explicitly allowlisted placeholders after acceptance.
+15. restore only explicitly allowlisted placeholders after acceptance.
 
 The fallback order is `semantic -> hybrid -> raw`; it never loops indefinitely.
 Reasoning tasks use safety verification but not semantic equivalence, because a
