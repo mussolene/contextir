@@ -12,7 +12,7 @@ from jsonschema import Draft202012Validator
 
 from contextir import ContextIR, ContextPipeline, PipelinePolicy
 from contextir.gateway import main, split_source
-from contextir.pipeline import approximate_token_count
+from contextir.pipeline import ContextWindowExceeded, approximate_token_count
 from contextir.schemas import load_contract_schema
 from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
 
@@ -20,6 +20,62 @@ from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
 class ContextIRGatewayTests(unittest.TestCase):
     def setUp(self) -> None:
         self.gateway = ContextIR()
+
+    def test_grouped_questions_preserve_independent_evidence_and_budget(self) -> None:
+        topics = [
+            f"Quasar telescope aperture calibration wavelength exposure result: run {index}."
+            for index in range(8)
+        ]
+        table = "Botanical storage:\n\n| Seed | Temperature |\n| --- | --- |\n| Iris | 17 kelvin |"
+        text = "\n\n".join(topics + [table] + ["Unrelated archive record. " * 80])
+        questions = [
+            "Which quasar telescope aperture calibration wavelength exposure result was recorded?",
+            "What is the botanical storage temperature?",
+        ]
+        singles = [
+            self.gateway.compile_private(
+                text, source_lang="en", target_lang="en", mode="hybrid",
+                context_kind="retrieval", query=question,
+            )
+            for question in questions
+        ]
+        wrapped = self.gateway.compile_private(
+            text, source_lang="en", target_lang="en", mode="hybrid",
+            context_kind="retrieval", query=questions[0].replace("aperture ", "aperture\n"),
+        )
+        self.assertEqual(wrapped.evidence_source_groups, singles[0].evidence_source_groups)
+        self.assertEqual(wrapped.required_source_refs, singles[0].required_source_refs)
+        for separator in ("\n", " "):
+            query = separator.join(questions)
+            with self.subTest(separator=repr(separator)):
+                bundle = self.gateway.compile_private(
+                    text, source_lang="en", target_lang="en", mode="hybrid",
+                    context_kind="retrieval", query=query,
+                )
+                included = [item["ref"] for item in bundle.contract["source"]["included"]]
+                for single in singles:
+                    for group in single.evidence_source_groups:
+                        self.assertTrue(set(group) <= set(included))
+                        self.assertTrue(set(group) <= set(bundle.required_source_refs))
+                self.assertEqual(included, [ref for ref in bundle.sources if ref in included])
+                prompt = self.gateway.render_bundle(bundle)
+                self.assertIn(table, prompt)
+                budget = approximate_token_count(prompt)
+                packed = self.gateway._pack_retrieval_prompt(bundle, budget, approximate_token_count)
+                self.assertIsNotNone(packed)
+                self.assertEqual(self.gateway.render_bundle(packed), prompt)
+                pipeline = ContextPipeline(gateway=self.gateway, policy=PipelinePolicy(min_token_savings=0))
+                prepared = pipeline.prepare(
+                    text, source_lang="en", target_lang="en", risk="high",
+                    context_kind="retrieval", query=query, max_prompt_tokens=budget,
+                )
+                self.assertLessEqual(prepared.prompt_tokens, budget)
+                self.assertIn(table, prepared.prompt)
+                with self.assertRaises(ContextWindowExceeded):
+                    pipeline.prepare(
+                        text, source_lang="en", target_lang="en", risk="high",
+                        context_kind="retrieval", query=query, max_prompt_tokens=budget - 1,
+                    )
 
     def test_structural_retrieval_preserves_atomic_blocks_and_layout(self) -> None:
         blocks = [

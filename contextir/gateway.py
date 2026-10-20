@@ -55,6 +55,7 @@ class TaskProfile:
     retrieval_confidence: float = 0.0
     query: str = ""
     source_groups: tuple[tuple[str, ...], ...] = ()
+    grouped_query: bool = False
 
 
 class ContextIR:
@@ -677,6 +678,10 @@ def plan_source_refs(
             if ordered_group not in groups:
                 groups.append(ordered_group)
             selected.update(group)
+        if task_profile.grouped_query:
+            # Every per-question selection is mandatory: budget packing must
+            # report insufficient space rather than silently drop a question.
+            required.update(selected)
         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
         ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
         ordered_required = tuple(ref for ref, _text in segments if ref in required)
@@ -769,9 +774,22 @@ def analyze_task(
     )
     excluded = set(query_refs)
     excluded.update(group[0] for group in source_groups if excluded.intersection(group))
-    evidence, confidence = retrieve_evidence(
-        ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
-    )
+    # Rank each question independently so unrelated questions cannot compete
+    # for one shared top-k. Keep single-question ranking unchanged.
+    questions = [
+        part.strip()
+        for part in re.split(r"(?<=[?？])\s+|\n(?=\s*(?:[-*]\s+|\d+[.)]\s+|[\w-]+:\s*))", query)
+        if part.strip()
+    ]
+    grouped_query = len(questions) > 1
+    evidence = []
+    confidence = 0.0
+    for question in questions:
+        question_evidence, question_confidence = retrieve_evidence(
+            ranked_segments, content_terms(question), excluded, evidence_limit, skip_edges=not source_groups
+        )
+        evidence.extend(ref for ref in question_evidence if ref not in evidence)
+        confidence = max(confidence, question_confidence)
     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
         marker in normalized for marker in RETRIEVAL_MARKERS
     )
@@ -784,6 +802,7 @@ def analyze_task(
         retrieval_confidence=confidence,
         query=query,
         source_groups=source_groups,
+        grouped_query=grouped_query,
     )
 
 
