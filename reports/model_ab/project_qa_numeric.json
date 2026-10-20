@@ -1678,7 +1678,7 @@
     }
   ],
   "method": "24 новых вопроса, 2 повтора, 96 запросов. Ручная оценка с проверкой по исходным документам, без ослепления. Два повтора объединены по вопросу в bootstrap. Нагрузка Mac наблюдаемая, математическая поправка не применялась. Равный суммарный счет не доказывает эквивалентности качества. Все обязательные числа сохранены в preflight; single6 получает новое ложное значение отсутствующей задержки в обоих повторах.",
-  "source_repository": "https://github.com/mussolene/relative-int4-research-prototype",
+  "source_repository": "https://huggingface.co/mussolene/relative-int4-research-prototype",
   "sources": {
     "single": {
       "path": "qwen35_basis_validation_experiment/README.md",
