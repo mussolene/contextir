@@ -1,0 +1,57 @@
+--- a/contextir/sir_runtime.py
++++ b/contextir/sir_runtime.py
+@@ -98,8 +98,13 @@
+         placeholders: dict[tuple[str, str], str] = {}
+         for kind, pattern in self.patterns:
+             while True:
++                numeric_spans = numeric_measurement_spans(scrubbed) if kind in {"card", "phone"} else []
+                 match = next(
+-                    (item for item in pattern.finditer(scrubbed) if valid_privacy_match(kind, item.group(0))),
++                    (
++                        item for item in pattern.finditer(scrubbed)
++                        if valid_privacy_match(kind, item.group(0))
++                        and not any(item.start() < end and item.end() > start for start, end in numeric_spans)
++                    ),
+                     None,
+                 )
+                 if not match:
+@@ -122,6 +127,39 @@
+                     vault[placeholder] = surface
+                 scrubbed = scrubbed[: match.start()] + placeholder + scrubbed[match.end() :]
+         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
++
++
++def numeric_measurement_spans(text: str) -> list[tuple[int, int]]:
++    number_pattern = re.compile(
++        r"(?<![\w.,])[-+]?(?:(?:\d{1,3}(?:[ ,.'\u00a0\u202f_]\d{3})+|\d+)"
++        r"(?:[.,]\d+)?|[.,]\d+)(?:[eE][+-]?\d+)?(?!\d|[.,]\d)"
++    )
++    unit_pattern = re.compile(
++        r"\s*(?:%|(?:tokens?|bytes?|[kmgtpe]?i?b|[numk]?s|secs?|seconds?|minutes?|hours?|"
++        r"[numk]?m|[mk]?g|hz|khz|mhz|ghz|[kmgt]?flops|fps|rpm|pa|kpa|mpa|j|kj|w|kw|mw|"
++        r"v|mv|a|ma|k|°[cf]|мс|мкс|нс|сек|с|мин|ч|байт(?:а|ов)?|токен(?:а|ов)?|"
++        r"кб|мб|гб|тб|мм|см|м|км|мг|г|кг)(?!\w))",
++        re.IGNORECASE,
++    )
++    phone_label_pattern = re.compile(
++        r"(?:\b(?:phone|telephone|tel|mobile|cell|fax|call|телефон|тел|мобильный|факс)"
++        r"\.?\s*(?:(?:number|номер|no\.?|#)\s*)?[:=]?[\s\d()+.-]*)$",
++        re.IGNORECASE,
++    )
++    spans = []
++    for number in number_pattern.finditer(text):
++        prefix = text[:number.start()]
++        if phone_label_pattern.search(prefix):
++            continue
++        value = number.group(0)
++        fractional = re.fullmatch(r"[-+]?\d*[.,]\d+", value)
++        scientific = re.search(r"[eE][+-]?\d+$", value)
++        unit = unit_pattern.match(text, number.end())
++        if not unit and re.search(r"\(\d{2,4}\)\s*$", prefix):
++            continue
++        if fractional or scientific or unit:
++            spans.append(number.span())
++    return spans
+ 
+ 
+ def valid_privacy_match(kind: str, surface: str) -> bool:

@@ -1,0 +1,97 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -101,13 +101,21 @@
+         started = time.perf_counter()
+         scrubbed, scrubbed_query = self._scrub_text_and_query(text, query, source_lang)
+         segments = split_source(scrubbed.scrubbed_text)
+-        sources = {segment_id: value for segment_id, value in segments}
+         task_profile = analyze_task(
+             scrubbed.scrubbed_text,
+             segments,
+             context_kind=context_kind,
+             explicit_query=scrubbed_query,
+         )
++        if task_profile.kind == "retrieval":
++            segments = split_source(scrubbed.scrubbed_text, preserve_structure=True)
++            task_profile = analyze_task(
++                scrubbed.scrubbed_text,
++                segments,
++                context_kind="retrieval",
++                explicit_query=task_profile.query,
++            )
++        sources = {segment_id: value for segment_id, value in segments}
+         normalized_tokens = set(normalize(scrubbed.scrubbed_text).split())
+         intent = asdict(guess_intent(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens))
+         constraints = detect_constraints(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens)
+@@ -433,8 +441,69 @@
+ }
+ 
+ 
+-def split_source(text: str) -> list[tuple[str, str]]:
+-    parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
++def split_source(text: str, preserve_structure: bool = False) -> list[tuple[str, str]]:
++    if not preserve_structure:
++        parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
++    else:
++        parts = []
++        lines = text.splitlines(keepends=True)
++        fence_re = re.compile(r"^ {0,3}(`{3,}|~{3,})")
++        list_re = re.compile(r"^[ \t]*(?:[-+*]|\d+[.)])[ \t]+")
++        index = 0
++        while index < len(lines):
++            if not lines[index].strip():
++                index += 1
++                continue
++            start = index
++            fence = fence_re.match(lines[index])
++            if fence:
++                marker = fence.group(1)
++                closing = re.compile(r"^ {0,3}" + re.escape(marker[0]) +
++                                     "{" + str(len(marker)) + r",}[ \t]*(?:\r?\n)?$")
++                index += 1
++                while index < len(lines):
++                    line = lines[index]
++                    index += 1
++                    if closing.match(line):
++                        break
++            elif list_re.match(lines[index]):
++                index += 1
++                while index < len(lines):
++                    line = lines[index]
++                    if list_re.match(line) or (line.strip() and line[0].isspace()):
++                        index += 1
++                    elif not line.strip():
++                        following = index + 1
++                        while following < len(lines) and not lines[following].strip():
++                            following += 1
++                        if following < len(lines) and (
++                            list_re.match(lines[following]) or lines[following][0].isspace()
++                        ):
++                            index = following
++                        else:
++                            break
++                    elif fence_re.match(line) or "|" in line:
++                        break
++                    else:
++                        # A list item's paragraph may continue without indentation.
++                        index += 1
++            elif "|" in lines[index]:
++                index += 1
++                while index < len(lines) and lines[index].strip() and "|" in lines[index]:
++                    index += 1
++            else:
++                index += 1
++                while index < len(lines) and lines[index].strip():
++                    line = lines[index]
++                    if fence_re.match(line) or list_re.match(line) or "|" in line:
++                        break
++                    index += 1
++            block = "".join(lines[start:index])
++            # Inline numbered records have explicit boundaries within a physical line.
++            if index == start + 1 and len(re.findall(r"\b(?:Record|Paragraph)\s+\d+\s*:", block)) > 1:
++                parts.extend(part.strip() for part in SOURCE_SPLIT_RE.split(block) if part.strip())
++            else:
++                parts.append(block)
+     return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
+ 
+ 

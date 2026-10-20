@@ -1,0 +1,1647 @@
+{
+  "summary": {
+    "history": {
+      "runs": 6,
+      "passed": 4,
+      "original_passed": 2,
+      "completed": 6,
+      "missing_usage": 0,
+      "median_agent_seconds": 283.30954712499806,
+      "median_preparation_seconds": 0.0,
+      "median_total_seconds": 283.30954712499806,
+      "sum_total_seconds": 1509.0204932069973,
+      "median_context_chars": 19496.0,
+      "usage_totals": {
+        "input_tokens": 2047737,
+        "cached_input_tokens": 1775872,
+        "output_tokens": 28080,
+        "reasoning_output_tokens": 5930
+      },
+      "median_input_plus_output": 417395.5,
+      "paging_intervals": 6
+    },
+    "summary": {
+      "runs": 6,
+      "passed": 4,
+      "original_passed": 2,
+      "completed": 6,
+      "missing_usage": 0,
+      "median_agent_seconds": 213.1750971879992,
+      "median_preparation_seconds": 17.061513249998825,
+      "median_total_seconds": 231.01450948000274,
+      "sum_total_seconds": 1517.7097399179838,
+      "median_context_chars": 1851.5,
+      "usage_totals": {
+        "input_tokens": 2279761,
+        "cached_input_tokens": 1927040,
+        "output_tokens": 35690,
+        "reasoning_output_tokens": 6558
+      },
+      "median_input_plus_output": 388274.5,
+      "paging_intervals": 6
+    },
+    "contextir_oacs": {
+      "runs": 6,
+      "passed": 4,
+      "original_passed": 2,
+      "completed": 6,
+      "missing_usage": 0,
+      "median_agent_seconds": 278.75036514599924,
+      "median_preparation_seconds": 0.6521430835018691,
+      "median_total_seconds": 279.5200479585037,
+      "sum_total_seconds": 1575.6115043750033,
+      "median_context_chars": 19686.0,
+      "usage_totals": {
+        "input_tokens": 2164815,
+        "cached_input_tokens": 1845888,
+        "output_tokens": 28476,
+        "reasoning_output_tokens": 5833
+      },
+      "median_input_plus_output": 393667.0,
+      "paging_intervals": 6
+    }
+  },
+  "runs": [
+    {
+      "case": "structural-blocks",
+      "repeat": 0,
+      "arm": "history",
+      "index": 0,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 287.49596191699675,
+      "preparation_seconds": 0,
+      "total_seconds": 287.49596191699675,
+      "context_chars": 19496,
+      "actions_started": 19,
+      "agent_usage": {
+        "input_tokens": 432752,
+        "cached_input_tokens": 371584,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4899,
+        "reasoning_output_tokens": 863
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 432752,
+        "cached_input_tokens": 371584,
+        "output_tokens": 4899,
+        "reasoning_output_tokens": 863
+      },
+      "original_pass": true,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.17425170900241937,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.2731888330017682
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 80,
+        "seconds": 0.36806145800073864
+      },
+      "load_before": [
+        3.6396484375,
+        3.3798828125,
+        3.509765625
+      ],
+      "load_after": [
+        3.65185546875,
+        3.7109375,
+        3.6259765625
+      ],
+      "paging_delta": {
+        "Pageins": 73242,
+        "Swapins": 2192,
+        "Swapouts": 10184
+      },
+      "patch": "code_memory_patches/0_structural-blocks_history.diff",
+      "patch_sha256": "7dced1542c5f45184fab1f67f5d430ff2869f02a287db0e081e4fa797c771d05",
+      "uncached_input_tokens": 61168
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 0,
+      "arm": "summary",
+      "index": 1,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 221.8116536669986,
+      "preparation_seconds": 17.43240125000011,
+      "total_seconds": 239.24405491699872,
+      "context_chars": 1828,
+      "actions_started": 20,
+      "agent_usage": {
+        "input_tokens": 309931,
+        "cached_input_tokens": 265728,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5240,
+        "reasoning_output_tokens": 636
+      },
+      "preparation_usage": {
+        "input_tokens": 21086,
+        "cached_input_tokens": 12288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 440,
+        "reasoning_output_tokens": 0
+      },
+      "total_usage": {
+        "input_tokens": 331017,
+        "cached_input_tokens": 278016,
+        "output_tokens": 5680,
+        "reasoning_output_tokens": 636
+      },
+      "original_pass": true,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.17405895800038707,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.20413325000117766
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 80,
+        "seconds": 0.37054212499788264
+      },
+      "load_before": [
+        3.3759765625,
+        3.646484375,
+        3.6044921875
+      ],
+      "load_after": [
+        2.92919921875,
+        3.4541015625,
+        3.52490234375
+      ],
+      "paging_delta": {
+        "Pageins": 25053,
+        "Swapins": 994,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_structural-blocks_summary.diff",
+      "patch_sha256": "6ae23971fcf144f616b38c7b9385222eaf6c3d331901bca10faa62fdbc30b86c",
+      "uncached_input_tokens": 53001
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 0,
+      "arm": "contextir_oacs",
+      "index": 2,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 258.4851863750009,
+      "preparation_seconds": 0.6507450420031091,
+      "total_seconds": 259.13593141700403,
+      "context_chars": 19686,
+      "actions_started": 16,
+      "agent_usage": {
+        "input_tokens": 348016,
+        "cached_input_tokens": 293888,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3858,
+        "reasoning_output_tokens": 642
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 348016,
+        "cached_input_tokens": 293888,
+        "output_tokens": 3858,
+        "reasoning_output_tokens": 642
+      },
+      "original_pass": true,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.17818000000261236,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.23763195899664424
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 80,
+        "seconds": 0.3412995000035153
+      },
+      "load_before": [
+        2.9345703125,
+        3.4462890625,
+        3.521484375
+      ],
+      "load_after": [
+        3.61474609375,
+        3.40380859375,
+        3.4755859375
+      ],
+      "paging_delta": {
+        "Pageins": 49344,
+        "Swapins": 1363,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_structural-blocks_contextir_oacs.diff",
+      "patch_sha256": "de0261e78f178aeb358f1c00e7b91221792be0dd87704a17a9299a9d6fec0600",
+      "uncached_input_tokens": 54128
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 0,
+      "arm": "summary",
+      "index": 3,
+      "completed": true,
+      "stop_reason": null,
+      "pass": false,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/sir_runtime.py"
+      ],
+      "wall_seconds": 187.64406824999605,
+      "preparation_seconds": 16.690625249997538,
+      "total_seconds": 204.3346934999936,
+      "context_chars": 1838,
+      "actions_started": 16,
+      "agent_usage": {
+        "input_tokens": 280226,
+        "cached_input_tokens": 244608,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5378,
+        "reasoning_output_tokens": 1461
+      },
+      "preparation_usage": {
+        "input_tokens": 21280,
+        "cached_input_tokens": 12288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 526,
+        "reasoning_output_tokens": 0
+      },
+      "total_usage": {
+        "input_tokens": 301506,
+        "cached_input_tokens": 256896,
+        "output_tokens": 5904,
+        "reasoning_output_tokens": 1461
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.16527270799997495,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": [
+          "test_grouped_integer_measurements_remain_exact"
+        ]
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.20274420799978543
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 82,
+        "seconds": 0.3285037919995375
+      },
+      "load_before": [
+        4.20703125,
+        3.5546875,
+        3.52783203125
+      ],
+      "load_after": [
+        2.59814453125,
+        3.10986328125,
+        3.34130859375
+      ],
+      "paging_delta": {
+        "Pageins": 32858,
+        "Swapins": 523,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_numeric-masking_summary.diff",
+      "patch_sha256": "27c0c009b481d4efc966b81caf6f33b6c7bd4410fe1d091dd6386bbd27b22cd3",
+      "uncached_input_tokens": 44610
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 0,
+      "arm": "contextir_oacs",
+      "index": 4,
+      "completed": true,
+      "stop_reason": null,
+      "pass": false,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/sir_runtime.py"
+      ],
+      "wall_seconds": 193.58499704099813,
+      "preparation_seconds": 0.6462380840021069,
+      "total_seconds": 194.23123512500024,
+      "context_chars": 18728,
+      "actions_started": 12,
+      "agent_usage": {
+        "input_tokens": 260050,
+        "cached_input_tokens": 214016,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5324,
+        "reasoning_output_tokens": 1727
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 260050,
+        "cached_input_tokens": 214016,
+        "output_tokens": 5324,
+        "reasoning_output_tokens": 1727
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.21196683299785946,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": [
+          "test_grouped_integer_measurements_remain_exact"
+        ]
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.1995098749976023
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 82,
+        "seconds": 0.3517684999969788
+      },
+      "load_before": [
+        2.59814453125,
+        3.10986328125,
+        3.34130859375
+      ],
+      "load_after": [
+        2.35205078125,
+        2.697265625,
+        3.10986328125
+      ],
+      "paging_delta": {
+        "Pageins": 10972,
+        "Swapins": 1212,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_numeric-masking_contextir_oacs.diff",
+      "patch_sha256": "c2364e097134f79305a8331768f896548b66b0b81c6f5c6ebb4aab1266c99a5b",
+      "uncached_input_tokens": 46034
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 0,
+      "arm": "history",
+      "index": 5,
+      "completed": true,
+      "stop_reason": null,
+      "pass": false,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/sir_runtime.py"
+      ],
+      "wall_seconds": 177.83957870800077,
+      "preparation_seconds": 0,
+      "total_seconds": 177.83957870800077,
+      "context_chars": 18455,
+      "actions_started": 9,
+      "agent_usage": {
+        "input_tokens": 175899,
+        "cached_input_tokens": 147584,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4780,
+        "reasoning_output_tokens": 1660
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 175899,
+        "cached_input_tokens": 147584,
+        "output_tokens": 4780,
+        "reasoning_output_tokens": 1660
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.17018583299795864,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": [
+          "test_grouped_integer_measurements_remain_exact"
+        ]
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.24180120800156146
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 82,
+        "seconds": 0.4604187090008054
+      },
+      "load_before": [
+        2.35205078125,
+        2.697265625,
+        3.10986328125
+      ],
+      "load_after": [
+        4.24072265625,
+        3.6201171875,
+        3.42138671875
+      ],
+      "paging_delta": {
+        "Pageins": 125876,
+        "Swapins": 1857,
+        "Swapouts": 21040
+      },
+      "patch": "code_memory_patches/0_numeric-masking_history.diff",
+      "patch_sha256": "f9eb580cf648b8e4438ff40f7e47d4b0486dc9a9e8a6b99315ecff2041ec20ed",
+      "uncached_input_tokens": 28315
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 0,
+      "arm": "contextir_oacs",
+      "index": 6,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 314.1571183749984,
+      "preparation_seconds": 0.6417279579982278,
+      "total_seconds": 314.7988463329966,
+      "context_chars": 21319,
+      "actions_started": 17,
+      "agent_usage": {
+        "input_tokens": 460189,
+        "cached_input_tokens": 395392,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4701,
+        "reasoning_output_tokens": 318
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 460189,
+        "cached_input_tokens": 395392,
+        "output_tokens": 4701,
+        "reasoning_output_tokens": 318
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.36407529200369027,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 4,
+        "seconds": 0.21138012500159675
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 88,
+        "seconds": 0.3632434169994667
+      },
+      "load_before": [
+        4.24072265625,
+        3.6201171875,
+        3.42138671875
+      ],
+      "load_after": [
+        4.95361328125,
+        3.76611328125,
+        3.47119140625
+      ],
+      "paging_delta": {
+        "Pageins": 76880,
+        "Swapins": 2116,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_grouped-questions_contextir_oacs.diff",
+      "patch_sha256": "23586ba1cb4df468807ff78bb5e8053c4c7f8e9eaf9c63a83eaebaeadbed926b",
+      "uncached_input_tokens": 64797
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 0,
+      "arm": "history",
+      "index": 7,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 339.5766185829998,
+      "preparation_seconds": 0,
+      "total_seconds": 339.5766185829998,
+      "context_chars": 20995,
+      "actions_started": 16,
+      "agent_usage": {
+        "input_tokens": 416171,
+        "cached_input_tokens": 359936,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4770,
+        "reasoning_output_tokens": 770
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 416171,
+        "cached_input_tokens": 359936,
+        "output_tokens": 4770,
+        "reasoning_output_tokens": 770
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.3318858749989886,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 4,
+        "seconds": 0.2663940839993302
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 88,
+        "seconds": 0.3702636669986532
+      },
+      "load_before": [
+        4.95361328125,
+        3.76611328125,
+        3.47119140625
+      ],
+      "load_after": [
+        4.62060546875,
+        4.39306640625,
+        3.81982421875
+      ],
+      "paging_delta": {
+        "Pageins": 95181,
+        "Swapins": 1694,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_grouped-questions_history.diff",
+      "patch_sha256": "cd41cebb3248d5be2d717ad36cd5f4e2b4a1ccc4ab625e2379543804646e9482",
+      "uncached_input_tokens": 56235
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 0,
+      "arm": "summary",
+      "index": 8,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 317.0245344169962,
+      "preparation_seconds": 16.202826124994317,
+      "total_seconds": 333.2273605419905,
+      "context_chars": 2151,
+      "actions_started": 18,
+      "agent_usage": {
+        "input_tokens": 442869,
+        "cached_input_tokens": 376704,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4825,
+        "reasoning_output_tokens": 308
+      },
+      "preparation_usage": {
+        "input_tokens": 21420,
+        "cached_input_tokens": 12288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 507,
+        "reasoning_output_tokens": 0
+      },
+      "total_usage": {
+        "input_tokens": 464289,
+        "cached_input_tokens": 388992,
+        "output_tokens": 5332,
+        "reasoning_output_tokens": 308
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.6438333339974633,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 4,
+        "seconds": 0.22142920899932506
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 88,
+        "seconds": 0.3442288749938598
+      },
+      "load_before": [
+        4.52685546875,
+        4.38818359375,
+        3.828125
+      ],
+      "load_after": [
+        4.45654296875,
+        3.98388671875,
+        3.779296875
+      ],
+      "paging_delta": {
+        "Pageins": 40550,
+        "Swapins": 1010,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/0_grouped-questions_summary.diff",
+      "patch_sha256": "2bd7fe49ed4601ae877ce45689dc5d0cd0c9257c359b370a70f155598488e159",
+      "uncached_input_tokens": 75297
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 1,
+      "arm": "contextir_oacs",
+      "index": 9,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 349.3869311669987,
+      "preparation_seconds": 0.6535411250006291,
+      "total_seconds": 350.0404722919993,
+      "context_chars": 19686,
+      "actions_started": 18,
+      "agent_usage": {
+        "input_tokens": 430960,
+        "cached_input_tokens": 375552,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4500,
+        "reasoning_output_tokens": 998
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 430960,
+        "cached_input_tokens": 375552,
+        "output_tokens": 4500,
+        "reasoning_output_tokens": 998
+      },
+      "original_pass": true,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.17365212499862537,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.20384887500404147
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 80,
+        "seconds": 0.32692116600082954
+      },
+      "load_before": [
+        4.45654296875,
+        3.98388671875,
+        3.779296875
+      ],
+      "load_after": [
+        1.79248046875,
+        2.7392578125,
+        3.25341796875
+      ],
+      "paging_delta": {
+        "Pageins": 34091,
+        "Swapins": 473,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_structural-blocks_contextir_oacs.diff",
+      "patch_sha256": "10c2a94da43a494f71595b76768ec6733bcc4f0522f58ee0a6c4f84684c3853c",
+      "uncached_input_tokens": 55408
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 1,
+      "arm": "summary",
+      "index": 10,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 204.5385407089998,
+      "preparation_seconds": 18.246423334006977,
+      "total_seconds": 222.78496404300677,
+      "context_chars": 1858,
+      "actions_started": 17,
+      "agent_usage": {
+        "input_tokens": 412733,
+        "cached_input_tokens": 349696,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5574,
+        "reasoning_output_tokens": 1358
+      },
+      "preparation_usage": {
+        "input_tokens": 21086,
+        "cached_input_tokens": 12288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 459,
+        "reasoning_output_tokens": 0
+      },
+      "total_usage": {
+        "input_tokens": 433819,
+        "cached_input_tokens": 361984,
+        "output_tokens": 6033,
+        "reasoning_output_tokens": 1358
+      },
+      "original_pass": true,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.21636983400094323,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.20487349999893922
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 80,
+        "seconds": 0.34654033400147455
+      },
+      "load_before": [
+        1.81982421875,
+        2.68896484375,
+        3.22314453125
+      ],
+      "load_after": [
+        1.5966796875,
+        2.12158203125,
+        2.8642578125
+      ],
+      "paging_delta": {
+        "Pageins": 12987,
+        "Swapins": 273,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_structural-blocks_summary.diff",
+      "patch_sha256": "5ab1f649fb9d4ae1bb90a0bd0176bdc2b7c4aa0421c6aa0deadd05fea06119be",
+      "uncached_input_tokens": 71835
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 1,
+      "arm": "history",
+      "index": 11,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 279.1231323329994,
+      "preparation_seconds": 0,
+      "total_seconds": 279.1231323329994,
+      "context_chars": 19496,
+      "actions_started": 15,
+      "agent_usage": {
+        "input_tokens": 408734,
+        "cached_input_tokens": 363520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5116,
+        "reasoning_output_tokens": 1002
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 408734,
+        "cached_input_tokens": 363520,
+        "output_tokens": 5116,
+        "reasoning_output_tokens": 1002
+      },
+      "original_pass": true,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.1706254579985398,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.2088817920011934
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 80,
+        "seconds": 0.3496342079961323
+      },
+      "load_before": [
+        1.708984375,
+        2.1357421875,
+        2.86474609375
+      ],
+      "load_after": [
+        2.99560546875,
+        3.61669921875,
+        3.39501953125
+      ],
+      "paging_delta": {
+        "Pageins": 49143,
+        "Swapins": 502,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_structural-blocks_history.diff",
+      "patch_sha256": "46f3b30ed3805528510ed3b0ebec9c2c9fe77a0fef9f1e0d874dcb14dd8f42ce",
+      "uncached_input_tokens": 45214
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 1,
+      "arm": "history",
+      "index": 12,
+      "completed": true,
+      "stop_reason": null,
+      "pass": false,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/sir_runtime.py"
+      ],
+      "wall_seconds": 87.41337137499795,
+      "preparation_seconds": 0,
+      "total_seconds": 87.41337137499795,
+      "context_chars": 18455,
+      "actions_started": 8,
+      "agent_usage": {
+        "input_tokens": 179564,
+        "cached_input_tokens": 161408,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3153,
+        "reasoning_output_tokens": 838
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 179564,
+        "cached_input_tokens": 161408,
+        "output_tokens": 3153,
+        "reasoning_output_tokens": 838
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.1877559580025263,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": [
+          "test_grouped_integer_measurements_remain_exact"
+        ]
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.20022070800041547
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 82,
+        "seconds": 0.34116795800218824
+      },
+      "load_before": [
+        3.23583984375,
+        3.65625,
+        3.41015625
+      ],
+      "load_after": [
+        1.63037109375,
+        3.0595703125,
+        3.20458984375
+      ],
+      "paging_delta": {
+        "Pageins": 6711,
+        "Swapins": 44,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_numeric-masking_history.diff",
+      "patch_sha256": "9403b15450101f0ccd9aa8728b17a1c27ebe59dc88d0d1010f71883c7fdc920e",
+      "uncached_input_tokens": 18156
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 1,
+      "arm": "contextir_oacs",
+      "index": 13,
+      "completed": true,
+      "stop_reason": null,
+      "pass": false,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/sir_runtime.py"
+      ],
+      "wall_seconds": 156.62183283299964,
+      "preparation_seconds": 0.8790218750000349,
+      "total_seconds": 157.50085470799968,
+      "context_chars": 18728,
+      "actions_started": 11,
+      "agent_usage": {
+        "input_tokens": 202082,
+        "cached_input_tokens": 160384,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4417,
+        "reasoning_output_tokens": 1295
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 202082,
+        "cached_input_tokens": 160384,
+        "output_tokens": 4417,
+        "reasoning_output_tokens": 1295
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.17374491700320505,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": [
+          "test_grouped_integer_measurements_remain_exact"
+        ]
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.20778979200258618
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 82,
+        "seconds": 0.35014379199856194
+      },
+      "load_before": [
+        1.81982421875,
+        3.07470703125,
+        3.208984375
+      ],
+      "load_after": [
+        1.35986328125,
+        2.33251953125,
+        2.873046875
+      ],
+      "paging_delta": {
+        "Pageins": 8354,
+        "Swapins": 88,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_numeric-masking_contextir_oacs.diff",
+      "patch_sha256": "a2648439c43a68d63be64f95061dc1b234796cc725f097a48149ad5b27afcac6",
+      "uncached_input_tokens": 41698
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 1,
+      "arm": "summary",
+      "index": 14,
+      "completed": true,
+      "stop_reason": null,
+      "pass": false,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/sir_runtime.py"
+      ],
+      "wall_seconds": 180.23574933299824,
+      "preparation_seconds": 17.71036141699733,
+      "total_seconds": 197.94611074999557,
+      "context_chars": 1845,
+      "actions_started": 12,
+      "agent_usage": {
+        "input_tokens": 220490,
+        "cached_input_tokens": 190976,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5373,
+        "reasoning_output_tokens": 1921
+      },
+      "preparation_usage": {
+        "input_tokens": 21280,
+        "cached_input_tokens": 12288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 515,
+        "reasoning_output_tokens": 0
+      },
+      "total_usage": {
+        "input_tokens": 241770,
+        "cached_input_tokens": 203264,
+        "output_tokens": 5888,
+        "reasoning_output_tokens": 1921
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.18704849999630824,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": [
+          "test_grouped_integer_measurements_remain_exact"
+        ]
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 5,
+        "seconds": 0.24791779200313613
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 82,
+        "seconds": 0.4773848749973695
+      },
+      "load_before": [
+        1.89453125,
+        2.40380859375,
+        2.88623046875
+      ],
+      "load_after": [
+        2.33154296875,
+        2.228515625,
+        2.70947265625
+      ],
+      "paging_delta": {
+        "Pageins": 12247,
+        "Swapins": 190,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_numeric-masking_summary.diff",
+      "patch_sha256": "0744b3e102feb7cd9b767e7f1768ce3533767f2d5369709c1aff7add60d6a7c3",
+      "uncached_input_tokens": 38506
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 1,
+      "arm": "summary",
+      "index": 15,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 304.23175004099903,
+      "preparation_seconds": 15.940806124999654,
+      "total_seconds": 320.1725561659987,
+      "context_chars": 2130,
+      "actions_started": 20,
+      "agent_usage": {
+        "input_tokens": 485940,
+        "cached_input_tokens": 425600,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6343,
+        "reasoning_output_tokens": 874
+      },
+      "preparation_usage": {
+        "input_tokens": 21420,
+        "cached_input_tokens": 12288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 510,
+        "reasoning_output_tokens": 0
+      },
+      "total_usage": {
+        "input_tokens": 507360,
+        "cached_input_tokens": 437888,
+        "output_tokens": 6853,
+        "reasoning_output_tokens": 874
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.405240624997532,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 4,
+        "seconds": 0.2099551670034998
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 88,
+        "seconds": 0.36200587500206893
+      },
+      "load_before": [
+        2.638671875,
+        2.298828125,
+        2.7255859375
+      ],
+      "load_after": [
+        3.8955078125,
+        3.63134765625,
+        3.205078125
+      ],
+      "paging_delta": {
+        "Pageins": 38063,
+        "Swapins": 416,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_grouped-questions_summary.diff",
+      "patch_sha256": "59e464555faf3208959b7862fbd3a8b01906bf325b7a286f7467c24963b295ec",
+      "uncached_input_tokens": 69472
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 1,
+      "arm": "history",
+      "index": 16,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 337.5718302910027,
+      "preparation_seconds": 0,
+      "total_seconds": 337.5718302910027,
+      "context_chars": 20995,
+      "actions_started": 16,
+      "agent_usage": {
+        "input_tokens": 434617,
+        "cached_input_tokens": 371840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5362,
+        "reasoning_output_tokens": 797
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 434617,
+        "cached_input_tokens": 371840,
+        "output_tokens": 5362,
+        "reasoning_output_tokens": 797
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.6315479170007166,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 4,
+        "seconds": 0.19833099999959813
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 88,
+        "seconds": 0.3471132080012467
+      },
+      "load_before": [
+        3.8955078125,
+        3.63134765625,
+        3.205078125
+      ],
+      "load_after": [
+        7.85400390625,
+        5.15380859375,
+        3.875
+      ],
+      "paging_delta": {
+        "Pageins": 102412,
+        "Swapins": 1362,
+        "Swapouts": 9180
+      },
+      "patch": "code_memory_patches/1_grouped-questions_history.diff",
+      "patch_sha256": "be3511596a5745e8489416c677d2c29540fe12518c8977e674bcef909033d573",
+      "uncached_input_tokens": 62777
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 1,
+      "arm": "contextir_oacs",
+      "index": 17,
+      "completed": true,
+      "stop_reason": null,
+      "pass": true,
+      "scope_ok": true,
+      "changed_files": [
+        "contextir/gateway.py"
+      ],
+      "wall_seconds": 299.01554391699756,
+      "preparation_seconds": 0.8886205830058316,
+      "total_seconds": 299.9041645000034,
+      "context_chars": 21319,
+      "actions_started": 20,
+      "agent_usage": {
+        "input_tokens": 463518,
+        "cached_input_tokens": 406656,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5676,
+        "reasoning_output_tokens": 853
+      },
+      "preparation_usage": null,
+      "total_usage": {
+        "input_tokens": 463518,
+        "cached_input_tokens": 406656,
+        "output_tokens": 5676,
+        "reasoning_output_tokens": 853
+      },
+      "original_pass": false,
+      "corrected_hidden": {
+        "exit_code": 0,
+        "tests": 4,
+        "seconds": 0.3346249579990399,
+        "checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+        "failed_checks": []
+      },
+      "hidden": {
+        "exit_code": 1,
+        "tests": 4,
+        "seconds": 0.2028948750012205
+      },
+      "regression": {
+        "exit_code": 0,
+        "tests": 88,
+        "seconds": 0.3577209579962073
+      },
+      "load_before": [
+        7.85400390625,
+        5.15380859375,
+        3.875
+      ],
+      "load_after": [
+        1.54541015625,
+        3.1591796875,
+        3.3408203125
+      ],
+      "paging_delta": {
+        "Pageins": 44129,
+        "Swapins": 753,
+        "Swapouts": 0
+      },
+      "patch": "code_memory_patches/1_grouped-questions_contextir_oacs.diff",
+      "patch_sha256": "13f1dd278a4a0c750284b088cf11627e6e1fbb4c485ce85dd53dec9ebf4504ad",
+      "uncached_input_tokens": 56862
+    }
+  ],
+  "expected_runs": 18,
+  "complete": true,
+  "paired_comparisons": [
+    {
+      "case": "structural-blocks",
+      "repeat": 0,
+      "arm": "summary",
+      "time_ratio_to_history": 0.8321649226714047,
+      "input_ratio_to_history": 0.7649115428698192
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 0,
+      "arm": "contextir_oacs",
+      "time_ratio_to_history": 0.9013550301336735,
+      "input_ratio_to_history": 0.8041927015935224
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 1,
+      "arm": "summary",
+      "time_ratio_to_history": 0.7981601602880407,
+      "input_ratio_to_history": 1.0613724329270382
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 1,
+      "arm": "contextir_oacs",
+      "time_ratio_to_history": 1.254071883495468,
+      "input_ratio_to_history": 1.0543776637128304
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 0,
+      "arm": "summary",
+      "time_ratio_to_history": 1.148983229630204,
+      "input_ratio_to_history": 1.7140859243088362
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 0,
+      "arm": "contextir_oacs",
+      "time_ratio_to_history": 1.0921710259104547,
+      "input_ratio_to_history": 1.4784052211780625
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 1,
+      "arm": "summary",
+      "time_ratio_to_history": 2.2644831978945077,
+      "input_ratio_to_history": 1.3464280145240695
+    },
+    {
+      "case": "numeric-masking",
+      "repeat": 1,
+      "arm": "contextir_oacs",
+      "time_ratio_to_history": 1.8017936184194379,
+      "input_ratio_to_history": 1.1254037557639616
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 0,
+      "arm": "summary",
+      "time_ratio_to_history": 0.9813024286904565,
+      "input_ratio_to_history": 1.115620742435201
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 0,
+      "arm": "contextir_oacs",
+      "time_ratio_to_history": 0.9270333382981522,
+      "input_ratio_to_history": 1.105769022829558
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 1,
+      "arm": "summary",
+      "time_ratio_to_history": 0.9484575649869688,
+      "input_ratio_to_history": 1.1673726522432395
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 1,
+      "arm": "contextir_oacs",
+      "time_ratio_to_history": 0.8884158498695581,
+      "input_ratio_to_history": 1.066497628946866
+    }
+  ],
+  "matched_success_all_arms": [
+    {
+      "case": "structural-blocks",
+      "repeat": 0,
+      "total_seconds": {
+        "history": 287.49596191699675,
+        "summary": 239.24405491699872,
+        "contextir_oacs": 259.13593141700403
+      }
+    },
+    {
+      "case": "structural-blocks",
+      "repeat": 1,
+      "total_seconds": {
+        "contextir_oacs": 350.0404722919993,
+        "summary": 222.78496404300677,
+        "history": 279.1231323329994
+      }
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 0,
+      "total_seconds": {
+        "contextir_oacs": 314.7988463329966,
+        "history": 339.5766185829998,
+        "summary": 333.2273605419905
+      }
+    },
+    {
+      "case": "grouped-questions",
+      "repeat": 1,
+      "total_seconds": {
+        "summary": 320.1725561659987,
+        "history": 337.5718302910027,
+        "contextir_oacs": 299.9041645000034
+      }
+    }
+  ],
+  "protocol": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "low",
+    "wall_limit_seconds": 600,
+    "action_limit": 20,
+    "context_window": 32768,
+    "cases_sha256": "9865b34bb6de4fd4b13d85830e92202f8ee2aaab536660720917239b3b55737e",
+    "hidden_sha256": "a36bf2ac4752e11d6f3acd69e3f3080226b85c29d1d24a4d8c249cdf875c3e63",
+    "script_sha256": "1897c1f3c0a6304f8d9838337347b7879cc45bc95ad81040bd744a5ebf875fa7",
+    "contextir_revision": "b47d189567cf7422c3e924ccf678f80d706e9e28",
+    "schedule": [
+      {
+        "case": "structural-blocks",
+        "repeat": 0,
+        "arm": "history"
+      },
+      {
+        "case": "structural-blocks",
+        "repeat": 0,
+        "arm": "summary"
+      },
+      {
+        "case": "structural-blocks",
+        "repeat": 0,
+        "arm": "contextir_oacs"
+      },
+      {
+        "case": "numeric-masking",
+        "repeat": 0,
+        "arm": "summary"
+      },
+      {
+        "case": "numeric-masking",
+        "repeat": 0,
+        "arm": "contextir_oacs"
+      },
+      {
+        "case": "numeric-masking",
+        "repeat": 0,
+        "arm": "history"
+      },
+      {
+        "case": "grouped-questions",
+        "repeat": 0,
+        "arm": "contextir_oacs"
+      },
+      {
+        "case": "grouped-questions",
+        "repeat": 0,
+        "arm": "history"
+      },
+      {
+        "case": "grouped-questions",
+        "repeat": 0,
+        "arm": "summary"
+      },
+      {
+        "case": "structural-blocks",
+        "repeat": 1,
+        "arm": "contextir_oacs"
+      },
+      {
+        "case": "structural-blocks",
+        "repeat": 1,
+        "arm": "summary"
+      },
+      {
+        "case": "structural-blocks",
+        "repeat": 1,
+        "arm": "history"
+      },
+      {
+        "case": "numeric-masking",
+        "repeat": 1,
+        "arm": "history"
+      },
+      {
+        "case": "numeric-masking",
+        "repeat": 1,
+        "arm": "contextir_oacs"
+      },
+      {
+        "case": "numeric-masking",
+        "repeat": 1,
+        "arm": "summary"
+      },
+      {
+        "case": "grouped-questions",
+        "repeat": 1,
+        "arm": "summary"
+      },
+      {
+        "case": "grouped-questions",
+        "repeat": 1,
+        "arm": "history"
+      },
+      {
+        "case": "grouped-questions",
+        "repeat": 1,
+        "arm": "contextir_oacs"
+      }
+    ],
+    "preparation": [
+      {
+        "id": "structural-blocks",
+        "raw_chars": 19496,
+        "context_chars": 19686
+      },
+      {
+        "id": "numeric-masking",
+        "raw_chars": 18455,
+        "context_chars": 18728
+      },
+      {
+        "id": "grouped-questions",
+        "raw_chars": 20995,
+        "context_chars": 21319
+      }
+    ],
+    "limits": [
+      "Исторические ошибки одного проекта; возможна известность публичных исправлений модели.",
+      "История воспроизведена из диагностики, не взята из реальной многодневной беседы.",
+      "OACS хранит и возвращает наблюдения; семантический поиск памяти здесь не проверяется.",
+      "macOS sandbox-exec запрещает чтение исходного репозитория, каталога доказательств и соседних рабочих копий.",
+      "Равные лимиты времени, действий и окна; жесткого общего лимита токенов CLI не предоставляет.",
+      "Проверка выполняется после завершения агента; время проверок отдельно.",
+      "Фоновая нагрузка и удаленная очередь не корректируются расчетным коэффициентом."
+    ],
+    "cli_version": "0.163.0-alpha.10.2",
+    "corrected_checks_sha256": "dba6be9500d3183c519a495cadb6778680b3e1355610f36fa31d649cd956e6cb",
+    "oracle_corrected_after_start": true,
+    "model_alias_not_immutable_snapshot": true
+  },
+  "contexts": {
+    "structural-blocks": {
+      "oacs_record_seconds": 1.19384991699917,
+      "contextir_seconds": 0.016741333005484194,
+      "mode": "raw",
+      "decision": "compiler_selected_raw",
+      "counter": "approximate_token_count, не токенизатор модели"
+    },
+    "numeric-masking": {
+      "oacs_record_seconds": 0.9666748329982511,
+      "contextir_seconds": 0.020267250001779757,
+      "mode": "raw",
+      "decision": "compiler_selected_raw",
+      "counter": "approximate_token_count, не токенизатор модели"
+    },
+    "grouped-questions": {
+      "oacs_record_seconds": 0.9730909159989096,
+      "contextir_seconds": 0.01746183400246082,
+      "mode": "raw",
+      "decision": "compiler_selected_raw",
+      "counter": "approximate_token_count, не токенизатор модели"
+    }
+  },
+  "schema_note": "pass: исправленный критерий; original_pass: первоначальный ошибочный бюджетный тест. Время в секундах; токены cumulative CLI usage.",
+  "oracle_controls": [
+    {
+      "snapshot": "base_grouped-questions",
+      "exit_code": 1,
+      "failed_checks": [
+        "test_labeled_questions_keep_evidence_for_each",
+        "test_separate_question_lines_keep_both_answers",
+        "test_budget_keeps_all_grouped_evidence_or_fails"
+      ]
+    },
+    {
+      "snapshot": "fixed_grouped-questions",
+      "exit_code": 0,
+      "failed_checks": []
+    },
+    {
+      "snapshot": "0_grouped-questions_contextir_oacs",
+      "exit_code": 0,
+      "failed_checks": []
+    },
+    {
+      "snapshot": "0_grouped-questions_history",
+      "exit_code": 0,
+      "failed_checks": []
+    }
+  ]
+}

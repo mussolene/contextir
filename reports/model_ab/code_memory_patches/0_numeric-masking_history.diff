@@ -1,0 +1,68 @@
+--- a/contextir/sir_runtime.py
++++ b/contextir/sir_runtime.py
+@@ -77,6 +77,20 @@
+ 
+ 
+ class PrivacyScrubber:
++    numeric_pattern = re.compile(
++        r"(?<![\w.,])(?P<number>[+-]?(?:(?:\d{1,3}(?:[ ,.'\u00a0\u202f]\d{3})+|\d+)"
++        r"(?:[.,]\d+)?|[.,]\d+)(?:[eE][+-]?\d+)?)(?!\w|[.,]\d)"
++        r"(?:\s*(?P<unit>%|‰|(?:[kmgtunµμ]?bytes?|[kmgt]?b|tokens?|"
++        r"[numkµμ]?(?:s|sec|seconds?|m|meters?|g|grams?|hz|w|v|a|pa|j)|"
++        r"minutes?|hours?|kg|kbps|mbps|gbps|fps|rpm|°[cf]|кг|мг|км|мм|см|"
++        r"мс|сек|байт(?:а|ов)?|токен(?:а|ов)?)(?!\w)))?",
++        re.IGNORECASE,
++    )
++    phone_label = re.compile(
++        r"\b(?:phone|telephone|tel|mobile|cell|fax|телефон|тел|мобильный|факс|номер телефона)"
++        r"(?:\s+number)?\.?\s*[:=#]?\s*$",
++        re.IGNORECASE,
++    )
+     patterns = [
+         ("email", re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)),
+         ("card", re.compile(r"(?<![\w+])(?:\d[ -]*){11,18}\d(?![ -]*\d)(?!\w)")),
+@@ -98,8 +112,25 @@
+         placeholders: dict[tuple[str, str], str] = {}
+         for kind, pattern in self.patterns:
+             while True:
++                numeric_spans = []
++                if kind in {"card", "phone"}:
++                    for number in self.numeric_pattern.finditer(scrubbed):
++                        value = number.group("number")
++                        if self.phone_label.search(scrubbed[:number.start()]):
++                            continue
++                        if number.group("unit") or re.fullmatch(
++                            r"[+-]?(?:\d*[.,]\d+(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+)", value
++                        ):
++                            numeric_spans.append((number.start(), number.end("number")))
+                 match = next(
+-                    (item for item in pattern.finditer(scrubbed) if valid_privacy_match(kind, item.group(0))),
++                    (
++                        item for item in pattern.finditer(scrubbed)
++                        if not any(start <= item.start() and item.end() <= end for start, end in numeric_spans)
++                        and valid_privacy_match(
++                            kind, item.group(0),
++                            explicit_phone=bool(self.phone_label.search(scrubbed[:item.start()])),
++                        )
++                    ),
+                     None,
+                 )
+                 if not match:
+@@ -124,7 +155,7 @@
+         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
+ 
+ 
+-def valid_privacy_match(kind: str, surface: str) -> bool:
++def valid_privacy_match(kind: str, surface: str, *, explicit_phone: bool = False) -> bool:
+     if kind == "card":
+         return luhn_valid(surface)
+     if kind != "phone":
+@@ -138,7 +169,7 @@
+         return False
+     if re.fullmatch(r"\d{3}-\d{2}-\d{4}", base):
+         return False
+-    if len(digits) < 9 and base.isdigit():
++    if len(digits) < 9 and base.isdigit() and not explicit_phone:
+         return False
+     return base.startswith("+") or not (12 <= len(digits) <= 19 and luhn_valid(base))
+ 

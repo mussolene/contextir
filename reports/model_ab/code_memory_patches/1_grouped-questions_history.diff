@@ -1,0 +1,123 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -55,6 +55,7 @@
+     retrieval_confidence: float = 0.0
+     query: str = ""
+     source_groups: tuple[tuple[str, ...], ...] = ()
++    required_evidence_refs: tuple[str, ...] = ()
+ 
+ 
+ class ContextIR:
+@@ -226,6 +227,11 @@
+         selected = set(bundle.required_source_refs)
+         accepted_groups = 0
+         packed: ContextBundle | None = None
++        if any(set(group).issubset(selected) for group in bundle.evidence_source_groups):
++            packed = self._bundle_with_source_refs(bundle, selected)
++            if token_counter(self.render_bundle(packed)) > max_prompt_tokens:
++                return packed
++            accepted_groups = 1
+         for group in bundle.evidence_source_groups:
+             trial = selected | set(group)
+             candidate = self._bundle_with_source_refs(bundle, trial)
+@@ -677,6 +683,8 @@
+             if ordered_group not in groups:
+                 groups.append(ordered_group)
+             selected.update(group)
++            if evidence_ref in task_profile.required_evidence_refs:
++                required.update(group)
+         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
+         ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
+         ordered_required = tuple(ref for ref, _text in segments if ref in required)
+@@ -769,9 +777,28 @@
+     )
+     excluded = set(query_refs)
+     excluded.update(group[0] for group in source_groups if excluded.intersection(group))
+-    evidence, confidence = retrieve_evidence(
+-        ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
+-    )
++    questions = split_query_questions(query)
++    ranked_questions = [
++        retrieve_evidence(
++            ranked_segments, content_terms(question), excluded,
++            max(evidence_limit, 1), skip_edges=not source_groups,
++        )
++        for question in questions
++    ]
++    confidence = min((score for _refs, score in ranked_questions), default=0.0)
++    required_evidence = tuple(dict.fromkeys(
++        refs[0] for refs, _score in ranked_questions if refs
++    )) if len(questions) > 1 else ()
++    evidence = list(required_evidence)
++    limit = max(evidence_limit, len(required_evidence), 1)
++    for rank in range(max(evidence_limit, 1)):
++        for refs, _score in ranked_questions:
++            if rank < len(refs) and refs[rank] not in evidence:
++                evidence.append(refs[rank])
++            if len(evidence) >= limit:
++                break
++        if len(evidence) >= limit:
++            break
+     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
+         marker in normalized for marker in RETRIEVAL_MARKERS
+     )
+@@ -784,21 +811,50 @@
+         retrieval_confidence=confidence,
+         query=query,
+         source_groups=source_groups,
++        required_evidence_refs=required_evidence,
+     )
+ 
+ 
++QUERY_LABEL_RE = re.compile(
++    r"\b(?:questions?|вопрос(?:ы)?|q)\s*\d*\s*[:.)]",
++    re.IGNORECASE,
++)
++
++
++def split_query_questions(query: str) -> list[str]:
++    # A line break alone can be a continuation of the same question.
++    labels = list(re.finditer(
++        r"(?:\b(?:questions?|вопрос(?:ы)?|q)\s*\d*\s*[:.)]|^\s*(?:\d+[.)]|[-*])\s+)",
++        query, re.IGNORECASE | re.MULTILINE,
++    ))
++    blocks = [
++        query[label.end():labels[index + 1].start() if index + 1 < len(labels) else len(query)]
++        for index, label in enumerate(labels)
++    ] if labels else [query]
++    questions = []
++    for block in blocks:
++        block = re.split(r"\b(?:Answer|Ответ)\s*:", block, maxsplit=1, flags=re.IGNORECASE)[0]
++        questions.extend(part.strip() for part in re.split(r"(?<=\?)\s+", block) if part.strip())
++    return questions
++
++
+ def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
+-    patterns = [
+-        r"Question:\s*(.+?)(?:\s*Answer:|$)",
++    labels = list(QUERY_LABEL_RE.finditer(text))
++    if labels:
++        blocks = []
++        for index, label in enumerate(labels):
++            block = text[label.start():labels[index + 1].start() if index + 1 < len(labels) else len(text)]
++            blocks.append(re.split(r"\b(?:Answer|Ответ)\s*:", block, maxsplit=1, flags=re.IGNORECASE)[0].strip())
++        return "\n".join(blocks)
++    matches = list(re.finditer(
+         r"The following is an abstract\.\s*(.+?)(?:\s*Please enter|\s*The answer is:|$)",
+-    ]
+-    for pattern in patterns:
+-        matches = list(re.finditer(pattern, text, re.IGNORECASE | re.DOTALL))
+-        if matches:
+-            return matches[-1].group(1).strip()
+-    questions = [segment for _ref, segment in segments if "?" in segment]
++        text, re.IGNORECASE | re.DOTALL,
++    ))
++    if matches:
++        return matches[-1].group(1).strip()
++    questions = re.findall(r"[^.!?]+\?", text)
+     if questions:
+-        return " ".join(questions[-3:])
++        return "\n".join(question.strip() for question in questions)
+     for _ref, segment in segments[:4]:
+         if re.search(r"\b(answer|respond)\b", segment, re.IGNORECASE):
+             return segment

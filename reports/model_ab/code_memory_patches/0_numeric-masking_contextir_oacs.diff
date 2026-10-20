@@ -1,0 +1,61 @@
+--- a/contextir/sir_runtime.py
++++ b/contextir/sir_runtime.py
+@@ -77,6 +77,21 @@
+ 
+ 
+ class PrivacyScrubber:
++    numeric_pattern = re.compile(
++        r"(?<![\w.,])[+-]?(?:\d{1,3}(?:[ ,.'\u00a0\u202f\u2009_]\d{3})+|\d+|(?=[.,]\d))"
++        r"(?:[.,]\d+)?(?:[eE][+-]?\d+)?(?!\w|[.,]\d)"
++    )
++    unit_pattern = re.compile(
++        r"\s*(?:%|‰|°[CFK]?|(?:tokens?|bytes?|bits?|bps|[numkgtpµμ]?(?:s|sec|g|m|b|hz|w|j|v|a|pa|l))\b"
++        r"|(?:seconds?|milliseconds?|minutes?|hours?|kg|km|mb|gb|tb|usd|eur|rub|"
++        r"мс|сек|мин|час|кг|мг|км|мм|см|м|г|л|байт\w*|бит\w*|токен\w*|руб\w*)\b)",
++        re.IGNORECASE,
++    )
++    phone_label_pattern = re.compile(
++        r"\b(?:phone|telephone|tel|mobile|fax|call|телефон|тел|мобильный|факс)"
++        r"\.?\s*(?:(?:number|номер|no)\.?\s*)?[:=#-]?\s*$",
++        re.IGNORECASE,
++    )
+     patterns = [
+         ("email", re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)),
+         ("card", re.compile(r"(?<![\w+])(?:\d[ -]*){11,18}\d(?![ -]*\d)(?!\w)")),
+@@ -99,7 +114,11 @@
+         for kind, pattern in self.patterns:
+             while True:
+                 match = next(
+-                    (item for item in pattern.finditer(scrubbed) if valid_privacy_match(kind, item.group(0))),
++                    (
++                        item for item in pattern.finditer(scrubbed)
++                        if valid_privacy_match(kind, item.group(0))
++                        and (kind not in {"phone", "card"} or not self.is_numeric_measurement(item))
++                    ),
+                     None,
+                 )
+                 if not match:
+@@ -122,6 +141,23 @@
+                     vault[placeholder] = surface
+                 scrubbed = scrubbed[: match.start()] + placeholder + scrubbed[match.end() :]
+         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
++
++    def is_numeric_measurement(self, match: re.Match[str]) -> bool:
++        if self.phone_label_pattern.search(match.string[:match.start()]):
++            return False
++        for number in self.numeric_pattern.finditer(match.string):
++            if number.start() >= match.end():
++                break
++            if number.start() > match.start() or number.end() < match.end():
++                continue
++            value = number.group(0).lstrip("+-")
++            if (
++                re.fullmatch(r"(?:\d*[.,]\d+|\d+)(?:[eE][+-]?\d+)", value)
++                or re.fullmatch(r"\d*[.,]\d+", value)
++                or self.unit_pattern.match(match.string, number.end())
++            ):
++                return True
++        return False
+ 
+ 
+ def valid_privacy_match(kind: str, surface: str) -> bool:

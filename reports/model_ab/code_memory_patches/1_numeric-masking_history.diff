@@ -1,0 +1,59 @@
+--- a/contextir/sir_runtime.py
++++ b/contextir/sir_runtime.py
+@@ -99,7 +99,12 @@
+         for kind, pattern in self.patterns:
+             while True:
+                 match = next(
+-                    (item for item in pattern.finditer(scrubbed) if valid_privacy_match(kind, item.group(0))),
++                    (
++                        item
++                        for item in pattern.finditer(scrubbed)
++                        if valid_privacy_match(kind, item.group(0))
++                        and (kind != "phone" or not phone_match_is_numeric(item, scrubbed))
++                    ),
+                     None,
+                 )
+                 if not match:
+@@ -122,6 +127,42 @@
+                     vault[placeholder] = surface
+                 scrubbed = scrubbed[: match.start()] + placeholder + scrubbed[match.end() :]
+         return PrivacyScrubResult(scrubbed_text=scrubbed, protected_spans=protected, vault=vault)
++
++
++_NUMERIC_VALUE = re.compile(
++    r"(?<![\w.,])[-+]?"
++    r"(?P<mantissa>(?:\d{1,3}(?:[ ,.'\u00a0\u202f]\d{3})+(?:[.,]\d+)?"
++    r"|\d+(?:[.,]\d+)?|[.,]\d+))"
++    r"(?P<exponent>[eE][-+]?\d+)?(?![\w]|[.,]\d)"
++)
++_MEASUREMENT_UNIT = re.compile(
++    r"\s*(?:%|‰|(?:tokens?|bytes?|[kmgtpe]?i?[bB]|[numk]?s|"
++    r"seconds?|minutes?|hours?|[kmg]?hz|[numk]?m|[mk]?g|"
++    r"[mk]?l|[kmg]?w|[mk]?v|pa|[kmg]?pa|°[cf]|"
++    r"токен\w*|байт\w*|мс|мкс|нс|сек\w*|кб|мб|гб|кг|км|см|мм)\b)",
++    re.IGNORECASE,
++)
++_PHONE_LABEL = re.compile(
++    r"\b(?:phone|telephone|tel|call|fax|mobile|телефон|тел|звонить|звоните|факс)"
++    r"\.?\s*[:=]?\s*$",
++    re.IGNORECASE,
++)
++
++
++def phone_match_is_numeric(match: re.Match[str], text: str) -> bool:
++    # Explicit phone labels take priority over ambiguous decimal or unit syntax.
++    if _PHONE_LABEL.search(text[: match.start()]):
++        return False
++    for number in _NUMERIC_VALUE.finditer(text):
++        if number.start() >= match.end():
++            break
++        if number.start() > match.start() or number.end() < match.end():
++            continue
++        mantissa = number.group("mantissa")
++        decimal = bool(re.fullmatch(r"(?:\d+[.,]\d+|[.,]\d+)", mantissa))
++        if decimal or number.group("exponent") or _MEASUREMENT_UNIT.match(text, number.end()):
++            return True
++    return False
+ 
+ 
+ def valid_privacy_match(kind: str, surface: str) -> bool:

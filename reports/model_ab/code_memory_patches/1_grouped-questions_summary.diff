@@ -1,0 +1,139 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -55,6 +55,7 @@
+     retrieval_confidence: float = 0.0
+     query: str = ""
+     source_groups: tuple[tuple[str, ...], ...] = ()
++    question_evidence_refs: tuple[str, ...] = ()
+ 
+ 
+ class ContextIR:
+@@ -677,6 +678,16 @@
+             if ordered_group not in groups:
+                 groups.append(ordered_group)
+             selected.update(group)
++        if task_profile.question_evidence_refs:
++            mandatory = set()
++            for ref in task_profile.question_evidence_refs:
++                mandatory.update(structural_by_ref.get(ref, (ref,)))
++                owner = owner_by_ref.get(ref)
++                if owner:
++                    mandatory.add(owner)
++            required.update(mandatory)
++            selected.update(mandatory)
++            groups.insert(0, tuple(ref for ref, _text in segments if ref in mandatory))
+         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
+         ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
+         ordered_required = tuple(ref for ref, _text in segments if ref in required)
+@@ -761,7 +772,14 @@
+         return TaskProfile(kind="operational")
+     normalized_query = " ".join(query.lower().split())
+     query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, normalized_query))
++    questions = split_questions(query)
+     source_groups = structural_source_groups(text, segments)
++    # Appended questions must not exclude the source block containing them.
++    source_groups = tuple(
++        tuple(ref for ref in group if ref not in query_refs)
++        for group in source_groups
++    )
++    source_groups = tuple(group for group in source_groups if group)
+     values = dict(segments)
+     ranked_segments = (
+         [(group[0], " ".join(values[ref] for ref in group)) for group in source_groups]
+@@ -769,9 +787,28 @@
+     )
+     excluded = set(query_refs)
+     excluded.update(group[0] for group in source_groups if excluded.intersection(group))
+-    evidence, confidence = retrieve_evidence(
+-        ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
+-    )
++    question_evidence = []
++    if len(questions) > 1:
++        ranked_by_question = []
++        confidences = []
++        for question in questions:
++            matches, question_confidence = retrieve_evidence(
++                ranked_segments, content_terms(question), excluded, evidence_limit, skip_edges=False
++            )
++            if not matches:
++                raise ValueError("No supporting source found for question: " + question)
++            question_evidence.append(matches[0])
++            ranked_by_question.append(matches)
++            confidences.append(question_confidence)
++        evidence = list(dict.fromkeys(
++            ref for rank in range(evidence_limit)
++            for matches in ranked_by_question for ref in matches[rank:rank + 1]
++        ))
++        confidence = min(confidences)
++    else:
++        evidence, confidence = retrieve_evidence(
++            ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
++        )
+     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
+         marker in normalized for marker in RETRIEVAL_MARKERS
+     )
+@@ -784,21 +821,61 @@
+         retrieval_confidence=confidence,
+         query=query,
+         source_groups=source_groups,
++        question_evidence_refs=tuple(question_evidence),
+     )
+ 
+ 
++QUESTION_LABEL_RE = re.compile(
++    r"(?:\b(?:Question(?:\s+\d+)?|Q\d*|Вопрос(?:\s+\d+)?)\s*:|^\s*\d+[.)]\s+)",
++    re.IGNORECASE | re.MULTILINE,
++)
++
++
++def split_questions(query: str) -> list[str]:
++    """Separate labels and completed question lines while retaining wrapped lines."""
++    questions = []
++    labels = list(QUESTION_LABEL_RE.finditer(query))
++    parts = [
++        query[label.end():labels[index + 1].start() if index + 1 < len(labels) else len(query)]
++        for index, label in enumerate(labels)
++    ] if labels else [query]
++    for part in parts:
++        questions.extend(
++            piece.strip() for piece in re.split(r"(?<=\?)\s*\n+", part) if piece.strip()
++        )
++    return questions
++
++
+ def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
++    labels = list(QUESTION_LABEL_RE.finditer(text))
++    if labels:
++        questions = []
++        for index, label in enumerate(labels):
++            end = labels[index + 1].start() if index + 1 < len(labels) else len(text)
++            body = re.split(r"\b(?:Answer|Ответ)\s*:", text[label.end():end], maxsplit=1, flags=re.IGNORECASE)[0].strip()
++            if body:
++                questions.append((label.group().strip(), body))
++        if len(questions) == 1:
++            return questions[0][1]
++        return "\n".join(label + " " + body for label, body in questions)
+     patterns = [
+-        r"Question:\s*(.+?)(?:\s*Answer:|$)",
+         r"The following is an abstract\.\s*(.+?)(?:\s*Please enter|\s*The answer is:|$)",
+     ]
+     for pattern in patterns:
+         matches = list(re.finditer(pattern, text, re.IGNORECASE | re.DOTALL))
+         if matches:
+             return matches[-1].group(1).strip()
+-    questions = [segment for _ref, segment in segments if "?" in segment]
++    questions = []
++    pending = []
++    for _ref, segment in segments:
++        pending.append(segment)
++        if "?" in segment:
++            questions.append("\n".join(pending))
++            pending = []
++        elif re.search(r"[.!]$", segment):
++            pending = []
+     if questions:
+-        return " ".join(questions[-3:])
++        return "\n".join(questions)
+     for _ref, segment in segments[:4]:
+         if re.search(r"\b(answer|respond)\b", segment, re.IGNORECASE):
+             return segment

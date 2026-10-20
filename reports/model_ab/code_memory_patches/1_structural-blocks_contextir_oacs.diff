@@ -1,0 +1,132 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -8,7 +8,7 @@
+ import sys
+ import time
+ from collections import Counter
+-from dataclasses import asdict, dataclass
++from dataclasses import asdict, dataclass, replace
+ from pathlib import Path
+ from typing import Any, Callable, Literal
+ 
+@@ -101,13 +101,15 @@
+         started = time.perf_counter()
+         scrubbed, scrubbed_query = self._scrub_text_and_query(text, query, source_lang)
+         segments = split_source(scrubbed.scrubbed_text)
+-        sources = {segment_id: value for segment_id, value in segments}
+         task_profile = analyze_task(
+             scrubbed.scrubbed_text,
+             segments,
+             context_kind=context_kind,
+             explicit_query=scrubbed_query,
+         )
++        if task_profile.kind == "retrieval":
++            segments, task_profile = preserve_source_blocks(scrubbed.scrubbed_text, segments, task_profile)
++        sources = {segment_id: value for segment_id, value in segments}
+         normalized_tokens = set(normalize(scrubbed.scrubbed_text).split())
+         intent = asdict(guess_intent(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens))
+         constraints = detect_constraints(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens)
+@@ -282,8 +284,10 @@
+                 json.dumps(contract, ensure_ascii=False, separators=(",", ":")), query
+             )
+         if contract.get("mode") == "raw":
++            included = contract["source"]["included"]
++            separator = "\n\n" if any("\n" in str(item["text"]) for item in included) else " "
+             return append_query_if_missing(
+-                " ".join(str(item["text"]) for item in contract["source"]["included"]), query
++                separator.join(str(item["text"]) for item in included), query
+             )
+         if contract.get("mode") == "hybrid" and contract["source"]["included"]:
+             included_refs = {item["ref"] for item in contract["source"]["included"]}
+@@ -330,7 +334,8 @@
+         if contract.get("version") == "contextir.v2":
+             included = contract.get("source", {}).get("included", [])
+             if included:
+-                return " ".join(str(item["text"]) for item in included)
++                separator = "\n\n" if any("\n" in str(item["text"]) for item in included) else " "
++                return separator.join(str(item["text"]) for item in included)
+             rendered = []
+             for event in contract.get("events", []):
+                 prefix = "not " if event.get("polarity") == "negative" else ""
+@@ -436,6 +441,81 @@
+ def split_source(text: str) -> list[tuple[str, str]]:
+     parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
+     return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
++
++
++def preserve_source_blocks(
++    text: str,
++    segments: list[tuple[str, str]],
++    profile: TaskProfile,
++) -> tuple[list[tuple[str, str]], TaskProfile]:
++    """Expand retrieval hits to their original, indivisible document blocks."""
++    lines = text.splitlines(keepends=True)
++    if len(lines) < 2:
++        return segments, profile
++    offsets = [0]
++    for line in lines:
++        offsets.append(offsets[-1] + len(line))
++    blocks = []
++    index = 0
++    while index < len(lines):
++        if not lines[index].strip():
++            index += 1
++            continue
++        start = index
++        fence = re.match(r" {0,3}(`{3,}|~{3,})", lines[index])
++        if fence:
++            marker = fence.group(1)
++            index += 1
++            while index < len(lines):
++                closing = re.fullmatch(
++                    r" {0,3}" + re.escape(marker[0]) + "{" + str(len(marker)) + r",}[ \t]*(?:\r?\n)?",
++                    lines[index],
++                )
++                index += 1
++                if closing:
++                    break
++        else:
++            is_list = bool(re.match(r"\s*(?:[-+*]|\d+[.)])[ \t]+", lines[index]))
++            is_table = "|" in lines[index]
++            index += 1
++            while index < len(lines):
++                line = lines[index]
++                if not line.strip():
++                    following = index + 1
++                    while following < len(lines) and not lines[following].strip():
++                        following += 1
++                    if is_list and following < len(lines) and re.match(
++                        r"(?:[ \t]+\S|\s*(?:[-+*]|\d+[.)])[ \t]+)", lines[following]
++                    ):
++                        index = following
++                        continue
++                    break
++                if re.match(r" {0,3}(?:`{3,}|~{3,}|#{1,6}[ \t])", line):
++                    break
++                next_list = bool(re.match(r"\s*(?:[-+*]|\d+[.)])[ \t]+", line))
++                if (not is_list and next_list) or (not is_list and ("|" in line) != is_table):
++                    break
++                index += 1
++        blocks.append((offsets[start], offsets[index]))
++
++    expanded = []
++    owner_by_ref = {}
++    cursor = 0
++    block_index = 0
++    for ref, value in segments:
++        position = text.index(value, cursor)
++        cursor = position + len(value)
++        while block_index + 1 < len(blocks) and position >= blocks[block_index][1]:
++            block_index += 1
++        start, end = blocks[block_index]
++        if not expanded or start != expanded[-1][2]:
++            expanded.append((ref, text[start:end].rstrip("\r\n"), start))
++        owner_by_ref[ref] = expanded[-1][0]
++    return [(ref, value) for ref, value, _start in expanded], replace(
++        profile,
++        query_refs=tuple(dict.fromkeys(owner_by_ref[ref] for ref in profile.query_refs)),
++        evidence_refs=tuple(dict.fromkeys(owner_by_ref[ref] for ref in profile.evidence_refs)),
++    )
+ 
+ 
+ def extract_events(segments: list[tuple[str, str]], source_lang: str) -> list[dict[str, Any]]:

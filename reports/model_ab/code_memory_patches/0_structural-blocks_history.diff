@@ -1,0 +1,131 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -101,13 +101,22 @@
+         started = time.perf_counter()
+         scrubbed, scrubbed_query = self._scrub_text_and_query(text, query, source_lang)
+         segments = split_source(scrubbed.scrubbed_text)
+-        sources = {segment_id: value for segment_id, value in segments}
+         task_profile = analyze_task(
+             scrubbed.scrubbed_text,
+             segments,
+             context_kind=context_kind,
+             explicit_query=scrubbed_query,
+         )
++        if task_profile.kind == "retrieval" and "\n" in scrubbed.scrubbed_text:
++            segments = split_source(scrubbed.scrubbed_text, preserve_blocks=True)
++            task_profile = analyze_task(
++                scrubbed.scrubbed_text,
++                segments,
++                context_kind=context_kind,
++                explicit_query=task_profile.query,
++                include_edges=True,
++            )
++        sources = {segment_id: value for segment_id, value in segments}
+         normalized_tokens = set(normalize(scrubbed.scrubbed_text).split())
+         intent = asdict(guess_intent(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens))
+         constraints = detect_constraints(scrubbed.scrubbed_text, normalized_tokens=normalized_tokens)
+@@ -433,8 +442,56 @@
+ }
+ 
+ 
+-def split_source(text: str) -> list[tuple[str, str]]:
+-    parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
++def split_source(text: str, preserve_blocks: bool = False) -> list[tuple[str, str]]:
++    if not preserve_blocks:
++        parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
++        return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
++
++    parts: list[str] = []
++    block: list[str] = []
++    kind = ""
++    fence = ""
++    for line in text.splitlines(keepends=True):
++        stripped = line.lstrip(" \t")
++        marker = re.match(r"(`{3,}|~{3,})", stripped)
++        if fence:
++            block.append(line)
++            if re.fullmatch(re.escape(fence[0]) + "{" + str(len(fence)) + r",}[ \t]*(?:\r?\n)?", stripped):
++                parts.append("".join(block))
++                block = []
++                kind = ""
++                fence = ""
++            continue
++        if marker:
++            if block:
++                parts.append("".join(block))
++            block = [line]
++            kind = "code"
++            fence = marker.group(1)
++            continue
++        if not stripped.strip():
++            block.append(line)
++            continue
++        line_kind = (
++            "list" if re.match(r"(?:[-+*]|\d+[.)])[ \t]+", stripped)
++            else "table" if "|" in stripped
++            else "heading" if re.match(r"#{1,6}[ \t]+", stripped)
++            else "paragraph"
++        )
++        separated = bool(block and not block[-1].strip())
++        continuation = kind == "list" and (
++            line_kind == "list"
++            or line.startswith((" ", "\t"))
++            or (line_kind == "paragraph" and not separated)
++        )
++        if block and kind and not continuation and (separated or line_kind != kind or kind == "heading"):
++            parts.append("".join(block))
++            block = []
++        block.append(line)
++        if not continuation:
++            kind = line_kind
++    if block and any(line.strip() for line in block):
++        parts.append("".join(block))
+     return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
+ 
+ 
+@@ -652,6 +709,7 @@
+     evidence_limit: int = 6,
+     context_kind: ContextKind = "auto",
+     explicit_query: str = "",
++    include_edges: bool = False,
+ ) -> TaskProfile:
+     normalized = text.lower()
+     if context_kind == "exhaustive":
+@@ -670,8 +728,18 @@
+     if not query_terms:
+         return TaskProfile(kind="operational")
+     normalized_query = " ".join(query.lower().split())
+-    query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, normalized_query))
+-    evidence, confidence = retrieve_evidence(segments, query_terms, set(query_refs), evidence_limit)
++    query_refs = tuple(
++        ref for ref, segment in segments
++        if segment_belongs_to_query(segment, normalized_query)
++        or (
++            include_edges
++            and segment_belongs_to_query(
++                re.sub(r"^\s*Question:\s*|\s*Answer:\s*$", "", segment, flags=re.IGNORECASE),
++                normalized_query,
++            )
++        )
++    )
++    evidence, confidence = retrieve_evidence(segments, query_terms, set(query_refs), evidence_limit, include_edges)
+     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
+         marker in normalized for marker in RETRIEVAL_MARKERS
+     )
+@@ -733,6 +801,7 @@
+     query_terms: set[str],
+     excluded_refs: set[str],
+     limit: int,
++    include_edges: bool = False,
+ ) -> tuple[list[str], float]:
+     document_frequency: Counter[str] = Counter()
+     terms_by_ref: dict[str, set[str]] = {}
+@@ -744,7 +813,7 @@
+     total = max(len(segments), 1)
+     scored = []
+     for index, (ref, _segment) in enumerate(segments):
+-        if ref in excluded_refs or index < 2 or index >= len(segments) - 2:
++        if ref in excluded_refs or (not include_edges and (index < 2 or index >= len(segments) - 2)):
+             continue
+         overlap = query_terms & terms_by_ref[ref]
+         if not overlap:

@@ -1,0 +1,139 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -55,6 +55,7 @@
+     retrieval_confidence: float = 0.0
+     query: str = ""
+     source_groups: tuple[tuple[str, ...], ...] = ()
++    required_evidence_refs: tuple[str, ...] = ()
+ 
+ 
+ class ContextIR:
+@@ -677,6 +678,8 @@
+             if ordered_group not in groups:
+                 groups.append(ordered_group)
+             selected.update(group)
++            if evidence_ref in task_profile.required_evidence_refs:
++                required.update(group)
+         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
+         ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
+         ordered_required = tuple(ref for ref, _text in segments if ref in required)
+@@ -750,10 +753,12 @@
+         return TaskProfile(kind="operational")
+     if any(re.search(pattern, normalized, re.IGNORECASE) for pattern in EXHAUSTIVE_PATTERNS):
+         return TaskProfile(kind="exhaustive")
+-    if len(segments) < 6 and context_kind != "retrieval" and not explicit_query:
++    query = explicit_query or extract_query(text, segments)
++    if (
++        len(segments) < 6 and context_kind != "retrieval" and not explicit_query
++        and len(split_query_questions(query)) < 2
++    ):
+         return TaskProfile(kind="operational")
+-
+-    query = explicit_query or extract_query(text, segments)
+     if not query:
+         return TaskProfile(kind="operational")
+     query_terms = content_terms(query)
+@@ -762,6 +767,20 @@
+     normalized_query = " ".join(query.lower().split())
+     query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, normalized_query))
+     source_groups = structural_source_groups(text, segments)
++    # Keep document blocks separate from appended questions even without a blank line.
++    if source_groups and query_refs:
++        query_ref_set = set(query_refs)
++        separated_groups = []
++        for group in source_groups:
++            run = []
++            for ref in group:
++                if run and (ref in query_ref_set) != (run[-1] in query_ref_set):
++                    separated_groups.append(tuple(run))
++                    run = []
++                run.append(ref)
++            if run:
++                separated_groups.append(tuple(run))
++        source_groups = tuple(separated_groups)
+     values = dict(segments)
+     ranked_segments = (
+         [(group[0], " ".join(values[ref] for ref in group)) for group in source_groups]
+@@ -769,9 +788,24 @@
+     )
+     excluded = set(query_refs)
+     excluded.update(group[0] for group in source_groups if excluded.intersection(group))
+-    evidence, confidence = retrieve_evidence(
+-        ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
+-    )
++    questions = split_query_questions(query)
++    rankings = []
++    confidences = []
++    for question in questions:
++        refs, coverage = retrieve_evidence(
++            ranked_segments, content_terms(question), excluded, evidence_limit,
++            skip_edges=not source_groups and len(questions) == 1,
++        )
++        rankings.append(refs)
++        confidences.append(coverage)
++    required_evidence = tuple(dict.fromkeys(refs[0] for refs in rankings if refs)) if len(questions) > 1 else ()
++    evidence = list(required_evidence)
++    for rank in range(evidence_limit):
++        for refs in rankings:
++            if rank < len(refs) and refs[rank] not in evidence:
++                evidence.append(refs[rank])
++    evidence = evidence[:max(evidence_limit, len(required_evidence))]
++    confidence = min(confidences, default=0.0)
+     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
+         marker in normalized for marker in RETRIEVAL_MARKERS
+     )
+@@ -784,25 +818,52 @@
+         retrieval_confidence=confidence,
+         query=query,
+         source_groups=source_groups,
++        required_evidence_refs=required_evidence,
+     )
+ 
+ 
+ def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
++    labelled = re.search(QUESTION_LABEL_RE, text, re.IGNORECASE | re.MULTILINE)
++    if labelled:
++        return text[labelled.start():].strip()
+     patterns = [
+-        r"Question:\s*(.+?)(?:\s*Answer:|$)",
+         r"The following is an abstract\.\s*(.+?)(?:\s*Please enter|\s*The answer is:|$)",
+     ]
+     for pattern in patterns:
+         matches = list(re.finditer(pattern, text, re.IGNORECASE | re.DOTALL))
+         if matches:
+             return matches[-1].group(1).strip()
++    start = re.search(QUESTION_START_RE, text, re.IGNORECASE | re.MULTILINE)
++    if start:
++        return text[start.start():].strip()
+     questions = [segment for _ref, segment in segments if "?" in segment]
+     if questions:
+-        return " ".join(questions[-3:])
++        return "\n".join(questions)
+     for _ref, segment in segments[:4]:
+         if re.search(r"\b(answer|respond)\b", segment, re.IGNORECASE):
+             return segment
+     return ""
++
++
++QUESTION_START_RE = (
++    r"^[ \t]*(?:\d+[.)][ \t]*)?(?:what|which|who|when|where|why|how|"
++    r"что|како\w*|кто|когда|где|почему|сколько)\b"
++)
++QUESTION_LABEL_RE = r"\b(?:Question|Вопрос)\s*(?:\d+\s*)?:|^[ \t]*Q\d+\s*[:.)]"
++
++
++def split_query_questions(query: str) -> list[str]:
++    labelled = re.split(QUESTION_LABEL_RE, query, flags=re.IGNORECASE | re.MULTILINE)
++    parts = labelled[1:] if len(labelled) > 1 else [query]
++    questions = []
++    for part in parts:
++        part = re.split(r"\b(?:Answer|Ответ)\s*:", part, maxsplit=1, flags=re.IGNORECASE)[0]
++        # Wrapped continuation lines stay with their question.
++        boundary = r"(?<=\?)\s+|\n(?=" + QUESTION_START_RE + r")"
++        for question in re.split(boundary, part.strip(), flags=re.IGNORECASE | re.MULTILINE):
++            if content_terms(question):
++                questions.append(question)
++    return questions or [query]
+ 
+ 
+ def append_query_if_missing(prompt: str, query: str) -> str:

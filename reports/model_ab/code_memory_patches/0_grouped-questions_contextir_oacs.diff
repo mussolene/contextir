@@ -1,0 +1,114 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -55,6 +55,7 @@
+     retrieval_confidence: float = 0.0
+     query: str = ""
+     source_groups: tuple[tuple[str, ...], ...] = ()
++    required_evidence_refs: tuple[str, ...] = ()
+ 
+ 
+ class ContextIR:
+@@ -677,6 +678,8 @@
+             if ordered_group not in groups:
+                 groups.append(ordered_group)
+             selected.update(group)
++            if evidence_ref in task_profile.required_evidence_refs:
++                required.update(group)
+         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
+         ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
+         ordered_required = tuple(ref for ref, _text in segments if ref in required)
+@@ -764,14 +767,27 @@
+     source_groups = structural_source_groups(text, segments)
+     values = dict(segments)
+     ranked_segments = (
+-        [(group[0], " ".join(values[ref] for ref in group)) for group in source_groups]
++        [(group[0], " ".join(values[ref] for ref in group if ref not in query_refs))
++         for group in source_groups]
+         if source_groups else segments
+     )
+     excluded = set(query_refs)
+-    excluded.update(group[0] for group in source_groups if excluded.intersection(group))
+-    evidence, confidence = retrieve_evidence(
+-        ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
+-    )
++    if source_groups:
++        excluded = {group[0] for group in source_groups if all(ref in excluded for ref in group)}
++    questions = split_questions(query)
++    evidence = []
++    required_evidence = []
++    confidences = []
++    for question in questions:
++        matches, coverage = retrieve_evidence(
++            ranked_segments, content_terms(question), excluded, evidence_limit,
++            skip_edges=not source_groups and len(questions) == 1,
++        )
++        evidence.extend(ref for ref in matches if ref not in evidence)
++        confidences.append(coverage)
++        if matches and len(questions) > 1:
++            required_evidence.append(matches[0])
++    confidence = min(confidences, default=0.0)
+     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
+         marker in normalized for marker in RETRIEVAL_MARKERS
+     )
+@@ -784,21 +800,51 @@
+         retrieval_confidence=confidence,
+         query=query,
+         source_groups=source_groups,
++        required_evidence_refs=tuple(dict.fromkeys(required_evidence)),
+     )
+ 
+ 
++QUESTION_LABEL_RE = re.compile(
++    r"(?:\b(?:question|вопрос|q)\s*\d*\s*[:.)]|(?:^|(?<=\n)|(?<=\?))\s*\d+[.)])\s*",
++    re.IGNORECASE,
++)
++
++
++def split_questions(query: str) -> list[str]:
++    # Labels and question terminators delimit questions; a soft line break does not.
++    labelled = QUESTION_LABEL_RE.split(query)
++    questions = []
++    for part in labelled:
++        for question in re.split(r"(?<=\?)\s+", part.strip()):
++            if question.strip():
++                questions.append(" ".join(question.split()))
++    return questions
++
++
+ def extract_query(text: str, segments: list[tuple[str, str]]) -> str:
+-    patterns = [
+-        r"Question:\s*(.+?)(?:\s*Answer:|$)",
+-        r"The following is an abstract\.\s*(.+?)(?:\s*Please enter|\s*The answer is:|$)",
+-    ]
+-    for pattern in patterns:
+-        matches = list(re.finditer(pattern, text, re.IGNORECASE | re.DOTALL))
+-        if matches:
+-            return matches[-1].group(1).strip()
+-    questions = [segment for _ref, segment in segments if "?" in segment]
++    labels = list(QUESTION_LABEL_RE.finditer(text))
++    if labels:
++        query = text[labels[0].start():]
++        return re.split(r"\b(?:Answer|Ответ)\s*:", query, maxsplit=1, flags=re.IGNORECASE)[0].strip()
++    pattern = r"The following is an abstract\.\s*(.+?)(?:\s*Please enter|\s*The answer is:|$)"
++    matches = list(re.finditer(pattern, text, re.IGNORECASE | re.DOTALL))
++    if matches:
++        return matches[-1].group(1).strip()
++    questions = []
++    pending = []
++    for line in text.splitlines():
++        line = line.strip()
++        if not line:
++            pending = []
++            continue
++        pending.append(line)
++        if "?" in line:
++            questions.append(" ".join(pending))
++            pending = []
++        elif re.search(r"[.!]$", line):
++            pending = []
+     if questions:
+-        return " ".join(questions[-3:])
++        return "\n".join(questions)
+     for _ref, segment in segments[:4]:
+         if re.search(r"\b(answer|respond)\b", segment, re.IGNORECASE):
+             return segment

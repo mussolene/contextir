@@ -1,0 +1,91 @@
+--- a/contextir/gateway.py
++++ b/contextir/gateway.py
+@@ -423,6 +423,10 @@
+ PROHIBITION_RE = re.compile(r"\b(must not|do not|don't|нельзя|не должен\w*)\b")
+ CONDITION_RE = re.compile(r"\b(if|unless|when|если|когда)\b")
+ SOURCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|[\n]+")
++SOURCE_FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})(.*)$")
++SOURCE_LIST_RE = re.compile(r"^[ \t]*(?:[-+*]|\d+[.)])[ \t]+")
++SOURCE_HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}(?:[ \t]+|$)")
++SOURCE_TABLE_RULE_RE = re.compile(r"^[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(?:\|[ \t]*:?-{3,}:?[ \t]*)*\|?[ \t]*$")
+ SALIENT_TOKEN_RE = re.compile(r"PII_[A-Z_]+_\d+|[\wё-]+", re.IGNORECASE)
+ NUMBER_RE = re.compile(r"(?<!\w)\d+(?:[.,:]\d+)*(?!\w)")
+ 
+@@ -434,7 +438,76 @@
+ 
+ 
+ def split_source(text: str) -> list[tuple[str, str]]:
+-    parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
++    # Flat prose has sentence boundaries; line-oriented documents have blocks.
++    # Keep each block as an original slice so retrieval and budget packing cannot
++    # separate a match from its paragraph, list, fence, or table.
++    if "\n" not in text and "\r" not in text:
++        parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
++        return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
++
++    lines = text.splitlines(keepends=True)
++    table_starts = {
++        index for index in range(len(lines) - 1)
++        if "|" in lines[index]
++        and SOURCE_TABLE_RULE_RE.fullmatch(lines[index + 1].rstrip("\r\n"))
++    }
++    parts = []
++    index = 0
++    while index < len(lines):
++        if not lines[index].strip():
++            index += 1
++            continue
++        start = index
++        fence = SOURCE_FENCE_RE.match(lines[index].rstrip("\r\n"))
++        if fence:
++            marker = fence.group(1)
++            closing = re.compile(r"^[ \t]*" + re.escape(marker[0]) + "{" + str(len(marker)) + r",}[ \t]*$")
++            index += 1
++            while index < len(lines):
++                line = lines[index]
++                index += 1
++                if closing.fullmatch(line.rstrip("\r\n")):
++                    break
++        elif SOURCE_HEADING_RE.match(lines[index]):
++            index += 1
++        elif SOURCE_LIST_RE.match(lines[index]):
++            index += 1
++            nested_marker = ""
++            while index < len(lines):
++                line = lines[index]
++                nested_fence = SOURCE_FENCE_RE.match(line.rstrip("\r\n"))
++                if nested_marker:
++                    if re.fullmatch(re.escape(nested_marker[0]) + "{" + str(len(nested_marker)) + r",}", line.strip()):
++                        nested_marker = ""
++                elif nested_fence and line[:1].isspace():
++                    nested_marker = nested_fence.group(1)
++                elif not line.strip():
++                    next_index = index + 1
++                    while next_index < len(lines) and not lines[next_index].strip():
++                        next_index += 1
++                    if next_index == len(lines) or not (
++                        SOURCE_LIST_RE.match(lines[next_index])
++                        or lines[next_index].startswith((" ", "\t"))
++                    ):
++                        break
++                elif SOURCE_HEADING_RE.match(line) or nested_fence or index in table_starts:
++                    break
++                index += 1
++        elif index in table_starts:
++            index += 1
++            while index < len(lines) and lines[index].strip() and "|" in lines[index]:
++                index += 1
++        else:
++            index += 1
++            while index < len(lines) and lines[index].strip():
++                line = lines[index]
++                if (SOURCE_FENCE_RE.match(line.rstrip("\r\n"))
++                        or SOURCE_LIST_RE.match(line)
++                        or SOURCE_HEADING_RE.match(line)
++                        or index in table_starts):
++                    break
++                index += 1
++        parts.append("".join(lines[start:index]))
+     return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
+ 
+ 

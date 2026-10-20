@@ -1,0 +1,32 @@
+[
+  {
+    "id": "structural-blocks",
+    "base_revision": "c5ffc050894d01e1a8ac88c645eb717c1eadb53a",
+    "allowed_files": [
+      "contextir/gateway.py"
+    ],
+    "issue": "При поиске по документу найденный фрагмент абзаца, списка, блока кода в ограждении или таблицы сохраняется вместе со связанными с ним строками и исходным форматированием.",
+    "probe_code": "from contextir import ContextIR\n\ntext = (\n    \"Archive notice one: obsolete.\\n\\nArchive notice two: obsolete.\\n\\n\"\n    \"Thermal catalog:\\n\\n| Sample | location | sensor | reading |\\n| --- | --- | --- | --- |\\n\"\n    \"| frost alloy | north valve | frost sensor | 18.4 C |\\n\"\n    \"| copper alloy | south valve | pressure sensor | 29.1 C |\\n\\n\"\n    \"Archive tail: unrelated.\"\n)\nbundle = ContextIR().compile_private(\n    text, source_lang=\"en\", target_lang=\"en\", mode=\"hybrid\",\n    context_kind=\"retrieval\", query=\"What reading did the frost sensor log for the north valve?\",\n)\nprompt = ContextIR().render_bundle(bundle)\nprint({\n    \"frost_row\": \"| frost alloy | north valve | frost sensor | 18.4 C |\" in prompt,\n    \"neighbor_row\": \"| copper alloy | south valve | pressure sensor | 29.1 C |\" in prompt,\n    \"table_header\": \"| Sample | location | sensor | reading |\" in prompt,\n})",
+    "fixed_revision": "b730aaab78ea074f6146043c2b92c6d927abf58b"
+  },
+  {
+    "id": "numeric-masking",
+    "base_revision": "b730aaab78ea074f6146043c2b92c6d927abf58b",
+    "allowed_files": [
+      "contextir/sir_runtime.py"
+    ],
+    "issue": "Дробные, экспоненциальные и сгруппированные числовые показатели с единицами измерения остаются неизменными и не попадают в хранилище маскировщика как телефонные данные; настоящие телефонные номера, в том числе явно помеченные, по-прежнему маскируются.",
+    "probe_code": "from contextir.sir_runtime import PrivacyScrubber\n\ntext = (\n    \"validation score=0.987654321; latency=12.75 ms; \"\n    \"payload=1.2e-5 bytes; throughput=987654321 tokens.\"\n)\nresult = PrivacyScrubber().scrub(text)\nprint({\"original\": text, \"scrubbed\": result.scrubbed_text, \"vault\": result.vault})",
+    "fixed_revision": "b200abd80214fdc1002a40aecffbbf203dbdc344"
+  },
+  {
+    "id": "grouped-questions",
+    "base_revision": "79693cc7d3330069fb8826fc34f80a1954372724",
+    "allowed_files": [
+      "contextir/gateway.py"
+    ],
+    "issue": "Для нескольких независимых вопросов, заданных с метками или на отдельных строках, в контекст попадают подтверждающие сведения по каждому вопросу; перенос строки внутри одного вопроса не создает новый вопрос, а ограничение размера контекста не приводит к молчаливому исключению ответа на один из вопросов.",
+    "probe_code": "from contextir import ContextIR\n\nterms = (\n    \"aurora battery degradation thermal cycling endurance capacity voltage \"\n    \"chemistry electrode electrolyte cathode anode impedance retention\"\n)\nrecords = [f\"Archive {index}: {terms} report batch {index}.\" for index in range(1, 9)]\nrecords.append(\"Orchid greenhouse night humidity target is 61 percent.\")\ntext = \"\\n\\n\".join(records)\nquery = (\n    \"Which aurora battery degradation thermal cycling endurance capacity voltage chemistry \"\n    \"electrode electrolyte cathode anode impedance retention report is relevant?\\n\"\n    \"What is the orchid greenhouse night humidity target?\"\n)\nbundle = ContextIR().compile_private(\n    text, source_lang=\"en\", target_lang=\"en\", mode=\"hybrid\",\n    context_kind=\"retrieval\", query=query,\n)\nprompt = ContextIR().render_bundle(bundle)\nprint({\"second_answer_present\": \"61 percent\" in prompt, \"orchid_evidence_present\": \"Orchid greenhouse\" in prompt})",
+    "fixed_revision": "37bd5325d02b97d48557e2c9a6b1806ae835701a"
+  }
+]
