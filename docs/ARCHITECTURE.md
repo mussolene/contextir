@@ -219,3 +219,17 @@ apply to unformatted single-line evidence. Lexical retrieval and PII masking sti
 require task-specific validation. The default filter now preserves numeric scalars
 and recognized unit-bearing counts while retaining explicit phone and card checks;
 ambiguous values remain heuristic.
+
+### Grouped retrieval questions
+
+Separate questions with question marks followed by whitespace, or put each on a
+new line with an identifier (`latency:`), a number (`1.`), or a list marker.
+ContextIR ranks each question independently and retains the union of its
+evidence blocks in source order. A wrapped line inside one question is not a
+new question. This remains lexical retrieval, so evidence completeness is not
+guaranteed by the splitter.
+
+All selected evidence for a group is mandatory during budget packing. If it
+cannot fit, `ContextWindowExceeded` is raised before the model is called.
+Provide a sufficient budget or explicitly restructure the task in the caller.
+A broad group may retain most of the document and produce little compression.
