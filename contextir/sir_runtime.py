@@ -99,7 +99,16 @@ class PrivacyScrubber:
         for kind, pattern in self.patterns:
             while True:
                 match = next(
-                    (item for item in pattern.finditer(scrubbed) if valid_privacy_match(kind, item.group(0))),
+                    (
+                        item
+                        for item in pattern.finditer(scrubbed)
+                        if valid_privacy_match(kind, item.group(0))
+                        and not (
+                            kind == "phone"
+                            and is_numeric_measurement(scrubbed, item.start(), item.end())
+                            and not is_explicit_phone_context(scrubbed, item.start())
+                        )
+                    ),
                     None,
                 )
                 if not match:
@@ -141,6 +150,39 @@ def valid_privacy_match(kind: str, surface: str) -> bool:
     if len(digits) < 9 and base.isdigit():
         return False
     return base.startswith("+") or not (12 <= len(digits) <= 19 and luhn_valid(base))
+
+
+NUMERIC_GROUP = r"(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)"
+NUMERIC_EXPRESSION_RE = re.compile(rf"(?<!\w)[+-]?{NUMERIC_GROUP}(?:[.,]\d+)?(?:[eE][+-]?\d+)?(?!\w)")
+MEASUREMENT_UNIT_RE = re.compile(
+    r"\s*(?:%|bytes?|octets?|[kmgtpe]?i?b|байт\w*|[кмгт]?б|"
+    r"items?|tokens?|records?|штук\w*|запис\w*|ms|msec|s|sec|min|h|hz|"
+    r"сек\w*|мин\w*|час\w*|мс|гц)(?=\b|[\s,.;]|$)",
+    re.IGNORECASE,
+)
+EXPLICIT_PHONE_RE = re.compile(
+    r"(?:phone(?:\s+number)?|telephone|mobile|call|телефон\w*|мобильн\w*)\s*[:=#-]?\s*$",
+    re.IGNORECASE,
+)
+
+
+def is_numeric_measurement(text: str, start: int, end: int) -> bool:
+    """Recognize clear scalar measurements, while leaving formatted phone forms eligible."""
+    expression = next(
+        (item for item in NUMERIC_EXPRESSION_RE.finditer(text) if item.start() <= start and item.end() >= end),
+        None,
+    )
+    if expression is None:
+        return False
+    token = expression.group(0)
+    if re.search(r"[.,]|[eE]", token):
+        return True
+    return bool(MEASUREMENT_UNIT_RE.match(text[expression.end():]))
+
+
+def is_explicit_phone_context(text: str, start: int) -> bool:
+    context = text[max(0, start - 40):start]
+    return bool(EXPLICIT_PHONE_RE.search(context))
 
 
 def luhn_valid(value: str) -> bool:

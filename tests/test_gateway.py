@@ -189,6 +189,59 @@ class ContextIRGatewayTests(unittest.TestCase):
         self.assertEqual(result.vault, {"PII_PHONE_1": "+447700677662"})
         self.assertEqual(result.protected_spans[0].kind, "phone")
 
+    def test_privacy_scrubber_preserves_decimal_and_scientific_metrics(self) -> None:
+        text = "PPL=12.345678, accuracy=0.987654321, loss=1.25e-6."
+
+        result = PrivacyScrubber().scrub(text)
+
+        self.assertEqual(result.scrubbed_text, text)
+        self.assertEqual(result.vault, {})
+
+    def test_privacy_scrubber_preserves_integer_measurements_with_units(self) -> None:
+        text = "Artifact size: 123456789 bytes; token count: 987654321 tokens; share: 123456789%."
+
+        result = PrivacyScrubber().scrub(text)
+
+        self.assertEqual(result.scrubbed_text, text)
+        self.assertEqual(result.vault, {})
+
+    def test_privacy_scrubber_preserves_grouped_integer_measurements(self) -> None:
+        for separator in (" ", "\u00a0", "\u202f"):
+            text = f"Size: 198{separator}765{separator}432 байта."
+            with self.subTest(separator=repr(separator)):
+                result = PrivacyScrubber().scrub(text)
+
+                self.assertEqual(result.scrubbed_text, text)
+                self.assertEqual(result.vault, {})
+
+    def test_privacy_scrubber_preserves_decimal_comma_and_negative_interval_bounds(self) -> None:
+        text = "accuracy=0,987654321; interval=[-12.345678, -98.765432]."
+
+        result = PrivacyScrubber().scrub(text)
+
+        self.assertEqual(result.scrubbed_text, text)
+        self.assertEqual(result.vault, {})
+
+    def test_privacy_scrubber_does_not_join_separate_numbers_as_one_measurement(self) -> None:
+        text = "Values 987654321 123456789 bytes."
+
+        result = PrivacyScrubber().scrub(text)
+
+        self.assertNotEqual(result.scrubbed_text, text)
+        self.assertTrue(result.vault)
+        self.assertTrue(all(span.kind in {"card", "phone"} for span in result.protected_spans))
+
+    def test_privacy_scrubber_masks_ru_and_explicitly_labeled_phones(self) -> None:
+        text = "Телефон: +7 921 555-01-23; phone number: 2025550147; phone: 202.5550147; 202.555.0147."
+
+        result = PrivacyScrubber().scrub(text)
+
+        self.assertEqual(
+            list(result.vault.values()),
+            ["+7 921 555-01-23", "2025550147", "202.5550147", "202.555.0147"],
+        )
+        self.assertEqual([span.kind for span in result.protected_spans], ["phone"] * 4)
+
     def test_covered_hybrid_events_render_as_plain_text(self) -> None:
         text = " ".join(
             ["Do not send payment 42 twice to finance@example.test."] * 20
