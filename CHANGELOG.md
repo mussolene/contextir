@@ -4,6 +4,10 @@ All notable changes to ContextIR are documented here.
 
 ## Unreleased
 
+- preserve decimal/scientific metrics and grouped integer measurements during
+  phone masking, with explicit phone and payment-card checks retained;
+- document model-free preparation for external-model agent loops and its limits.
+
 - require the existing CI tests, package validation and secret audit before release publishing;
 
 - preserve atomic Markdown evidence blocks and source layout in private bundles;

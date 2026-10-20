@@ -216,4 +216,6 @@ contracts do not preserve the exact original layout. If structured evidence
 cannot fit, increase the budget or change the application input. Explicit
 chunking of structured evidence raises `ValueError`; the chunking examples above
 apply to unformatted single-line evidence. Lexical retrieval and PII masking still
-require task-specific validation, including decimal metrics mistaken for phones.
+require task-specific validation. The default filter now preserves numeric scalars
+and recognized unit-bearing counts while retaining explicit phone and card checks;
+ambiguous values remain heuristic.

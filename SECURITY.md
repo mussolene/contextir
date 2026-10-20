@@ -17,8 +17,10 @@ reporting form under **Security > Report a vulnerability**.
 - The local vault must never be sent to a model provider.
 - Private bundles retain masked source text and layout spans. Do not serialize
   the entire bundle into application logs or send it to a model provider.
-- Decimal metrics and long integer measurements can be false positive phone
-  matches. Masking can remove facts needed for a correct answer.
+- Decimal and scientific scalars and recognized unit-bearing integers are
+  excluded from phone matching unless explicitly labeled as phones. Card
+  detection retains priority. Ambiguous integers, unsupported units and unusual
+  phone formats still need application-specific validation.
 - Public contracts may still contain sensitive context not recognized as PII.
 - External queries share the document's local masking pass and vault, but their
   masked text is still model-visible and must follow the same provider policy.

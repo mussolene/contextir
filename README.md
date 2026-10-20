@@ -62,6 +62,30 @@ facts in two questions. Shared-runner memory, GPU execution and system paging
 limit these results to the measured conditions. This is evidence for further
 validation, not a deployment-quality or hardware-independent speed guarantee.
 
+## Use In An Agent Loop Without A Local Model
+
+ContextIR preparation runs locally without LLM weights or a model server.
+`ContextPipeline.prepare()` can select document excerpts, search results or long
+logs before the host agent sends them to its external model. Supply the target
+model's token counter and an explicit prompt budget. A tokenizer is not an LLM.
+The existing `OpenAICompatibleClient` supports text chat with compatible hosted
+endpoints, and applications can also supply their own callable adapter.
+
+The host agent owns the message history, model credentials, tool calls,
+permissions and execution on the computer. The bundled text client does not
+implement a tool-call loop. Keep executable commands, tool arguments, patches,
+source code being edited and exact test failures in the host's exact-data path;
+lexical evidence selection does not establish code dependency completeness.
+Treat selected file contents as untrusted data, not system instructions.
+
+A sensible initial scope is optional reference material: retrieved documentation,
+search results and long repeated logs. Measure total tokens across all agent
+turns, final test success, retries, latency and actual provider usage. Fewer input
+tokens may reduce cost, but extra retries or provider prefix caching can change
+the result. The document QA experiment does not validate autonomous coding.
+Only selected masked context is intended for the provider; the vault stays local.
+Masking is heuristic and does not certify that a prompt is safe to disclose.
+
 ## Why
 
 Long agent histories and tool outputs consume model context with repeated facts,
@@ -98,8 +122,10 @@ budget or reduce the document at the application boundary. Explicit chunking of
 structured evidence raises `ValueError`; it does not split tables or paragraphs.
 The existing chunking path below applies to unformatted single-line evidence.
 Lexical retrieval can miss evidence across languages. The default PII filter
-can also mistake decimal metrics and long integer measurements for phone
-numbers; validate both evidence selection and masking on your own documents.
+preserves decimal and scientific scalars and integers
+with recognized measurement units. Explicit phone labels and payment-card
+checks retain priority. Ambiguous numbers and unsupported units still require
+validation on your own documents.
 
 For an unformatted evidence segment larger than the window, enable bounded
 chunked retrieval explicitly:
@@ -304,3 +330,9 @@ Architecture, scope, contribution, and security guidance:
 ContextIR code is licensed under Apache-2.0. Research datasets and derived
 lexical artifacts retain their upstream terms. See
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing them.
+
+## Проверка чисел и текущего harness
+
+[Новая серия Qwen](reports/model_ab/project_qa_numeric.md): после исправления маскирования по 19/24 правильных ответов в каждом варианте; медиана запроса 3.15 против 2.05 с. Строгий критерий качества не пройден из-за новых ложных утверждений об отсутствующем измерении.
+
+[Два одинаковых агента](reports/model_ab/project_qa_agent.md): 24/24 с полными документами против 23/24 через ContextIR, сокращение справочного текста на 45.59%. Оба изменения кода прошли по 96 независимых проверок. Отбор удалил нужный абзац при группировке вопросов; ускорение агента и стоимость не измерены. LoRA пока не обучалась.
