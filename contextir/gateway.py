@@ -8,7 +8,7 @@ import re
 import sys
 import time
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal
 
@@ -32,6 +32,8 @@ class ContextBundle:
     evidence_source_groups: tuple[tuple[str, ...], ...] = ()
     task_source_refs: tuple[str, ...] = ()
     retrieval_query: str = ""
+    source_text: str = ""
+    source_spans: dict[str, tuple[int, int]] = field(default_factory=dict)
 
 
 @dataclass
@@ -52,6 +54,7 @@ class TaskProfile:
     evidence_refs: tuple[str, ...] = ()
     retrieval_confidence: float = 0.0
     query: str = ""
+    source_groups: tuple[tuple[str, ...], ...] = ()
 
 
 class ContextIR:
@@ -162,8 +165,19 @@ class ContextIR:
                 "requires_source": selected_mode != "semantic",
             },
         }
+        bundle = ContextBundle(
+            contract=contract,
+            vault=scrubbed.vault,
+            sources=sources,
+            task_source_refs=source_plan.task_refs,
+            required_source_refs=source_plan.required_refs,
+            evidence_source_groups=source_plan.evidence_groups,
+            retrieval_query=task_profile.query,
+            source_text=scrubbed.scrubbed_text if task_profile.source_groups else "",
+            source_spans=source_segment_spans(scrubbed.scrubbed_text, segments) if task_profile.source_groups else {},
+        )
         compact_chars = len(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
-        prompt_chars = len(self.render_prompt(contract, task_profile.query))
+        prompt_chars = len(self.render_bundle(bundle))
         source_chars = len(text) + len(query)
         contract["stats"] = {
             "source_chars": source_chars,
@@ -174,15 +188,7 @@ class ContextIR:
             "included_segments": len(included_refs),
             "latency_ms": round((time.perf_counter() - started) * 1000, 3),
         }
-        return ContextBundle(
-            contract=contract,
-            vault=scrubbed.vault,
-            sources=sources,
-            task_source_refs=source_plan.task_refs,
-            required_source_refs=source_plan.required_refs,
-            evidence_source_groups=source_plan.evidence_groups,
-            retrieval_query=task_profile.query,
-        )
+        return bundle
 
     def _scrub_text_and_query(
         self,
@@ -223,7 +229,7 @@ class ContextIR:
         for group in bundle.evidence_source_groups:
             trial = selected | set(group)
             candidate = self._bundle_with_source_refs(bundle, trial)
-            candidate_tokens = token_counter(self.render_prompt(candidate.contract, candidate.retrieval_query))
+            candidate_tokens = token_counter(self.render_bundle(candidate))
             if candidate_tokens <= max_prompt_tokens:
                 selected = trial
                 packed = candidate
@@ -238,6 +244,8 @@ class ContextIR:
         refs: set[str],
         overrides: dict[str, str] | None = None,
     ) -> ContextBundle:
+        if overrides and bundle.source_text:
+            raise ValueError("structural retrieval evidence must remain atomic; increase the prompt budget")
         contract = copy.deepcopy(bundle.contract)
         source_values = overrides or {}
         included = [
@@ -260,13 +268,7 @@ class ContextIR:
             for item in contract["entities"]
             if item.get("type") == "number" or item.get("value") in protected_values
         ]
-        stats = contract.pop("stats")
-        stats["included_segments"] = len(included)
-        stats["prompt_chars"] = len(self.render_prompt(contract, bundle.retrieval_query))
-        stats["prompt_ratio"] = round(stats["prompt_chars"] / max(stats["source_chars"], 1), 4)
-        stats["contract_chars"] = len(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
-        contract["stats"] = stats
-        return ContextBundle(
+        candidate = ContextBundle(
             contract=contract,
             vault=bundle.vault,
             sources=bundle.sources,
@@ -274,7 +276,16 @@ class ContextIR:
             required_source_refs=bundle.required_source_refs,
             evidence_source_groups=bundle.evidence_source_groups,
             retrieval_query=bundle.retrieval_query,
+            source_text=bundle.source_text,
+            source_spans=bundle.source_spans,
         )
+        stats = contract.pop("stats")
+        stats["included_segments"] = len(included)
+        stats["prompt_chars"] = len(self.render_bundle(candidate))
+        stats["prompt_ratio"] = round(stats["prompt_chars"] / max(stats["source_chars"], 1), 4)
+        stats["contract_chars"] = len(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
+        contract["stats"] = stats
+        return candidate
 
     def render_prompt(self, contract: dict[str, Any], query: str = "") -> str:
         if contract.get("version") != "contextir.v2":
@@ -324,6 +335,23 @@ class ContextIR:
 
     def render_bundle(self, bundle: ContextBundle) -> str:
         """Render a private bundle without dropping its external retrieval query."""
+        if bundle.source_text and bundle.contract.get("mode") in {"raw", "hybrid"}:
+            runs: list[str] = []
+            start = end = -1
+            previous = -2
+            for item in bundle.contract["source"]["included"]:
+                ref = item["ref"]
+                index = int(ref[1:])
+                left, right = bundle.source_spans[ref]
+                if index != previous + 1:
+                    if start >= 0:
+                        runs.append(bundle.source_text[start:end])
+                    start = left
+                end = right
+                previous = index
+            if start >= 0:
+                runs.append(bundle.source_text[start:end])
+            return append_query_if_missing("\n\n".join(runs), bundle.retrieval_query)
         return self.render_prompt(bundle.contract, bundle.retrieval_query)
 
     def decompile(self, contract: dict[str, Any], target_lang: str | None = None, include_anchors: bool = False) -> str:
@@ -436,6 +464,62 @@ STOPWORDS = {
 def split_source(text: str) -> list[tuple[str, str]]:
     parts = [part.strip() for part in SOURCE_SPLIT_RE.split(text) if part.strip()]
     return [(f"s{index}", part) for index, part in enumerate(parts, 1)]
+
+
+def source_segment_spans(text: str, segments: list[tuple[str, str]]) -> dict[str, tuple[int, int]]:
+    """Locate unchanged segment IDs in source order, including line indentation."""
+    spans = {}
+    cursor = 0
+    for ref, value in segments:
+        start = text.index(value, cursor)
+        end = start + len(value)
+        line_start = text.rfind("\n", 0, start) + 1
+        if not text[line_start:start].strip():
+            start = line_start
+        spans[ref] = (start, end)
+        cursor = end
+    return spans
+
+
+def structural_source_groups(
+    text: str, segments: list[tuple[str, str]]
+) -> tuple[tuple[str, ...], ...]:
+    """Keep physical Markdown blocks atomic; unformatted single-line text uses sentences."""
+    if "\n" not in text:
+        return ()
+    blocks: list[tuple[int, int]] = []
+    start = offset = 0
+    fence = ""
+    pending_blank = False
+    for line in text.splitlines(keepends=True):
+        stripped = line.strip()
+        marker = re.match(r"^(`{3,}|~{3,})", stripped)
+        if fence:
+            if re.fullmatch(re.escape(fence[0]) + "{" + str(len(fence)) + ",}\\s*", stripped):
+                fence = ""
+        elif marker:
+            if pending_blank:
+                blocks.append((start, offset))
+                start = offset
+                pending_blank = False
+            fence = marker.group(1)
+        elif not stripped:
+            pending_blank = True
+        elif pending_blank:
+            # Retain the introductory paragraph and blank-separated list items.
+            if not re.match(r"^(?:(?:[-+*]|\d+[.)])\s+|\|)", stripped) and not line[:1].isspace():
+                blocks.append((start, offset))
+                start = offset
+            pending_blank = False
+        offset += len(line)
+    blocks.append((start, len(text)))
+    spans = source_segment_spans(text, segments)
+    groups = []
+    for begin, end in blocks:
+        refs = tuple(ref for ref, (left, right) in spans.items() if left < end and right > begin)
+        if refs:
+            groups.append(refs)
+    return tuple(groups)
 
 
 def extract_events(segments: list[tuple[str, str]], source_lang: str) -> list[dict[str, Any]]:
@@ -564,10 +648,12 @@ def plan_source_refs(
         return SourcePlan(())
     if task_profile and task_profile.kind == "retrieval":
         task_refs = set(task_profile.query_refs)
-        task_refs.update(ref for ref, _text in segments[:1])
-        task_refs.update(ref for ref, _text in segments[-2:])
+        if not task_profile.source_groups:
+            task_refs.update(ref for ref, _text in segments[:1])
+            task_refs.update(ref for ref, _text in segments[-2:])
         required = set(task_refs)
-        required.update(ref for ref, _text in segments[:2])
+        if not task_profile.source_groups:
+            required.update(ref for ref, _text in segments[:2])
         edge_segments = segments[:4] + segments[-6:]
         edge_refs = {
             ref
@@ -576,16 +662,20 @@ def plan_source_refs(
         }
         task_refs.update(edge_refs)
         required.update(edge_refs)
-        owner_by_ref = paragraph_owner_map(segments)
+        owner_by_ref = paragraph_owner_map(segments) if not task_profile.source_groups else {}
+        structural_by_ref = {ref: group for group in task_profile.source_groups for ref in group}
+        for ref in tuple(required):
+            required.update(structural_by_ref.get(ref, (ref,)))
         groups = []
         selected = set(required)
         for evidence_ref in task_profile.evidence_refs:
-            group = {evidence_ref}
+            group = set(structural_by_ref.get(evidence_ref, (evidence_ref,)))
             owner = owner_by_ref.get(evidence_ref, "")
             if owner:
                 group.add(owner)
             ordered_group = tuple(ref for ref, _text in segments if ref in group)
-            groups.append(ordered_group)
+            if ordered_group not in groups:
+                groups.append(ordered_group)
             selected.update(group)
         ordered_refs = tuple(ref for ref, _text in segments if ref in selected)
         ordered_task = tuple(ref for ref, _text in segments if ref in task_refs)
@@ -671,7 +761,17 @@ def analyze_task(
         return TaskProfile(kind="operational")
     normalized_query = " ".join(query.lower().split())
     query_refs = tuple(ref for ref, segment in segments if segment_belongs_to_query(segment, normalized_query))
-    evidence, confidence = retrieve_evidence(segments, query_terms, set(query_refs), evidence_limit)
+    source_groups = structural_source_groups(text, segments)
+    values = dict(segments)
+    ranked_segments = (
+        [(group[0], " ".join(values[ref] for ref in group)) for group in source_groups]
+        if source_groups else segments
+    )
+    excluded = set(query_refs)
+    excluded.update(group[0] for group in source_groups if excluded.intersection(group))
+    evidence, confidence = retrieve_evidence(
+        ranked_segments, query_terms, excluded, evidence_limit, skip_edges=not source_groups
+    )
     explicit_retrieval = bool(explicit_query) or context_kind == "retrieval" or any(
         marker in normalized for marker in RETRIEVAL_MARKERS
     )
@@ -683,6 +783,7 @@ def analyze_task(
         evidence_refs=tuple(evidence),
         retrieval_confidence=confidence,
         query=query,
+        source_groups=source_groups,
     )
 
 
@@ -733,6 +834,7 @@ def retrieve_evidence(
     query_terms: set[str],
     excluded_refs: set[str],
     limit: int,
+    skip_edges: bool = True,
 ) -> tuple[list[str], float]:
     document_frequency: Counter[str] = Counter()
     terms_by_ref: dict[str, set[str]] = {}
@@ -744,7 +846,7 @@ def retrieve_evidence(
     total = max(len(segments), 1)
     scored = []
     for index, (ref, _segment) in enumerate(segments):
-        if ref in excluded_refs or index < 2 or index >= len(segments) - 2:
+        if ref in excluded_refs or (skip_edges and (index < 2 or index >= len(segments) - 2)):
             continue
         overlap = query_terms & terms_by_ref[ref]
         if not overlap:

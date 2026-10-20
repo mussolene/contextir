@@ -206,3 +206,14 @@ caller should use hybrid or raw mode.
 Modules prefixed with `sir_` implement previous lexical, graph, embedding, and
 neural experiments. They remain useful for optional topic enrichment and
 research reproduction, but they are not required by the default gateway.
+
+## Structured Evidence Layout
+
+Current retrieval groups physical Markdown blocks before ranking. Tables, lists,
+paragraphs and fenced code remain atomic. Private bundles preserve masked source
+spans for `ContextIR.render_bundle()` and `ContextPipeline`; standalone serialized
+contracts do not preserve the exact original layout. If structured evidence
+cannot fit, increase the budget or change the application input. Explicit
+chunking of structured evidence raises `ValueError`; the chunking examples above
+apply to unformatted single-line evidence. Lexical retrieval and PII masking still
+require task-specific validation, including decimal metrics mistaken for phones.

@@ -1,0 +1,349 @@
+{
+  "status": "quality_and_memory_win_not_established",
+  "date": "2026-10-20",
+  "model": "qwen3:1.7b",
+  "model_digest": "8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+  "options": {
+    "temperature": 0,
+    "seed": 42,
+    "num_ctx": 8192,
+    "num_predict": 192
+  },
+  "dataset": {
+    "questions": 24,
+    "answerable": 20,
+    "repeats": 2,
+    "documents_sha256": {
+      "architecture": "4afc453bbb4a2e1aa08d4f4a3fa918acefe56ca0f0e36a8f02aa8dbe6d2c07e5",
+      "quickstart": "9c98e28a96ee061af71fdb22c3c8b79542a925a6751032a80ffef1a3cb9d1003",
+      "backbone": "62975cc2a898e0bc70b59a0d29276f0538d33c95b321d7da41c80aec7108faf9",
+      "distillation": "e133b5bf87cfeb80c09ea5e193737ff889337674da73bc970071e0cbc13498df"
+    }
+  },
+  "method": "Paired raw unmasked full document versus ContextIR preparation including PII masking. New questions frozen before inference. Manual non-blind grading reviewed against exact questions. Descriptive paired bootstrap clusters both repeats by question. Not an isolated ablation of the structural selector.",
+  "results": {
+    "requests": 96,
+    "unique_tasks": 24,
+    "variants": {
+      "raw": {
+        "wall_seconds": {
+          "min": 2.6993074999190867,
+          "median": 4.763750062440522,
+          "max": 11.228764040861279
+        },
+        "preparation_seconds": {
+          "min": 0.00013441708870232105,
+          "median": 0.00029679154977202415,
+          "max": 0.004046791000291705
+        },
+        "prompt_tokens": {
+          "min": 1730,
+          "median": 2440.5,
+          "max": 4452
+        },
+        "output_tokens": {
+          "min": 18,
+          "median": 43.0,
+          "max": 96
+        },
+        "prefill_seconds": {
+          "min": 1.888073,
+          "median": 3.2881615,
+          "max": 7.656404
+        },
+        "decode_seconds": {
+          "min": 0.29565,
+          "median": 0.845433,
+          "max": 2.552943
+        },
+        "model_cpu_seconds": {
+          "min": 0.031085849,
+          "median": 0.0701142435,
+          "max": 0.166945981
+        },
+        "sampled_peak_rss_bytes": 3918348288,
+        "sampled_peak_footprint_bytes": 11421689744,
+        "client_peak_footprint_endpoints_bytes": 70910648,
+        "full_correct": 26,
+        "partial": 4,
+        "failed": 18,
+        "mean_score": 0.5833333333333334,
+        "invented_guarantees": 6,
+        "quality_by_repeat": {
+          "0": 13,
+          "1": 13
+        }
+      },
+      "context": {
+        "wall_seconds": {
+          "min": 0.7429558751173317,
+          "median": 2.8311344374669716,
+          "max": 4.479678457835689
+        },
+        "preparation_seconds": {
+          "min": 0.00997191690839827,
+          "median": 0.018955645500682294,
+          "max": 0.06871641683392227
+        },
+        "prompt_tokens": {
+          "min": 135,
+          "median": 1256.5,
+          "max": 1935
+        },
+        "output_tokens": {
+          "min": 25,
+          "median": 47.0,
+          "max": 94
+        },
+        "prefill_seconds": {
+          "min": 0.105118,
+          "median": 1.4805169999999999,
+          "max": 3.019134
+        },
+        "decode_seconds": {
+          "min": 0.312142,
+          "median": 0.8499494999999999,
+          "max": 1.676996
+        },
+        "model_cpu_seconds": {
+          "min": 0.034356829,
+          "median": 0.0700292435,
+          "max": 0.152158334
+        },
+        "sampled_peak_rss_bytes": 3614998528,
+        "sampled_peak_footprint_bytes": 11421689744,
+        "client_peak_footprint_endpoints_bytes": 70927032,
+        "full_correct": 24,
+        "partial": 8,
+        "failed": 16,
+        "mean_score": 0.5833333333333334,
+        "invented_guarantees": 6,
+        "quality_by_repeat": {
+          "0": 12,
+          "1": 12
+        }
+      }
+    },
+    "paired_ratio_of_mean_wall": 1.9618858430897328,
+    "paired_bootstrap_speed_95": [
+      1.6282271645718018,
+      2.3351249492823825
+    ],
+    "paired_bootstrap_full_correct_difference_95": [
+      -0.20833333333333334,
+      0.125
+    ],
+    "bootstrap_unit": "Вопрос, оба повтора сохраняются вместе; описательный интервал для этой нагрузки.",
+    "pairs": [
+      {
+        "id": "architecture1",
+        "raw": 4.0985807705437765,
+        "raw_quality": 0,
+        "context": 4.04796231247019,
+        "context_quality": 0
+      },
+      {
+        "id": "architecture2",
+        "raw": 3.3639478541444987,
+        "raw_quality": 0,
+        "context": 3.869182707858272,
+        "context_quality": 0
+      },
+      {
+        "id": "architecture3",
+        "raw": 5.135703562409617,
+        "raw_quality": 0,
+        "context": 2.693092874949798,
+        "context_quality": 0
+      },
+      {
+        "id": "architecture4",
+        "raw": 3.4213698125677183,
+        "raw_quality": 1,
+        "context": 1.6614580835448578,
+        "context_quality": 1
+      },
+      {
+        "id": "architecture5",
+        "raw": 4.46142552094534,
+        "raw_quality": 0,
+        "context": 4.015020874910988,
+        "context_quality": 0
+      },
+      {
+        "id": "architecture6",
+        "raw": 3.955185583443381,
+        "raw_quality": 1,
+        "context": 3.206646249978803,
+        "context_quality": 1
+      },
+      {
+        "id": "quickstart1",
+        "raw": 3.105105958529748,
+        "raw_quality": 1,
+        "context": 1.9910815209150314,
+        "context_quality": 1
+      },
+      {
+        "id": "quickstart2",
+        "raw": 3.5850734579144046,
+        "raw_quality": 1,
+        "context": 3.657397542032413,
+        "context_quality": 1
+      },
+      {
+        "id": "quickstart3",
+        "raw": 4.288744437508285,
+        "raw_quality": 1,
+        "context": 1.6258897294756025,
+        "context_quality": 1
+      },
+      {
+        "id": "quickstart4",
+        "raw": 3.3949699795339257,
+        "raw_quality": 0,
+        "context": 1.94507627049461,
+        "context_quality": 0
+      },
+      {
+        "id": "quickstart5",
+        "raw": 3.2972425834741443,
+        "raw_quality": 0,
+        "context": 3.6569256249349564,
+        "context_quality": 1
+      },
+      {
+        "id": "quickstart6",
+        "raw": 2.957393874647096,
+        "raw_quality": 0,
+        "context": 1.0628772914642468,
+        "context_quality": 0
+      },
+      {
+        "id": "backbone1",
+        "raw": 8.527352291392162,
+        "raw_quality": 1,
+        "context": 2.9697300620609894,
+        "context_quality": 1
+      },
+      {
+        "id": "backbone2",
+        "raw": 9.56297441595234,
+        "raw_quality": 0,
+        "context": 3.5234575000358745,
+        "context_quality": 1
+      },
+      {
+        "id": "backbone3",
+        "raw": 9.89200808305759,
+        "raw_quality": 1,
+        "context": 2.4513756040250883,
+        "context_quality": 1
+      },
+      {
+        "id": "backbone4",
+        "raw": 8.986830874928273,
+        "raw_quality": 1,
+        "context": 2.844050458050333,
+        "context_quality": 1
+      },
+      {
+        "id": "backbone5",
+        "raw": 8.714933500043117,
+        "raw_quality": 1,
+        "context": 2.821156062069349,
+        "context_quality": 0
+      },
+      {
+        "id": "backbone6",
+        "raw": 8.817948562442325,
+        "raw_quality": 0,
+        "context": 2.9801725420402363,
+        "context_quality": 0
+      },
+      {
+        "id": "distillation1",
+        "raw": 8.139943458489142,
+        "raw_quality": 1,
+        "context": 3.3095862079644576,
+        "context_quality": 0
+      },
+      {
+        "id": "distillation2",
+        "raw": 6.180138166993856,
+        "raw_quality": 1,
+        "context": 3.606490020523779,
+        "context_quality": 0
+      },
+      {
+        "id": "distillation3",
+        "raw": 6.271668478613719,
+        "raw_quality": 1,
+        "context": 2.5893692498793826,
+        "context_quality": 1
+      },
+      {
+        "id": "distillation4",
+        "raw": 5.062128374935128,
+        "raw_quality": 0,
+        "context": 3.2370279794558883,
+        "context_quality": 0
+      },
+      {
+        "id": "distillation5",
+        "raw": 5.581513458513655,
+        "raw_quality": 1,
+        "context": 2.6515058958902955,
+        "context_quality": 1
+      },
+      {
+        "id": "distillation6",
+        "raw": 5.502881916472688,
+        "raw_quality": 0,
+        "context": 3.0600199374603108,
+        "context_quality": 0
+      }
+    ],
+    "token_reduction_weighted": 0.562186279977691,
+    "load_one_minute": {
+      "min": 7.21875,
+      "median": 8.697265625,
+      "max": 15.6484375
+    },
+    "paging_intervals": 96,
+    "cache_tokens": {
+      "min": 1,
+      "median": 79.0,
+      "max": 80
+    },
+    "length_stops": [],
+    "memory_errors": 0,
+    "memory_caveat": "Один общий runner с GPU и резервированным окном; пики по вариантам не являются изолированным сравнением полной памяти. CPU time не измеряет GPU работу.",
+    "repeat_answer_differences": {
+      "raw": [
+        "architecture5",
+        "distillation5"
+      ],
+      "context": [
+        "quickstart3",
+        "backbone1",
+        "backbone6",
+        "distillation6"
+      ]
+    }
+  },
+  "limitations": [
+    "Numeric PII false positives remove answers for two questions.",
+    "Full correct answers: raw 13/24, ContextIR 12/24 in each repeat.",
+    "Shared GPU runner, fixed window, system paging in every interval: no isolated total memory claim.",
+    "No retuning on this opened test set.",
+    "No statistical equivalence or unloaded-machine speed claim."
+  ],
+  "verification": {
+    "unit_tests": 82,
+    "unit_tests_status": "PASS",
+    "gateway_evaluation": "PASS",
+    "actionlint": "PASS",
+    "package_contents": "No home paths, checkpoints, reports or caches in wheel/sdist."
+  }
+}

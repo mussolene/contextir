@@ -4,6 +4,13 @@ All notable changes to ContextIR are documented here.
 
 ## Unreleased
 
+- require the existing CI tests, package validation and secret audit before release publishing;
+
+- preserve atomic Markdown evidence blocks and source layout in private bundles;
+- rank whole blocks and account for the actual rendered prompt when packing;
+- reject explicit subdivision of structured evidence instead of breaking its context;
+- document lexical retrieval and numeric PII masking limitations.
+
 - changed the model A/B harness to pass application-owned document context and
   retrieval queries separately through ContextIR and every comparison baseline;
 - added `--check` with per-dataset quality and measured-token gates, structured

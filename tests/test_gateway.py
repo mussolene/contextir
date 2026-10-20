@@ -11,7 +11,7 @@ from unittest.mock import patch
 from jsonschema import Draft202012Validator
 
 from contextir import ContextIR, ContextPipeline, PipelinePolicy
-from contextir.gateway import main
+from contextir.gateway import main, split_source
 from contextir.pipeline import approximate_token_count
 from contextir.schemas import load_contract_schema
 from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
@@ -20,6 +20,33 @@ from contextir.sir_runtime import PresidioPrivacyScrubber, PrivacyScrubber
 class ContextIRGatewayTests(unittest.TestCase):
     def setUp(self) -> None:
         self.gateway = ContextIR()
+
+    def test_structural_retrieval_preserves_atomic_blocks_and_layout(self) -> None:
+        blocks = [
+            ("The zircon system is approved. However, secondary certification is pending.", "zircon approved"),
+            ("The zircon system is approved.\nIt must not be used without the secondary interlock.", "zircon approved"),
+            ("Measurements at room temperature:\n\n| Product | Conductivity (W/m K) |\n| --- | --- |\n| Alloy A | 12 |\n| Alloy B | 17 |", "conductivity"),
+            ("Allowed actions only after supervisor approval:\n\n- inspect the zircon valve\n- record pressure\n\n- close the hatch", "zircon valve"),
+            ("```python\ndef zircon_check():\n    # Keep both conditions. Do not remove the second.\n\n    return ready and interlock\n```", "zircon_check"),
+            ("Limits in kelvin:\n| Part | Maximum |\n| --- | --- |\n| zircon | 310 |\nRequired precautions:\n- inspect the valve\n- record pressure\n```text\nretain interlock\n```", "zircon maximum"),
+        ]
+        for block, query in blocks:
+            with self.subTest(query=query):
+                text = "Preface.\n\nArchive entry.\n\n" + block + "\n\nUnrelated tail.\n\nEnd."
+                bundle = self.gateway.compile_private(
+                    text, source_lang="en", target_lang="en", mode="hybrid",
+                    context_kind="retrieval", query=query,
+                )
+                refs = tuple(ref for ref, value in split_source(text) if value in block)
+                self.assertTrue(any(set(refs) <= set(group) for group in bundle.evidence_source_groups))
+                self.assertEqual(bundle.sources, dict(split_source(text)))
+                self.assertIn(block, self.gateway.render_bundle(bundle))
+                self.assertNotIn("Unrelated tail.", self.gateway.render_bundle(bundle))
+                self.assertEqual(bundle.contract["stats"]["prompt_chars"], len(self.gateway.render_bundle(bundle)))
+                packed = self.gateway._pack_retrieval_prompt(bundle, 1000, len)
+                self.assertIsNotNone(packed)
+                self.assertIn(block, self.gateway.render_bundle(packed))
+                self.assertEqual(packed.contract["stats"]["prompt_chars"], len(self.gateway.render_bundle(packed)))
 
     def test_short_input_uses_raw_without_wrapper_overhead(self) -> None:
         text = "Проверь архитектуру и верни краткий ответ."

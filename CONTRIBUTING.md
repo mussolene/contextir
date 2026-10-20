@@ -1,7 +1,7 @@
 # Contributing
 
-ContextIR is alpha research software. Small, measurable changes are preferred
-over broad architecture rewrites.
+ContextIR has a stable 1.x public API, with task-dependent research components.
+Small, measurable changes are preferred over broad architecture rewrites.
 
 ## Setup
 

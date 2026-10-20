@@ -50,6 +50,18 @@ install remains available for environments that prefer source builds.
 For a two-minute integration and safe restoration example, see
 [Quick start](docs/QUICKSTART.md).
 
+## Current Document QA Evidence
+
+A [paired local evaluation](reports/model_ab/project_qa_structured.json) used
+24 new project-document questions and two repeats on Qwen3:1.7b Q4_K_M.
+Median end-to-end request time fell from 4.764 to 2.831 seconds, with 56.22%
+fewer input tokens. Fully correct answers fell from 13/24 to 12/24 per repeat;
+mean partial-credit scores were equal. Quality preservation and lower total
+memory were not established. Numeric PII false positives removed necessary
+facts in two questions. Shared-runner memory, GPU execution and system paging
+limit these results to the measured conditions. This is evidence for further
+validation, not a deployment-quality or hardware-independent speed guarantee.
+
 ## Why
 
 Long agent histories and tool outputs consume model context with repeated facts,
@@ -74,8 +86,23 @@ and configurable chat-template overhead from their context window; ContextIR
 packs ranked retrieval evidence to the remaining budget or refuses an unsafe
 prompt before contacting the model.
 
-For a query whose highest-ranked evidence segment is itself larger than the
-window, enable bounded chunked retrieval explicitly:
+Document retrieval now ranks complete physical Markdown blocks. Tables retain
+headers and units, lists retain their introduction, and fenced code retains
+indentation and internal blank lines. Use `ContextPipeline` or
+`ContextIR.render_bundle()` to preserve this layout; the serialized v2 contract
+alone does not carry the private source spans. Adjacent blocks without blank
+lines may be grouped conservatively, reducing compression.
+
+Structured blocks are atomic: if a selected block cannot fit, increase the
+budget or reduce the document at the application boundary. Explicit chunking of
+structured evidence raises `ValueError`; it does not split tables or paragraphs.
+The existing chunking path below applies to unformatted single-line evidence.
+Lexical retrieval can miss evidence across languages. The default PII filter
+can also mistake decimal metrics and long integer measurements for phone
+numbers; validate both evidence selection and masking on your own documents.
+
+For an unformatted evidence segment larger than the window, enable bounded
+chunked retrieval explicitly:
 
 ```bash
 contextir run \

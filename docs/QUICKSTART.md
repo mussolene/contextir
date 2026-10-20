@@ -216,3 +216,14 @@ boundary.
 - retain raw-source fallback for low-confidence or high-impact operations;
 - configure each model's real context length, output reserve, and tokenizer;
 - monitor fallback rate, semantic loss, latency, and task success.
+
+## Structured Evidence Layout
+
+Current retrieval groups physical Markdown blocks before ranking. Tables, lists,
+paragraphs and fenced code remain atomic. Private bundles preserve masked source
+spans for `ContextIR.render_bundle()` and `ContextPipeline`; standalone serialized
+contracts do not preserve the exact original layout. If structured evidence
+cannot fit, increase the budget or change the application input. Explicit
+chunking of structured evidence raises `ValueError`; the chunking examples above
+apply to unformatted single-line evidence. Lexical retrieval and PII masking still
+require task-specific validation, including decimal metrics mistaken for phones.

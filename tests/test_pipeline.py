@@ -46,6 +46,28 @@ def oversized_retrieval_text(repeat_query: bool = False) -> str:
 
 
 class ContextPipelineTests(unittest.TestCase):
+    def test_structural_evidence_budget_refuses_before_model_call(self) -> None:
+        table = "| Material | Thermal rating (K) |\n| --- | --- |\n" + "\n".join(
+            f"| alloy {index} | {index + 200} |" for index in range(25)
+        )
+        text = "Preface.\n\nArchive.\n\n" + table + "\n\nEnd."
+        calls = []
+        pipeline = ContextPipeline(policy=PipelinePolicy(max_prompt_tokens=80))
+        with self.assertRaises(ContextWindowExceeded):
+            pipeline.run(
+                text, lambda prompt: calls.append(prompt) or "unexpected",
+                source_lang="en", target_lang="en", context_kind="retrieval",
+                query="What are the thermal ratings?",
+            )
+        self.assertEqual(calls, [])
+        with self.assertRaisesRegex(ValueError, "structural retrieval evidence must remain atomic"):
+            pipeline.run(
+                text, lambda prompt: calls.append(prompt) or "unexpected",
+                source_lang="en", target_lang="en", context_kind="retrieval",
+                query="What are the thermal ratings?", chunked_retrieval=True,
+            )
+        self.assertEqual(calls, [])
+
     def test_pipeline_can_store_default_invoker(self) -> None:
         pipeline = ContextPipeline(invoke=lambda _prompt: "READY")
 

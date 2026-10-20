@@ -4,6 +4,7 @@ name: CI
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -43,6 +44,7 @@ jobs:
         with:
           name: contextir-dist
           path: dist/
+          retention-days: 1
 
   secrets:
     runs-on: ubuntu-latest
